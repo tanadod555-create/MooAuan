@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #090d16;
+  color: #f1f5f9;
+  font-family: 'Prompt', 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Glow effects */
+.glow-emerald {
+  filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.45));
+}
+
+.glow-blue {
+  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.45));
+}
+
+.glow-purple {
+  filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.45));
+}
+
+/* Safe areas for mobile bottom nav and notch */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 1rem);
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 1rem);
+}
+
+/* SVG muscle interactions */
+.muscle-path {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.muscle-path:hover {
+  fill: #38bdf8 !important;
+  filter: drop-shadow(0 0 8px #38bdf8);
+}
+
+.muscle-path.active {
+  fill: #10b981 !important;
+  filter: drop-shadow(0 0 12px #10b981);
+}
+
+/* 21st.dev Border Beam Animation */
+@keyframes border-beam {
+  100% {
+    offset-distance: 100%;
+  }
+}
+
