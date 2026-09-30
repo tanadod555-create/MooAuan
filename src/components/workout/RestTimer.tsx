@@ -150,44 +150,44 @@ export const RestTimer: React.FC<RestTimerProps> = ({
       {/* Main Countdown Display */}
       {seconds !== null ? (
         <div className="space-y-3">
-          <div className="flex items-center justify-between bg-slate-950/80 rounded-xl p-3 border border-slate-800">
+          <div className="flex items-center justify-between bg-pink-50/80 rounded-2xl p-3.5 border border-pink-200">
             {/* Big Countdown Number */}
             <div className="flex items-baseline gap-2">
               <span
-                className={`text-3xl font-black font-mono tracking-tight ${
+                className={`text-3xl sm:text-4xl font-black font-mono tracking-tight ${
                   isFinished
-                    ? 'text-emerald-400 animate-bounce'
+                    ? 'text-rose-600 animate-bounce'
                     : seconds <= 5
-                    ? 'text-rose-400 animate-pulse'
-                    : 'text-sky-400'
+                    ? 'text-rose-600 animate-pulse'
+                    : 'text-rose-500'
                 }`}
               >
                 {formatTime(seconds)}
               </span>
-              <span className="text-xs text-slate-500 font-mono">
+              <span className="text-xs text-pink-700/60 font-mono font-bold">
                 / {formatTime(initialSeconds)}
               </span>
             </div>
 
             {/* Quick adjust buttons */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={() => onAddSeconds(-15)}
-                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded-lg text-xs font-semibold"
+                className="px-2.5 py-1.5 bg-white border border-pink-200 hover:bg-pink-100 active:scale-95 text-pink-900 rounded-xl text-xs font-bold shadow-xs"
                 title="ลด 15 วินาที"
               >
                 -15s
               </button>
               <button
                 onClick={() => onAddSeconds(30)}
-                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded-lg text-xs font-semibold"
+                className="px-2.5 py-1.5 bg-white border border-pink-200 hover:bg-pink-100 active:scale-95 text-pink-900 rounded-xl text-xs font-bold shadow-xs"
                 title="เพิ่ม 30 วินาที"
               >
                 +30s
               </button>
               <button
                 onClick={() => onAddSeconds(60)}
-                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded-lg text-xs font-semibold"
+                className="px-2.5 py-1.5 bg-white border border-pink-200 hover:bg-pink-100 active:scale-95 text-pink-900 rounded-xl text-xs font-bold shadow-xs"
                 title="เพิ่ม 60 วินาที"
               >
                 +1m
@@ -196,23 +196,32 @@ export const RestTimer: React.FC<RestTimerProps> = ({
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+          <div className="w-full bg-pink-100 h-2 rounded-full overflow-hidden">
             <div
               className={`h-full transition-all duration-300 ${
-                isFinished ? 'bg-emerald-400' : 'bg-gradient-to-r from-sky-400 to-emerald-400'
+                isFinished ? 'bg-rose-500' : 'bg-gradient-to-r from-pink-400 to-rose-500'
               }`}
               style={{ width: `${progressPercent}%` }}
             />
           </div>
 
+          {/* Prominent Skip Rest Button requested by user */}
+          <button
+            onClick={onClose}
+            className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-200 active:scale-[0.98] transition cursor-pointer"
+          >
+            <Sparkles size={16} />
+            <span>ข้ามการพัก / พร้อมลุยต่อเลย ⚡</span>
+          </button>
+
           {/* Play / Pause / Reset Action Controls */}
           <div className="flex items-center gap-2">
             <button
               onClick={onPauseToggle}
-              className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
+              className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 border ${
                 isPaused
-                  ? 'bg-sky-500 hover:bg-sky-400 text-slate-950 shadow-md shadow-sky-500/20'
-                  : 'bg-slate-800 hover:bg-slate-700 text-sky-400'
+                  ? 'bg-rose-500 hover:bg-rose-600 text-white border-rose-500 shadow-sm'
+                  : 'bg-white hover:bg-pink-50 text-pink-900 border-pink-200'
               }`}
             >
               {isPaused ? (
@@ -228,7 +237,7 @@ export const RestTimer: React.FC<RestTimerProps> = ({
 
             <button
               onClick={onReset}
-              className="py-2 px-3 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-300 rounded-xl text-xs font-semibold flex items-center gap-1"
+              className="py-2 px-3 bg-white hover:bg-pink-50 active:scale-95 text-pink-800 border border-pink-200 rounded-xl text-xs font-semibold flex items-center gap-1"
               title="เริ่มนับใหม่"
             >
               <RotateCcw size={14} /> เริ่มใหม่
@@ -238,10 +247,10 @@ export const RestTimer: React.FC<RestTimerProps> = ({
       ) : null}
 
       {/* Preset Quick Buttons */}
-      <div className="mt-3 pt-3 border-t border-slate-800/80">
-        <div className="text-[11px] font-semibold text-slate-400 mb-2 flex items-center justify-between">
+      <div className="mt-3 pt-3 border-t border-pink-200">
+        <div className="text-[11px] font-bold text-pink-800 mb-2 flex items-center justify-between">
           <span>เลือกเวลาพักด่วน:</span>
-          {seconds !== null && <span className="text-[10px] text-sky-400 font-mono">กดเพื่อเริ่มนับใหม่ทันที</span>}
+          {seconds !== null && <span className="text-[10px] text-rose-500 font-bold">กดเพื่อเริ่มนับใหม่ทันที</span>}
         </div>
         <div className="grid grid-cols-6 gap-1.5">
           {PRESETS.map((p) => {
@@ -252,8 +261,8 @@ export const RestTimer: React.FC<RestTimerProps> = ({
                 onClick={() => onStart(p.sec)}
                 className={`py-1.5 px-1 rounded-xl text-xs font-bold transition active:scale-90 text-center ${
                   isSelected
-                    ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/25 ring-2 ring-sky-400/40'
-                    : 'bg-slate-950/70 hover:bg-slate-800 text-slate-300 border border-slate-800 hover:border-sky-500/30'
+                    ? 'bg-rose-500 text-white shadow-sm ring-2 ring-rose-300'
+                    : 'bg-pink-50/80 hover:bg-pink-100 text-pink-900 border border-pink-200'
                 }`}
               >
                 {p.label}

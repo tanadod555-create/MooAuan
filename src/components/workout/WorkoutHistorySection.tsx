@@ -19,7 +19,6 @@ import {
   CheckCircle2,
   TrendingUp,
 } from 'lucide-react';
-import { MagicCard } from '../ui/MagicCard';
 import { PigMascot } from '../ui/PigMascot';
 
 interface WorkoutHistorySectionProps {
@@ -43,7 +42,6 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
   const [scope, setScope] = useState<'mine' | 'partner' | 'all'>('mine');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedSessionIds, setExpandedSessionIds] = useState<Record<string, boolean>>({});
-  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
 
   // Filter based on scope
   const scopedHistory = allWorkoutHistory.filter((sess) => {
@@ -111,7 +109,7 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
     const [sh, sm] = start.split(':').map(Number);
     const [eh, em] = end.split(':').map(Number);
     if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return 60;
-    let diff = (eh * 60 + em) - (sh * 60 + sm);
+    let diff = eh * 60 + em - (sh * 60 + sm);
     if (diff <= 0) diff += 24 * 60;
     return diff > 0 && diff < 360 ? diff : 60;
   };
@@ -169,27 +167,22 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
     return grouped;
   };
 
-  const currentUserName =
-    activeProfileKey === 'partner' ? partnerProfile.name : primaryProfile.name;
-  const partnerUserName =
-    activeProfileKey === 'partner' ? primaryProfile.name : partnerProfile.name;
-
   return (
     <div className="space-y-5 animate-fadeIn">
-      {/* Top Banner with Mascot */}
+      {/* Top Banner with Mascot (Pastel Pink) */}
       <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-pink-100/90 via-rose-50/80 to-pink-100/90 border border-pink-200 shadow-sm flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <PigMascot size="md" expression="workout" className="shrink-0" />
           <div>
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-pink-500 text-white shadow-xs">
+              <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-500 text-white shadow-xs">
                 ประวัติการออกกำลังกาย 📜
               </span>
-              <span className="text-xs text-pink-700 font-bold">
+              <span className="text-xs text-rose-700 font-bold">
                 หมูอ้วน Fit Record
               </span>
             </div>
-            <p className="text-xs text-pink-900 font-medium mt-1">
+            <p className="text-xs text-pink-950 font-bold mt-1">
               บันทึกทุกหยาดเหงื่อ เซ็ต และน้ำหนักที่ยกได้ ย้อนดูความก้าวหน้าของคุณกับแฟน
             </p>
           </div>
@@ -197,65 +190,65 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
 
         <button
           onClick={openUnifiedSpreadsheet}
-          className="px-3.5 py-2 rounded-xl bg-white/80 hover:bg-white text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95 ml-auto"
+          className="px-3.5 py-2 rounded-xl bg-white hover:bg-pink-50 text-rose-700 border border-pink-200 text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95 ml-auto cursor-pointer"
           title="เปิด Spreadsheet ดูข้อมูลทั้งหมด"
         >
-          <FileSpreadsheet size={15} className="text-emerald-600" />
-          <span>ดูใน Google Sheets</span>
+          <FileSpreadsheet size={15} className="text-rose-500" />
+          <span>ดูใน Google Sheets รวม</span>
         </button>
       </div>
 
-      {/* Stats Summary Cards */}
+      {/* Stats Summary Cards (Pastel Pink & Cream) */}
       <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-        <div className="bg-slate-900/80 border border-slate-800 p-3.5 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[11px] font-semibold">จำนวนครั้งที่ซ้อม</span>
-            <Dumbbell size={15} className="text-pink-400" />
+        <div className="bg-white/95 border border-pink-200/90 p-3.5 rounded-3xl flex flex-col justify-between shadow-xs">
+          <div className="flex items-center justify-between text-pink-800">
+            <span className="text-[11px] font-bold">จำนวนครั้งที่ซ้อม</span>
+            <Dumbbell size={15} className="text-rose-500" />
           </div>
           <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-2xl font-black text-white">{totalWorkouts}</span>
-            <span className="text-xs text-slate-400">เซสชัน</span>
+            <span className="text-2xl font-black text-pink-950">{totalWorkouts}</span>
+            <span className="text-xs text-pink-700 font-bold">เซสชัน</span>
           </div>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 p-3.5 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[11px] font-semibold">เวลาซ้อมสะสม</span>
-            <Clock size={15} className="text-emerald-400" />
+        <div className="bg-white/95 border border-pink-200/90 p-3.5 rounded-3xl flex flex-col justify-between shadow-xs">
+          <div className="flex items-center justify-between text-pink-800">
+            <span className="text-[11px] font-bold">เวลาซ้อมสะสม</span>
+            <Clock size={15} className="text-rose-500" />
           </div>
           <div className="mt-2 flex flex-col">
-            <span className="text-xl sm:text-2xl font-black text-emerald-400 font-mono">
+            <span className="text-xl sm:text-2xl font-black text-rose-600 font-mono">
               {formatHoursMinutes(totalMinutes)}
             </span>
-            <span className="text-[10px] text-slate-400 mt-0.5">
+            <span className="text-[10px] text-pink-700/80 mt-0.5 font-medium">
               เฉลี่ย ~{avgMinutes} นาที/ครั้ง
             </span>
           </div>
         </div>
 
-        <div className="bg-slate-900/80 border border-slate-800 p-3.5 rounded-2xl flex flex-col justify-between">
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[11px] font-semibold">เซ็ตที่สำเร็จ</span>
-            <CheckCircle2 size={15} className="text-sky-400" />
+        <div className="bg-white/95 border border-pink-200/90 p-3.5 rounded-3xl flex flex-col justify-between shadow-xs">
+          <div className="flex items-center justify-between text-pink-800">
+            <span className="text-[11px] font-bold">เซ็ตที่สำเร็จ</span>
+            <CheckCircle2 size={15} className="text-sky-600" />
           </div>
           <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-2xl font-black text-sky-400 font-mono">
+            <span className="text-2xl font-black text-sky-700 font-mono">
               {totalCompletedSets}
             </span>
-            <span className="text-xs text-slate-400">เซ็ต</span>
+            <span className="text-xs text-pink-700 font-bold">เซ็ต</span>
           </div>
         </div>
       </div>
 
       {/* Scope Filter Tabs & Search Bar */}
       <div className="space-y-2.5">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-900/90 border border-slate-800 rounded-2xl">
+        <div className="flex items-center gap-1.5 p-1.5 bg-white/95 border border-pink-200/90 rounded-2xl shadow-xs">
           <button
             onClick={() => setScope('mine')}
             className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
               scope === 'mine'
-                ? 'bg-pink-500 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-rose-500 text-white shadow-xs'
+                : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
             }`}
           >
             <span>{activeProfileKey === 'partner' ? '🌸 ของมะนาว' : '🏋️‍♂️ ของแม็กนั่ม'}</span>
@@ -274,8 +267,8 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
             onClick={() => setScope('partner')}
             className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
               scope === 'partner'
-                ? 'bg-pink-500 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-rose-500 text-white shadow-xs'
+                : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
             }`}
           >
             <span>{activeProfileKey === 'partner' ? '🏋️‍♂️ ของแม็กนั่ม' : '🌸 ของมะนาว'}</span>
@@ -296,8 +289,8 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
             onClick={() => setScope('all')}
             className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
               scope === 'all'
-                ? 'bg-pink-500 text-white shadow-sm'
-                : 'text-slate-400 hover:text-white'
+                ? 'bg-rose-500 text-white shadow-xs'
+                : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
             }`}
           >
             <Users size={13} />
@@ -310,19 +303,19 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
         <div className="relative">
           <Search
             size={16}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-pink-400 pointer-events-none"
           />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="ค้นหาชื่อโปรแกรม, ท่าฝึก (เช่น Bench Press, Hip Thrust, อก, ขา)..."
-            className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-pink-400 transition"
+            className="w-full bg-white border border-pink-200 rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm text-pink-950 placeholder-pink-400 focus:outline-none focus:border-rose-400 transition shadow-xs"
           />
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-pink-400 hover:text-pink-700"
             >
               <X size={15} />
             </button>
@@ -332,10 +325,10 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
 
       {/* History List */}
       {filteredHistory.length === 0 ? (
-        <div className="bg-slate-900/60 p-10 rounded-3xl border border-slate-800 text-center space-y-3">
+        <div className="bg-white/95 p-10 rounded-3xl border border-pink-200 text-center space-y-3 shadow-xs">
           <PigMascot size="lg" expression="sleep" className="mx-auto opacity-70" />
-          <h4 className="text-base font-bold text-white">ยังไม่มีประวัติการฝึกซ้อมตามที่ค้นหา</h4>
-          <p className="text-xs text-slate-400 max-w-sm mx-auto">
+          <h4 className="text-base font-bold text-pink-950">ยังไม่มีประวัติการฝึกซ้อมตามที่ค้นหา</h4>
+          <p className="text-xs text-pink-800/70 max-w-sm mx-auto font-medium">
             {searchQuery
               ? `ไม่พบรายการที่ตรงกับ "${searchQuery}" ลองค้นหาด้วยคำอื่น หรือกดล้างการค้นหา`
               : 'เริ่มฝึกซ้อมวันนี้เพื่อบันทึกประวัติและสะสมสถิติไปด้วยกันนะหมูอ้วน!'}
@@ -343,7 +336,7 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
-              className="px-4 py-1.5 bg-slate-800 text-pink-400 font-semibold text-xs rounded-xl hover:bg-slate-700"
+              className="px-4 py-1.5 bg-pink-50 text-rose-600 font-bold text-xs rounded-xl hover:bg-pink-100 border border-pink-200"
             >
               ล้างการค้นหา
             </button>
@@ -365,7 +358,7 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
             return (
               <div
                 key={sess.session_id}
-                className="bg-slate-900/90 border border-slate-800 hover:border-slate-700/80 rounded-3xl p-4 sm:p-5 shadow-lg transition"
+                className="bg-white/95 border border-pink-200 hover:border-pink-300 rounded-3xl p-4 sm:p-5 shadow-xs transition"
               >
                 {/* Session Card Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
@@ -374,62 +367,60 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                       <span
                         className={`text-[11px] font-black px-2.5 py-0.5 rounded-full border flex items-center gap-1 ${
                           isPartner
-                            ? 'bg-pink-500/20 text-pink-300 border-pink-500/30'
-                            : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                            ? 'bg-rose-100 text-rose-700 border-rose-200'
+                            : 'bg-pink-100 text-pink-800 border border-pink-200'
                         }`}
                       >
                         {isPartner ? '🌸 มะนาว' : '🏋️‍♂️ แม็กนั่ม'}
                       </span>
-                      <span className="text-xs text-slate-400 flex items-center gap-1">
-                        <Calendar size={13} className="text-slate-500" />
+                      <span className="text-xs text-pink-800/80 font-medium flex items-center gap-1">
+                        <Calendar size={13} className="text-pink-400" />
                         {sess.date}
                       </span>
                       {sess.start_time && (
-                        <span className="text-xs text-slate-500 flex items-center gap-1 font-mono">
+                        <span className="text-xs text-pink-700/80 flex items-center gap-1 font-mono font-medium">
                           <Clock size={12} />
                           {sess.start_time} - {sess.end_time || 'เสร็จสิ้น'} ({sessionDurationMins} น.)
                         </span>
                       )}
                     </div>
 
-                    <h4 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                    <h4 className="text-base sm:text-lg font-black text-pink-950 flex items-center gap-2">
                       {sess.program_name || 'เซสชันการฝึกซ้อม'}
                     </h4>
 
                     {sess.note && (
-                      <p className="text-xs text-slate-400 italic">
-                        "{sess.note}"
-                      </p>
+                      <p className="text-xs text-pink-700/80 italic font-medium">"{sess.note}"</p>
                     )}
                   </div>
 
                   {/* Summary Metric Badges (Duration, Top Weight, Completed Sets) */}
                   <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
-                    <div className="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-right">
-                      <span className="text-[10px] text-slate-500 block uppercase font-bold">
+                    <div className="bg-pink-50 px-3 py-1.5 rounded-2xl border border-pink-200 text-right">
+                      <span className="text-[10px] text-pink-700 block uppercase font-bold">
                         ระยะเวลา
                       </span>
-                      <span className="text-sm font-black text-emerald-400 font-mono">
+                      <span className="text-sm font-black text-pink-950 font-mono">
                         {sessionDurationMins} นาที
                       </span>
                     </div>
 
                     {sessionMaxWeight > 0 && (
-                      <div className="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-right">
-                        <span className="text-[10px] text-amber-500/80 block uppercase font-bold">
+                      <div className="bg-rose-50 px-3 py-1.5 rounded-2xl border border-rose-200 text-right">
+                        <span className="text-[10px] text-rose-700 block uppercase font-bold">
                           ยกหนักสุด
                         </span>
-                        <span className="text-sm font-black text-amber-400 font-mono">
+                        <span className="text-sm font-black text-rose-600 font-mono">
                           {sessionMaxWeight} kg
                         </span>
                       </div>
                     )}
 
-                    <div className="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-right">
-                      <span className="text-[10px] text-slate-500 block uppercase font-bold">
+                    <div className="bg-sky-50 px-3 py-1.5 rounded-2xl border border-sky-200 text-right">
+                      <span className="text-[10px] text-sky-700 block uppercase font-bold">
                         เซ็ตสำเร็จ
                       </span>
-                      <span className="text-sm font-black text-sky-400 font-mono">
+                      <span className="text-sm font-black text-sky-800 font-mono">
                         {completedSets.length} เซ็ต
                       </span>
                     </div>
@@ -442,7 +433,7 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                     {groupedExercises.map((g, idx) => (
                       <span
                         key={idx}
-                        className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800/80 text-slate-300 font-medium"
+                        className="text-[11px] px-2.5 py-1 rounded-xl bg-pink-50/70 border border-pink-200 text-pink-900 font-medium"
                       >
                         {g.exercise_name.split(' (')[0]} ({g.sets.length} เซ็ต)
                       </span>
@@ -452,9 +443,9 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
 
                 {/* Expanded Detailed Breakdown */}
                 {isExpanded && (
-                  <div className="mt-4 pt-4 border-t border-slate-800 space-y-4 animate-fadeIn">
-                    <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Dumbbell size={14} className="text-pink-400" />
+                  <div className="mt-4 pt-4 border-t border-pink-100 space-y-4 animate-fadeIn">
+                    <h5 className="text-xs font-bold text-pink-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Dumbbell size={14} className="text-rose-500" />
                       รายละเอียดท่าฝึกและเซ็ตทั้งหมด ({groupedExercises.length} ท่า)
                     </h5>
 
@@ -464,23 +455,23 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                         return (
                           <div
                             key={exIdx}
-                            className="bg-slate-950/70 p-3.5 rounded-2xl border border-slate-800/80 space-y-2.5"
+                            className="bg-pink-50/50 p-3.5 rounded-2xl border border-pink-200/80 space-y-2.5"
                           >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-pink-400" />
-                                <span className="text-sm font-bold text-white">
+                                <span className="w-2 h-2 rounded-full bg-rose-500" />
+                                <span className="text-sm font-bold text-pink-950">
                                   {group.exercise_name}
                                 </span>
                                 {exObj?.muscle_primary && (
-                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-medium">
+                                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-white text-pink-900 font-bold border border-pink-200">
                                     {exObj.muscle_primary}
                                   </span>
                                 )}
                               </div>
 
                               {group.maxWeight > 0 && (
-                                <span className="text-[11px] text-amber-400 font-bold flex items-center gap-1 font-mono">
+                                <span className="text-[11px] text-rose-600 font-bold flex items-center gap-1 font-mono">
                                   <Award size={13} />
                                   Top: {group.maxWeight} kg
                                 </span>
@@ -489,43 +480,44 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
 
                             {/* Sets Table */}
                             <div className="grid grid-cols-4 gap-2 text-center text-xs">
-                              <div className="text-[11px] text-slate-500 font-semibold py-1 bg-slate-900 rounded-lg">
+                              <div className="text-[11px] text-pink-800 font-bold py-1 bg-white rounded-lg border border-pink-200">
                                 เซ็ต
                               </div>
-                              <div className="text-[11px] text-slate-500 font-semibold py-1 bg-slate-900 rounded-lg">
+                              <div className="text-[11px] text-pink-800 font-bold py-1 bg-white rounded-lg border border-pink-200">
                                 น้ำหนัก
                               </div>
-                              <div className="text-[11px] text-slate-500 font-semibold py-1 bg-slate-900 rounded-lg">
+                              <div className="text-[11px] text-pink-800 font-bold py-1 bg-white rounded-lg border border-pink-200">
                                 จำนวนครั้ง
                               </div>
-                              <div className="text-[11px] text-slate-500 font-semibold py-1 bg-slate-900 rounded-lg">
+                              <div className="text-[11px] text-pink-800 font-bold py-1 bg-white rounded-lg border border-pink-200">
                                 สถานะ
                               </div>
 
                               {group.sets.map((s, sIdx) => {
-                                const isTop = s.done && s.weight_kg === group.maxWeight && group.maxWeight > 0;
+                                const isTop =
+                                  s.done && s.weight_kg === group.maxWeight && group.maxWeight > 0;
                                 return (
                                   <React.Fragment key={s.set_id || sIdx}>
-                                    <div className="py-1 text-slate-300 font-mono font-bold flex items-center justify-center">
+                                    <div className="py-1 text-pink-900 font-mono font-bold flex items-center justify-center">
                                       #{s.set_no || sIdx + 1}
                                     </div>
                                     <div
                                       className={`py-1 font-mono font-bold ${
-                                        isTop ? 'text-amber-400' : 'text-white'
+                                        isTop ? 'text-rose-600 font-black' : 'text-pink-950'
                                       }`}
                                     >
                                       {s.weight_kg} kg
                                     </div>
-                                    <div className="py-1 text-slate-200 font-mono font-bold">
+                                    <div className="py-1 text-pink-900 font-mono font-bold">
                                       {s.reps} ครั้ง
                                     </div>
                                     <div className="py-1 flex items-center justify-center">
                                       {s.done ? (
-                                        <span className="text-emerald-400 flex items-center gap-0.5 text-[11px] font-bold">
+                                        <span className="text-rose-600 flex items-center gap-0.5 text-[11px] font-bold">
                                           <CheckCircle2 size={13} /> สำเร็จ
                                         </span>
                                       ) : (
-                                        <span className="text-slate-500 text-[11px]">ข้าม</span>
+                                        <span className="text-pink-400 text-[11px]">ข้าม</span>
                                       )}
                                     </div>
                                   </React.Fragment>
@@ -540,10 +532,10 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                 )}
 
                 {/* Card Actions Footer */}
-                <div className="mt-3.5 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2 flex-wrap">
+                <div className="mt-3.5 pt-3 border-t border-pink-100 flex items-center justify-between gap-2 flex-wrap">
                   <button
                     onClick={() => toggleExpand(sess.session_id)}
-                    className="text-xs text-pink-400 hover:text-pink-300 font-bold flex items-center gap-1 transition"
+                    className="text-xs text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1 transition cursor-pointer"
                   >
                     {isExpanded ? (
                       <>
@@ -559,7 +551,7 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleRepeatSession(sess)}
-                      className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 text-xs font-bold flex items-center gap-1.5 transition active:scale-95"
+                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow-xs cursor-pointer"
                       title="เริ่มการฝึกใหม่โดยดึงท่าจากเซสชันนี้"
                     >
                       <Play size={12} fill="currentColor" />
@@ -568,11 +560,17 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
 
                     <button
                       onClick={() => {
-                        if (confirm(`คุณต้องการลบประวัติเซสชัน "${sess.program_name || 'นี้'}" วันที่ ${sess.date} ใช่หรือไม่?`)) {
+                        if (
+                          confirm(
+                            `คุณต้องการลบประวัติเซสชัน "${sess.program_name || 'นี้'}" วันที่ ${
+                              sess.date
+                            } ใช่หรือไม่?`
+                          )
+                        ) {
                           deleteWorkoutSession(sess.session_id);
                         }
                       }}
-                      className="p-1.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition"
+                      className="p-1.5 rounded-xl text-pink-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
                       title="ลบประวัติเซสชันนี้"
                     >
                       <Trash2 size={14} />

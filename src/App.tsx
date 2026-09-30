@@ -22,7 +22,7 @@ export const MainContent: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-slate-100 flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-300">
+    <div className="min-h-screen bg-[#fff5f8] text-pink-950 flex flex-col font-sans selection:bg-pink-300 selection:text-pink-950">
       {/* Top Header */}
       <Header
         onOpenSettings={() => setActiveTab('stats')}

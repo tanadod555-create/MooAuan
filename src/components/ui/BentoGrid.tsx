@@ -38,26 +38,26 @@ export const BentoCard: React.FC<BentoCardProps> = ({
 
   return (
     <div
-      className={`group relative overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl transition-all duration-300 hover:border-slate-700/90 hover:shadow-2xl hover:shadow-emerald-500/5 ${colSpanClass} ${className}`}
+      className={`group relative overflow-hidden rounded-3xl border border-pink-200/90 bg-white/95 text-pink-950 p-5 shadow-sm shadow-pink-100/50 transition-all duration-300 hover:border-pink-300 hover:shadow-md ${colSpanClass} ${className}`}
     >
       {/* Background ambient gradient */}
-      <div className="pointer-events-none absolute -right-16 -top-16 h-36 w-36 rounded-full bg-emerald-500/5 blur-2xl group-hover:bg-emerald-500/10 transition-all duration-500" />
+      <div className="pointer-events-none absolute -right-16 -top-16 h-36 w-36 rounded-full bg-pink-400/5 blur-2xl group-hover:bg-pink-400/10 transition-all duration-500" />
 
       {/* Header */}
       <div className="flex items-center justify-between mb-3 relative z-10">
         <div className="flex items-center gap-2.5">
           {icon && (
-            <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+            <div className="w-8 h-8 rounded-xl bg-pink-50 border border-pink-200 flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform">
               {icon}
             </div>
           )}
           <div>
-            <h4 className="text-sm font-bold text-white tracking-tight">{title}</h4>
-            {subtitle && <p className="text-[11px] text-slate-400">{subtitle}</p>}
+            <h4 className="text-sm font-bold text-pink-950 tracking-tight">{title}</h4>
+            {subtitle && <p className="text-[11px] text-pink-700/70">{subtitle}</p>}
           </div>
         </div>
         {badge && (
-          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+          <span className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
             {badge}
           </span>
         )}

@@ -52,6 +52,7 @@ interface AppContextType {
   foodLogs: FoodLog[];
   allFoodLogs: FoodLog[];
   addFoodLog: (log: Omit<FoodLog, 'log_id'>) => Promise<void>;
+  updateFoodLog: (log_id: string, updates: Partial<FoodLog>) => Promise<void>;
   deleteFoodLog: (log_id: string) => void;
   
   bodyMetrics: BodyMetric[];
@@ -939,6 +940,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const updateFoodLog = async (log_id: string, updates: Partial<FoodLog>) => {
+    setAllFoodLogs(prev => prev.map(l => l.log_id === log_id ? { ...l, ...updates } : l));
+  };
+
   const deleteFoodLog = (log_id: string) => {
     setAllFoodLogs(prev => prev.filter(l => l.log_id !== log_id));
   };
@@ -1040,6 +1045,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         foodLogs,
         allFoodLogs,
         addFoodLog,
+        updateFoodLog,
         deleteFoodLog,
         bodyMetrics,
         allBodyMetrics,

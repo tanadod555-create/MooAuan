@@ -32,7 +32,7 @@ export const MagicCard: React.FC<MagicCardProps> = ({
       onMouseEnter={() => setOpacity(1)}
       onMouseLeave={() => setOpacity(0)}
       {...props}
-      className={`relative rounded-3xl border border-slate-800 bg-slate-900/90 overflow-hidden shadow-xl backdrop-blur-md transition-all duration-300 hover:border-slate-700/80 ${className}`}
+      className={`relative rounded-3xl border border-pink-200/90 bg-white/95 text-pink-950 overflow-hidden shadow-sm shadow-pink-100/50 backdrop-blur-md transition-all duration-300 hover:border-pink-300 hover:shadow-md ${className}`}
     >
       {/* Interactive Cursor Spotlight Glow */}
       <div
