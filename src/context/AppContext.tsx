@@ -4,6 +4,8 @@ import {
   Exercise,
   WorkoutSession,
   WorkoutSet,
+  CardioActivity,
+  CardioType,
   FoodLog,
   BodyMetric,
   Program,
@@ -13,15 +15,20 @@ import { SEED_EXERCISES } from '../data/exercises';
 import { GoogleSheetsService } from '../services/googleSheets';
 import { getDefaultGeminiApiKey } from '../services/gemini';
 
-interface ActiveWorkout {
+export interface ActiveWorkoutExercise {
+  exercise_id: string;
+  note?: string;
+  sets: WorkoutSet[];
+}
+
+export interface ActiveWorkout {
   session_id: string;
   name: string;
   start_time: string;
   elapsedSeconds: number;
-  exercises: {
-    exercise_id: string;
-    sets: WorkoutSet[];
-  }[];
+  note?: string;
+  cardio?: CardioActivity[];
+  exercises: ActiveWorkoutExercise[];
 }
 
 interface AppContextType {
@@ -37,13 +44,19 @@ interface AppContextType {
 
   activeWorkout: ActiveWorkout | null;
   startWorkout: (name?: string, initialExercises?: Exercise[]) => void;
+  startCardioSession: (name?: string, defaultType?: CardioType) => void;
   cancelWorkout: () => void;
   finishWorkout: () => Promise<void>;
+  setSessionNote: (note: string) => void;
+  setExerciseNote: (exercise_id: string, note: string) => void;
   addExerciseToWorkout: (exercise: Exercise) => void;
   removeExerciseFromWorkout: (exercise_id: string) => void;
   addSetToExercise: (exercise_id: string) => void;
   removeSetFromExercise: (exercise_id: string, setIndex: number) => void;
   updateSet: (exercise_id: string, setIndex: number, updates: Partial<WorkoutSet>) => void;
+  addCardioToWorkout: (cardio: CardioActivity) => void;
+  updateCardioInWorkout: (cardioIndex: number, updates: Partial<CardioActivity>) => void;
+  removeCardioFromWorkout: (cardioIndex: number) => void;
 
   workoutHistory: WorkoutSession[];
   allWorkoutHistory: WorkoutSession[];
@@ -63,6 +76,7 @@ interface AppContextType {
   addProgram: (program: Program) => void;
   updateProgram: (programId: string, updates: Partial<Program>) => void;
   deleteProgram: (programId: string) => void;
+  resetProgramsToDefault: () => void;
 
   settings: AppSettings;
   updateSettings: (settings: Partial<AppSettings>) => void;
@@ -135,39 +149,73 @@ const DEFAULT_SETTINGS: AppSettings = {
 
 const DEFAULT_PROGRAMS: Program[] = [
   {
-    program_id: 'prog_push',
-    name: 'Push Day (อก ไหล่ หลังแขน)',
+    program_id: 'prog_mon_push_quad',
+    name: 'จันทร์ — Push + Quad',
     day_of_week: 'จันทร์',
-    note: 'เน้นอกบนและไหล่หน้า-ข้าง',
+    note: 'เป้าหมาย 60kg: อยากตัวใหญ่ขึ้น / อกเต็ม / ไหล่แน่น / แขนใหญ่',
     items: [
-      { program_id: 'prog_push', order: 1, exercise_id: 'ex_bench_press', target_sets: 4, target_reps: 8, target_weight_kg: 60 },
-      { program_id: 'prog_push', order: 2, exercise_id: 'ex_incline_db_press', target_sets: 3, target_reps: 10, target_weight_kg: 22 },
-      { program_id: 'prog_push', order: 3, exercise_id: 'ex_lateral_raise', target_sets: 4, target_reps: 15, target_weight_kg: 10 },
-      { program_id: 'prog_push', order: 4, exercise_id: 'ex_tricep_pushdown', target_sets: 3, target_reps: 12, target_weight_kg: 25 },
+      { program_id: 'prog_mon_push_quad', order: 1, exercise_id: 'ex_machine_incline_press', target_sets: 3, target_reps: 8, target_weight_kg: 40 },
+      { program_id: 'prog_mon_push_quad', order: 2, exercise_id: 'ex_machine_chest_press', target_sets: 3, target_reps: 10, target_weight_kg: 45 },
+      { program_id: 'prog_mon_push_quad', order: 3, exercise_id: 'ex_machine_shoulder_press', target_sets: 3, target_reps: 10, target_weight_kg: 35 },
+      { program_id: 'prog_mon_push_quad', order: 4, exercise_id: 'ex_lateral_raise', target_sets: 4, target_reps: 15, target_weight_kg: 10 },
+      { program_id: 'prog_mon_push_quad', order: 5, exercise_id: 'ex_leg_extension', target_sets: 3, target_reps: 12, target_weight_kg: 45 },
+      { program_id: 'prog_mon_push_quad', order: 6, exercise_id: 'ex_db_overhead_triceps_ext', target_sets: 3, target_reps: 12, target_weight_kg: 14 },
     ]
   },
   {
-    program_id: 'prog_pull',
-    name: 'Pull Day (หลัง หน้าแขน)',
+    program_id: 'prog_tue_pull_ham',
+    name: 'อังคาร — Pull + Hamstring',
     day_of_week: 'อังคาร',
-    note: 'เน้นความกว้างของปีกและความหนา',
+    note: 'เน้นความกว้างหลัง ความหนา และต้นขาหลัง (*ถ้าคอนโดไม่มี Leg Curl ใช้ RDL/ท่าอื่นแทนได้)',
     items: [
-      { program_id: 'prog_pull', order: 1, exercise_id: 'ex_lat_pulldown', target_sets: 4, target_reps: 10, target_weight_kg: 50 },
-      { program_id: 'prog_pull', order: 2, exercise_id: 'ex_barbell_row', target_sets: 4, target_reps: 8, target_weight_kg: 55 },
-      { program_id: 'prog_pull', order: 3, exercise_id: 'ex_face_pull', target_sets: 3, target_reps: 15, target_weight_kg: 20 },
-      { program_id: 'prog_pull', order: 4, exercise_id: 'ex_barbell_curl', target_sets: 3, target_reps: 10, target_weight_kg: 25 },
+      { program_id: 'prog_tue_pull_ham', order: 1, exercise_id: 'ex_lat_pulldown', target_sets: 3, target_reps: 10, target_weight_kg: 50 },
+      { program_id: 'prog_tue_pull_ham', order: 2, exercise_id: 'ex_seated_cable_row', target_sets: 3, target_reps: 10, target_weight_kg: 45 },
+      { program_id: 'prog_tue_pull_ham', order: 3, exercise_id: 'ex_db_romanian_deadlift', target_sets: 3, target_reps: 10, target_weight_kg: 24 },
+      { program_id: 'prog_tue_pull_ham', order: 4, exercise_id: 'ex_lying_leg_curl', target_sets: 3, target_reps: 12, target_weight_kg: 35 },
+      { program_id: 'prog_tue_pull_ham', order: 5, exercise_id: 'ex_db_biceps_curl', target_sets: 3, target_reps: 10, target_weight_kg: 12 },
+      { program_id: 'prog_tue_pull_ham', order: 6, exercise_id: 'ex_hammer_curl', target_sets: 3, target_reps: 12, target_weight_kg: 12 },
     ]
   },
   {
-    program_id: 'prog_legs',
-    name: 'Leg Day (ขา ก้น ท้อง)',
+    program_id: 'prog_thu_legs_shoulder',
+    name: 'พฤหัส — Legs + Shoulder',
     day_of_week: 'พฤหัสบดี',
-    note: 'โฟกัส Squat และ RDL',
+    note: 'สร้างฐานขาและหัวไหล่ 3 มิติ (หน้า-ข้าง-หลัง)',
     items: [
-      { program_id: 'prog_legs', order: 1, exercise_id: 'ex_back_squat', target_sets: 4, target_reps: 8, target_weight_kg: 80 },
-      { program_id: 'prog_legs', order: 2, exercise_id: 'ex_romanian_deadlift', target_sets: 4, target_reps: 10, target_weight_kg: 60 },
-      { program_id: 'prog_legs', order: 3, exercise_id: 'ex_bulgarian_split_squat', target_sets: 3, target_reps: 10, target_weight_kg: 14 },
-      { program_id: 'prog_legs', order: 4, exercise_id: 'ex_hanging_leg_raise', target_sets: 3, target_reps: 12, target_weight_kg: 0 },
+      { program_id: 'prog_thu_legs_shoulder', order: 1, exercise_id: 'ex_leg_press', target_sets: 3, target_reps: 10, target_weight_kg: 80 },
+      { program_id: 'prog_thu_legs_shoulder', order: 2, exercise_id: 'ex_db_romanian_deadlift', target_sets: 3, target_reps: 10, target_weight_kg: 24 },
+      { program_id: 'prog_thu_legs_shoulder', order: 3, exercise_id: 'ex_leg_extension', target_sets: 3, target_reps: 12, target_weight_kg: 45 },
+      { program_id: 'prog_thu_legs_shoulder', order: 4, exercise_id: 'ex_machine_shoulder_press', target_sets: 3, target_reps: 10, target_weight_kg: 35 },
+      { program_id: 'prog_thu_legs_shoulder', order: 5, exercise_id: 'ex_lateral_raise', target_sets: 4, target_reps: 15, target_weight_kg: 10 },
+      { program_id: 'prog_thu_legs_shoulder', order: 6, exercise_id: 'ex_db_rear_delt_fly', target_sets: 3, target_reps: 15, target_weight_kg: 8 },
+    ]
+  },
+  {
+    program_id: 'prog_fri_upper_arms',
+    name: 'ศุกร์ — Upper + Arms (วันสำคัญมาก 🔥)',
+    day_of_week: 'ศุกร์',
+    note: 'วันที่สำคัญมากสำหรับคุณ! เน้นอกบน หลัง แขน และไหล่',
+    items: [
+      { program_id: 'prog_fri_upper_arms', order: 1, exercise_id: 'ex_machine_incline_press', target_sets: 3, target_reps: 8, target_weight_kg: 40 },
+      { program_id: 'prog_fri_upper_arms', order: 2, exercise_id: 'ex_machine_chest_press', target_sets: 3, target_reps: 10, target_weight_kg: 45 },
+      { program_id: 'prog_fri_upper_arms', order: 3, exercise_id: 'ex_lat_pulldown', target_sets: 3, target_reps: 10, target_weight_kg: 50 },
+      { program_id: 'prog_fri_upper_arms', order: 4, exercise_id: 'ex_seated_cable_row', target_sets: 3, target_reps: 10, target_weight_kg: 45 },
+      { program_id: 'prog_fri_upper_arms', order: 5, exercise_id: 'ex_lateral_raise', target_sets: 4, target_reps: 15, target_weight_kg: 10 },
+      { program_id: 'prog_fri_upper_arms', order: 6, exercise_id: 'ex_db_biceps_curl', target_sets: 3, target_reps: 10, target_weight_kg: 12 },
+      { program_id: 'prog_fri_upper_arms', order: 7, exercise_id: 'ex_db_overhead_triceps_ext', target_sets: 3, target_reps: 12, target_weight_kg: 14 },
+    ]
+  },
+  {
+    program_id: 'prog_sat_arms_shoulder_optional',
+    name: 'เสาร์ — Optional (แขน + ไหล่ Pump ⭐)',
+    day_of_week: 'เสาร์',
+    note: 'ถ้ารู้สึกสด เล่นแขน + ไหล่ เพิ่มได้เพื่อเพิ่ม volume ให้แขนและไหล่ แต่ถ้าเหนื่อยให้พักได้เลย',
+    items: [
+      { program_id: 'prog_sat_arms_shoulder_optional', order: 1, exercise_id: 'ex_lateral_raise', target_sets: 4, target_reps: 18, target_weight_kg: 8 },
+      { program_id: 'prog_sat_arms_shoulder_optional', order: 2, exercise_id: 'ex_db_rear_delt_fly', target_sets: 3, target_reps: 18, target_weight_kg: 8 },
+      { program_id: 'prog_sat_arms_shoulder_optional', order: 3, exercise_id: 'ex_db_biceps_curl', target_sets: 3, target_reps: 12, target_weight_kg: 10 },
+      { program_id: 'prog_sat_arms_shoulder_optional', order: 4, exercise_id: 'ex_hammer_curl', target_sets: 3, target_reps: 12, target_weight_kg: 10 },
+      { program_id: 'prog_sat_arms_shoulder_optional', order: 5, exercise_id: 'ex_db_overhead_triceps_ext', target_sets: 3, target_reps: 12, target_weight_kg: 12 },
     ]
   }
 ];
@@ -555,6 +603,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Programs
   const [programs, setPrograms] = useState<Program[]>(() => {
+    const v = localStorage.getItem('ft_programs_version');
+    if (v !== 'v2_magnum') {
+      localStorage.setItem('ft_programs_version', 'v2_magnum');
+      localStorage.setItem('ft_programs_primary', JSON.stringify(DEFAULT_PROGRAMS));
+      return activeProfileKey === 'partner' ? DEFAULT_PARTNER_PROGRAMS : DEFAULT_PROGRAMS;
+    }
     const saved = localStorage.getItem(`ft_programs_${activeProfileKey}`);
     if (saved) return JSON.parse(saved);
     return activeProfileKey === 'partner' ? DEFAULT_PARTNER_PROGRAMS : DEFAULT_PROGRAMS;
@@ -753,8 +807,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name,
       start_time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
       elapsedSeconds: 0,
+      note: '',
+      cardio: [],
       exercises: (initialExercises || []).map(ex => ({
         exercise_id: ex.exercise_id,
+        note: '',
         sets: [
           {
             set_id: 'set_' + Math.random().toString(36).substring(2, 9),
@@ -771,10 +828,107 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveWorkout(newSession);
   };
 
+  const startCardioSession = (name?: string, defaultType: CardioType = 'incline_treadmill') => {
+    const sessionId = 'sess_' + Date.now();
+    const typeNames: Record<CardioType, string> = {
+      incline_treadmill: 'เดินชันลู่วิ่ง (Incline Treadmill)',
+      treadmill_run: 'วิ่งบนลู่วิ่ง (Treadmill Running)',
+      stationary_bike: 'ปั่นจักรยานฟิตเนส (Stationary Bike)',
+      elliptical: 'เครื่องเดินวงรี (Elliptical)',
+      stairmaster: 'บันไดสเต็ปมาสเตอร์ (Stairmaster)',
+      outdoor_walk: 'เดินเร็วกลางแจ้ง (Outdoor Walk)',
+      outdoor_run: 'วิ่งกลางแจ้ง (Outdoor Run)',
+      other: 'คาร์ดิโอทั่วไป (Cardio)'
+    };
+    const defaultName = typeNames[defaultType] || 'คาร์ดิโอ (Cardio)';
+    const newSession: ActiveWorkout = {
+      session_id: sessionId,
+      name: name || defaultName,
+      start_time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+      elapsedSeconds: 0,
+      note: '',
+      exercises: [],
+      cardio: [
+        {
+          id: 'cardio_' + Date.now(),
+          type: defaultType,
+          machine_name: defaultName,
+          duration_minutes: 30,
+          incline_pct: defaultType === 'incline_treadmill' ? 10 : 0,
+          speed_kmh: defaultType === 'incline_treadmill' ? 4.5 : 8.0,
+          distance_km: defaultType === 'incline_treadmill' ? 2.25 : 4.0,
+          calories_kcal: defaultType === 'incline_treadmill' ? 190 : 250,
+          note: ''
+        }
+      ]
+    };
+    setActiveWorkout(newSession);
+  };
+
   const cancelWorkout = () => {
     if (window.confirm('คุณต้องการยกเลิกการฝึกเซสชันนี้ใช่หรือไม่?')) {
       setActiveWorkout(null);
     }
+  };
+
+  const setSessionNote = (note: string) => {
+    setActiveWorkout(prev => prev ? { ...prev, note } : null);
+  };
+
+  const setExerciseNote = (exercise_id: string, note: string) => {
+    setActiveWorkout(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        exercises: prev.exercises.map(ex =>
+          ex.exercise_id === exercise_id ? { ...ex, note } : ex
+        )
+      };
+    });
+  };
+
+  const addCardioToWorkout = (cardio: CardioActivity) => {
+    const cardioWithId: CardioActivity = {
+      ...cardio,
+      id: cardio.id || 'cardio_' + Math.random().toString(36).substring(2, 9)
+    };
+    setActiveWorkout(prev => {
+      if (!prev) {
+        const sessionId = 'sess_' + Date.now();
+        return {
+          session_id: sessionId,
+          name: 'คาร์ดิโอ / ' + cardio.machine_name,
+          start_time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+          elapsedSeconds: 0,
+          note: '',
+          exercises: [],
+          cardio: [cardioWithId]
+        };
+      }
+      return {
+        ...prev,
+        cardio: [...(prev.cardio || []), cardioWithId]
+      };
+    });
+  };
+
+  const updateCardioInWorkout = (cardioIndex: number, updates: Partial<CardioActivity>) => {
+    setActiveWorkout(prev => {
+      if (!prev || !prev.cardio) return prev;
+      const updated = [...prev.cardio];
+      updated[cardioIndex] = { ...updated[cardioIndex], ...updates };
+      return { ...prev, cardio: updated };
+    });
+  };
+
+  const removeCardioFromWorkout = (cardioIndex: number) => {
+    setActiveWorkout(prev => {
+      if (!prev || !prev.cardio) return prev;
+      return {
+        ...prev,
+        cardio: prev.cardio.filter((_, idx) => idx !== cardioIndex)
+      };
+    });
   };
 
   const finishWorkout = async () => {
@@ -791,9 +945,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ...s,
           exercise_name: exName,
           user_name: currentName,
+          note: ex.note || s.note,
         });
       });
     });
+
+    // Build session note including cardio summary if cardio was completed
+    let finalNote = activeWorkout.note || '';
+    if (activeWorkout.cardio && activeWorkout.cardio.length > 0) {
+      const cardioParts = activeWorkout.cardio.map(c => {
+        const details: string[] = [c.machine_name];
+        if (c.incline_pct !== undefined && c.incline_pct > 0) details.push(`ชัน ${c.incline_pct}%`);
+        if (c.speed_kmh) details.push(`เร็ว ${c.speed_kmh} km/h`);
+        if (c.duration_minutes) details.push(`${c.duration_minutes} นาที`);
+        if (c.calories_kcal) details.push(`${c.calories_kcal} kcal`);
+        if (c.note) details.push(`("${c.note}")`);
+        return details.join(' · ');
+      }).join(' | ');
+      finalNote = finalNote ? `${finalNote} [คาร์ดิโอ: ${cardioParts}]` : `[คาร์ดิโอ: ${cardioParts}]`;
+    }
 
     const finishedSession: WorkoutSession = {
       session_id: activeWorkout.session_id,
@@ -803,7 +973,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       program_name: activeWorkout.name,
       start_time: activeWorkout.start_time,
       end_time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+      note: finalNote,
       sets: allSets,
+      cardio: activeWorkout.cardio,
     };
 
     setAllWorkoutHistory(prev => [finishedSession, ...prev]);
@@ -817,6 +989,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error('Auto sync workout failed:', err);
       }
     }
+  };
+
+  const resetProgramsToDefault = () => {
+    const target = activeProfileKey === 'partner' ? DEFAULT_PARTNER_PROGRAMS : DEFAULT_PROGRAMS;
+    setPrograms(target);
+    localStorage.setItem(`ft_programs_${activeProfileKey}`, JSON.stringify(target));
   };
 
   const deleteWorkoutSession = (sessionId: string) => {
@@ -1033,13 +1211,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addCustomExercise,
         activeWorkout,
         startWorkout,
+        startCardioSession,
         cancelWorkout,
         finishWorkout,
+        setSessionNote,
+        setExerciseNote,
         addExerciseToWorkout,
         removeExerciseFromWorkout,
         addSetToExercise,
         removeSetFromExercise,
         updateSet,
+        addCardioToWorkout,
+        updateCardioInWorkout,
+        removeCardioFromWorkout,
         workoutHistory,
         allWorkoutHistory,
         deleteWorkoutSession,
@@ -1055,6 +1239,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addProgram,
         updateProgram,
         deleteProgram,
+        resetProgramsToDefault,
         settings,
         updateSettings,
         isSyncing,

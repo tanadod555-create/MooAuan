@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Exercise, WorkoutSet, Program } from '../types';
+import { Exercise, WorkoutSet, Program, CardioActivity, CardioType } from '../types';
 import { ExerciseDetailModal } from '../components/exercises/ExerciseDetailModal';
 import {
   Play,
@@ -23,6 +23,11 @@ import {
   Edit2,
   FileSpreadsheet,
   ExternalLink,
+  Footprints,
+  TrendingUp,
+  Zap,
+  Heart,
+  Activity,
 } from 'lucide-react';
 import { MagicCard } from '../components/ui/MagicCard';
 import { BentoGrid, BentoCard } from '../components/ui/BentoGrid';
@@ -31,22 +36,46 @@ import { RoutineEditModal } from '../components/workout/RoutineEditModal';
 import { WorkoutHistorySection } from '../components/workout/WorkoutHistorySection';
 import { PigMascot } from '../components/ui/PigMascot';
 
+const CARDIO_TYPE_PRESETS: {
+  type: CardioType;
+  label: string;
+  emoji: string;
+  defaultSpeed: number;
+  defaultIncline: number;
+  defaultDuration: number;
+}[] = [
+  { type: 'incline_treadmill', label: 'เดินชันลู่วิ่ง', emoji: '⛰️', defaultSpeed: 4.5, defaultIncline: 10, defaultDuration: 30 },
+  { type: 'treadmill_run', label: 'วิ่งลู่วิ่ง', emoji: '🏃‍♂️', defaultSpeed: 8.0, defaultIncline: 1, defaultDuration: 20 },
+  { type: 'stationary_bike', label: 'ปั่นจักรยาน', emoji: '🚴', defaultSpeed: 18.0, defaultIncline: 0, defaultDuration: 30 },
+  { type: 'stairmaster', label: 'สเต็ปมาสเตอร์', emoji: '🪜', defaultSpeed: 6.0, defaultIncline: 0, defaultDuration: 15 },
+  { type: 'elliptical', label: 'เครื่องเดินวงรี', emoji: '🔄', defaultSpeed: 5.5, defaultIncline: 5, defaultDuration: 25 },
+  { type: 'outdoor_walk', label: 'เดินเร็วกลางแจ้ง', emoji: '🚶‍♂️', defaultSpeed: 5.0, defaultIncline: 0, defaultDuration: 35 },
+  { type: 'outdoor_run', label: 'วิ่งกลางแจ้ง', emoji: '🏃', defaultSpeed: 9.0, defaultIncline: 0, defaultDuration: 25 },
+];
+
 export const WorkoutView: React.FC = () => {
   const {
     activeWorkout,
     startWorkout,
+    startCardioSession,
     cancelWorkout,
     finishWorkout,
+    setSessionNote,
+    setExerciseNote,
     addExerciseToWorkout,
     removeExerciseFromWorkout,
     addSetToExercise,
     removeSetFromExercise,
     updateSet,
+    addCardioToWorkout,
+    updateCardioInWorkout,
+    removeCardioFromWorkout,
     exercises,
     programs,
     addProgram,
     updateProgram,
     deleteProgram,
+    resetProgramsToDefault,
     workoutHistory,
     allWorkoutHistory,
     activeProfileKey,
@@ -351,6 +380,48 @@ export const WorkoutView: React.FC = () => {
               </div>
             )}
 
+            {/* Overall Session Note */}
+            <div className="mt-3.5 pt-3 border-t border-pink-100/90">
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Edit2 size={13} className="text-rose-400" />
+                  <span>บันทึกความรู้สึก / หมายเหตุรวมของเซสชันนี้:</span>
+                </span>
+                {activeWorkout.note && (
+                  <button
+                    type="button"
+                    onClick={() => setSessionNote('')}
+                    className="text-[10px] text-slate-400 hover:text-rose-500 font-medium cursor-pointer"
+                  >
+                    ล้างข้อความ
+                  </button>
+                )}
+              </div>
+              <input
+                type="text"
+                value={activeWorkout.note || ''}
+                onChange={(e) => setSessionNote(e.target.value)}
+                placeholder="เช่น วันนี้แรงดีมาก, เจ็บไหล่นิดหน่อยตอนเล่นท่าเพรส, ฟอร์มกระชับ, เหนื่อยแต่ฟิน..."
+                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-700 placeholder-pink-300 focus:outline-none focus:border-rose-400 focus:bg-white transition"
+              />
+              {/* Quick chips for session note */}
+              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                {['แรงดีมาก 💪', 'เจ็บไหล่ 🤕', 'ปวดเข่าเบาๆ', 'ยกผ่านทุกเซ็ต 🔥', 'ปรับฟอร์มให้แน่น', 'เหนื่อยเร็วแต่ฟิน'].map(chip => (
+                  <button
+                    key={chip}
+                    type="button"
+                    onClick={() => {
+                      const current = activeWorkout.note || '';
+                      setSessionNote(current ? `${current} · ${chip}` : chip);
+                    }}
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white text-slate-600 border border-pink-200 hover:bg-pink-100 transition active:scale-95 cursor-pointer"
+                  >
+                    +{chip}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Session Action Buttons */}
             <div className="flex items-center gap-2 mt-4 pt-3 border-t border-pink-100">
               <button
@@ -403,6 +474,50 @@ export const WorkoutView: React.FC = () => {
                   >
                     <Trash2 size={16} />
                   </button>
+                </div>
+
+                {/* Exercise Note Input */}
+                <div className="px-3 sm:px-4 py-2.5 bg-pink-50/40 border-b border-pink-100 flex flex-col gap-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
+                      <Edit2 size={11} className="text-rose-400" />
+                      <span>หมายเหตุท่านี้:</span>
+                    </span>
+                    <input
+                      type="text"
+                      value={item.note || ''}
+                      onChange={(e) => setExerciseNote(item.exercise_id, e.target.value)}
+                      placeholder="เช่น วันนี้เจ็บไหล่, ปรับเบาะระดับ 4, โดนจุดมาก..."
+                      className="flex-1 bg-white border border-pink-200 rounded-xl px-2.5 py-1 text-xs text-slate-700 placeholder-pink-300 focus:outline-none focus:border-rose-400 shadow-2xs"
+                    />
+                    {item.note && (
+                      <button
+                        type="button"
+                        onClick={() => setExerciseNote(item.exercise_id, '')}
+                        className="text-[10px] text-slate-400 hover:text-rose-500 font-medium cursor-pointer shrink-0"
+                      >
+                        ล้าง
+                      </button>
+                    )}
+                  </div>
+                  {/* Quick Chips for Exercise Note */}
+                  <div className="flex items-center gap-1 flex-wrap pl-5 sm:pl-6">
+                    {['เจ็บไหล่', 'ปวดเข่า', 'ปรับเบาะสูงขึ้น', 'ฟอร์มดีมาก', 'ลดน้ำหนักลง', 'หมดแรง'].map(
+                      (c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => {
+                            const current = item.note || '';
+                            setExerciseNote(item.exercise_id, current ? `${current} · ${c}` : c);
+                          }}
+                          className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white text-slate-600 border border-pink-200/70 hover:bg-pink-50 active:scale-95 transition cursor-pointer"
+                        >
+                          +{c}
+                        </button>
+                      )
+                    )}
+                  </div>
                 </div>
 
                 {/* Mobile Gym Tracker Set Cards (Touch-friendly steppers, no Excel look) */}
@@ -651,6 +766,337 @@ export const WorkoutView: React.FC = () => {
             );
           })}
 
+          {/* Cardio Activities Section in Active Workout */}
+          <div className="space-y-3">
+            {activeWorkout.cardio && activeWorkout.cardio.length > 0 && (
+              <div className="space-y-3">
+                {activeWorkout.cardio.map((c, cIdx) => (
+                  <div
+                    key={c.id || cIdx}
+                    className="bg-white/95 rounded-3xl border border-pink-200/90 overflow-hidden shadow-sm shadow-pink-100/50 p-4 sm:p-5 space-y-3.5"
+                  >
+                    {/* Header of Cardio Item */}
+                    <div className="flex items-center justify-between gap-2 border-b border-pink-100/80 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="w-9 h-9 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-300 text-white flex items-center justify-center text-base shadow-xs shrink-0">
+                          🏃‍♂️
+                        </span>
+                        <div>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="text-sm sm:text-base font-black text-slate-800">
+                              {c.machine_name}
+                            </h4>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-100 text-rose-600">
+                              Cardio #{cIdx + 1}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 font-medium">
+                            {c.type === 'incline_treadmill'
+                              ? 'เดินชันเน้นเบิร์นไขมัน ถนอมข้อต่อเข่า'
+                              : 'คาร์ดิโอกระตุ้นระบบไหลเวียนโลหิตและเบิร์นแคลอรี'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeCardioFromWorkout(cIdx)}
+                        className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition cursor-pointer"
+                        title="ลบกิจกรรมคาร์ดิโอนี้"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+
+                    {/* Quick Activity Selector Chips */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                      {CARDIO_TYPE_PRESETS.map((preset) => {
+                        const isSelected = c.type === preset.type;
+                        return (
+                          <button
+                            key={preset.type}
+                            type="button"
+                            onClick={() =>
+                              updateCardioInWorkout(cIdx, {
+                                type: preset.type,
+                                machine_name: preset.label,
+                                incline_pct: preset.defaultIncline,
+                                speed_kmh: preset.defaultSpeed,
+                                duration_minutes: preset.defaultDuration,
+                              })
+                            }
+                            className={`px-2.5 py-1 rounded-xl text-xs font-bold shrink-0 transition active:scale-95 cursor-pointer ${
+                              isSelected
+                                ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
+                                : 'bg-pink-50/70 hover:bg-pink-100 text-slate-600 border border-pink-200/70'
+                            }`}
+                          >
+                            <span className="mr-1">{preset.emoji}</span>
+                            {preset.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* 3 Steppers: Incline (ความชัน), Speed (ความเร็ว), Duration (ระยะเวลา) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {/* Incline (ความชัน %) */}
+                      <div className="bg-pink-50/40 rounded-2xl p-2.5 border border-pink-100">
+                        <div className="flex items-center justify-between mb-1.5 px-1">
+                          <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                            <TrendingUp size={13} className="text-rose-400" /> ความชัน (Incline)
+                          </span>
+                          <span className="text-xs font-black text-rose-500 font-mono">
+                            {c.incline_pct ?? 0}%
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = Math.max(
+                                0,
+                                Math.round(((c.incline_pct ?? 0) - 1) * 10) / 10
+                              );
+                              updateCardioInWorkout(cIdx, { incline_pct: next });
+                            }}
+                            className="w-10 h-10 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                            title="ลดความชัน 1%"
+                          >
+                            <Minus size={16} className="stroke-[2.5]" />
+                          </button>
+                          <div className="flex-1 min-w-[60px]">
+                            <input
+                              type="number"
+                              step="0.5"
+                              min="0"
+                              max="30"
+                              value={c.incline_pct ?? 0}
+                              onChange={(e) =>
+                                updateCardioInWorkout(cIdx, {
+                                  incline_pct: parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className="w-full h-10 text-center font-black font-mono text-base text-slate-800 bg-white border border-pink-200 rounded-xl focus:outline-none focus:border-rose-400"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = Math.round(((c.incline_pct ?? 0) + 1) * 10) / 10;
+                              updateCardioInWorkout(cIdx, { incline_pct: next });
+                            }}
+                            className="w-10 h-10 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                            title="เพิ่มความชัน 1%"
+                          >
+                            <Plus size={16} className="stroke-[2.5]" />
+                          </button>
+                        </div>
+                        {/* Quick Incline Chips */}
+                        <div className="flex items-center justify-center gap-1 mt-2">
+                          {[0, 5, 8, 10, 12, 15].map((inc) => (
+                            <button
+                              key={inc}
+                              type="button"
+                              onClick={() => updateCardioInWorkout(cIdx, { incline_pct: inc })}
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg border transition active:scale-95 cursor-pointer ${
+                                c.incline_pct === inc
+                                  ? 'bg-rose-500 text-white border-rose-500'
+                                  : 'bg-white text-slate-600 border-pink-200/70 hover:bg-white/80'
+                              }`}
+                            >
+                              {inc}%
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Speed (ความเร็ว km/h) */}
+                      <div className="bg-pink-50/40 rounded-2xl p-2.5 border border-pink-100">
+                        <div className="flex items-center justify-between mb-1.5 px-1">
+                          <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                            <Zap size={13} className="text-rose-400" /> ความเร็ว (Speed)
+                          </span>
+                          <span className="text-xs font-black text-rose-500 font-mono">
+                            {c.speed_kmh ?? 4.5} km/h
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = Math.max(
+                                0,
+                                Math.round(((c.speed_kmh ?? 4.5) - 0.5) * 10) / 10
+                              );
+                              updateCardioInWorkout(cIdx, { speed_kmh: next });
+                            }}
+                            className="w-10 h-10 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                            title="ลดความเร็ว 0.5 km/h"
+                          >
+                            <Minus size={16} className="stroke-[2.5]" />
+                          </button>
+                          <div className="flex-1 min-w-[60px]">
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              max="25"
+                              value={c.speed_kmh ?? 4.5}
+                              onChange={(e) =>
+                                updateCardioInWorkout(cIdx, {
+                                  speed_kmh: parseFloat(e.target.value) || 0,
+                                })
+                              }
+                              className="w-full h-10 text-center font-black font-mono text-base text-slate-800 bg-white border border-pink-200 rounded-xl focus:outline-none focus:border-rose-400"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = Math.round(((c.speed_kmh ?? 4.5) + 0.5) * 10) / 10;
+                              updateCardioInWorkout(cIdx, { speed_kmh: next });
+                            }}
+                            className="w-10 h-10 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                            title="เพิ่มความเร็ว 0.5 km/h"
+                          >
+                            <Plus size={16} className="stroke-[2.5]" />
+                          </button>
+                        </div>
+                        {/* Quick Speed Chips */}
+                        <div className="flex items-center justify-center gap-1 mt-2">
+                          {[3.5, 4.0, 4.5, 5.0, 6.0, 8.0].map((spd) => (
+                            <button
+                              key={spd}
+                              type="button"
+                              onClick={() => updateCardioInWorkout(cIdx, { speed_kmh: spd })}
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg border transition active:scale-95 cursor-pointer ${
+                                c.speed_kmh === spd
+                                  ? 'bg-rose-500 text-white border-rose-500'
+                                  : 'bg-white text-slate-600 border-pink-200/70 hover:bg-white/80'
+                              }`}
+                            >
+                              {spd}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Duration (ระยะเวลา นาที) */}
+                      <div className="bg-pink-50/40 rounded-2xl p-2.5 border border-pink-100">
+                        <div className="flex items-center justify-between mb-1.5 px-1">
+                          <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                            <Clock size={13} className="text-rose-400" /> เวลา (Duration)
+                          </span>
+                          <span className="text-xs font-black text-rose-500 font-mono">
+                            {c.duration_minutes} นาที
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = Math.max(5, (c.duration_minutes || 30) - 5);
+                              updateCardioInWorkout(cIdx, { duration_minutes: next });
+                            }}
+                            className="w-10 h-10 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                            title="ลดเวลา 5 นาที"
+                          >
+                            <Minus size={16} className="stroke-[2.5]" />
+                          </button>
+                          <div className="flex-1 min-w-[60px]">
+                            <input
+                              type="number"
+                              step="5"
+                              min="1"
+                              max="180"
+                              value={c.duration_minutes || 30}
+                              onChange={(e) =>
+                                updateCardioInWorkout(cIdx, {
+                                  duration_minutes: parseInt(e.target.value) || 0,
+                                })
+                              }
+                              className="w-full h-10 text-center font-black font-mono text-base text-slate-800 bg-white border border-pink-200 rounded-xl focus:outline-none focus:border-rose-400"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = (c.duration_minutes || 30) + 5;
+                              updateCardioInWorkout(cIdx, { duration_minutes: next });
+                            }}
+                            className="w-10 h-10 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                            title="เพิ่มเวลา 5 นาที"
+                          >
+                            <Plus size={16} className="stroke-[2.5]" />
+                          </button>
+                        </div>
+                        {/* Quick Duration Chips */}
+                        <div className="flex items-center justify-center gap-1 mt-2">
+                          {[15, 20, 30, 45, 60].map((dur) => (
+                            <button
+                              key={dur}
+                              type="button"
+                              onClick={() => updateCardioInWorkout(cIdx, { duration_minutes: dur })}
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg border transition active:scale-95 cursor-pointer ${
+                                c.duration_minutes === dur
+                                  ? 'bg-rose-500 text-white border-rose-500'
+                                  : 'bg-white text-slate-600 border-pink-200/70 hover:bg-white/80'
+                              }`}
+                            >
+                              {dur}น.
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Metric Estimates & Note */}
+                    <div className="flex items-center justify-between gap-2 p-2.5 bg-pink-50/50 rounded-2xl border border-pink-100 text-xs flex-wrap">
+                      <span className="text-slate-600 font-medium">
+                        🏃 ระยะทาง: <strong className="text-slate-800 font-mono">{((c.speed_kmh ?? 4.5) * (c.duration_minutes / 60)).toFixed(2)} km</strong>
+                      </span>
+                      <span className="text-slate-600 font-medium">
+                        🔥 เผาผลาญ: <strong className="text-rose-500 font-mono">{Math.round((c.duration_minutes * 6.5) * (1 + (c.incline_pct ?? 0) * 0.05))} kcal</strong>
+                      </span>
+                    </div>
+
+                    {/* Note Input for Cardio */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-500 shrink-0">📝 หมายเหตุ:</span>
+                      <input
+                        type="text"
+                        value={c.note || ''}
+                        onChange={(e) => updateCardioInWorkout(cIdx, { note: e.target.value })}
+                        placeholder="เช่น เดินชัน 10% สปีด 4.5 เหงื่อท่วม หัวใจเต้นโซน 2 ขาสดชื่น..."
+                        className="flex-1 bg-white border border-pink-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 placeholder-pink-300 focus:outline-none focus:border-rose-400"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add Cardio Button */}
+            <button
+              type="button"
+              onClick={() =>
+                addCardioToWorkout({
+                  type: 'incline_treadmill',
+                  machine_name: 'เดินชันลู่วิ่ง (Incline Treadmill)',
+                  duration_minutes: 30,
+                  incline_pct: 10,
+                  speed_kmh: 4.5,
+                  calories_kcal: 190,
+                })
+              }
+              className="w-full py-3.5 px-4 rounded-3xl bg-pink-50/70 hover:bg-pink-100/80 border-2 border-dashed border-pink-300 text-slate-700 hover:text-rose-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-xs active:scale-[0.99]"
+            >
+              <Footprints size={17} className="text-rose-400" />
+              <span>+ เพิ่มกิจกรรมคาร์ดิโอ / เดินชัน (Cardio Activity)</span>
+            </button>
+          </div>
+
           {/* Add Exercise into Active Workout */}
           <button
             onClick={() => setShowAddExerciseDrawer(true)}
@@ -751,18 +1197,25 @@ export const WorkoutView: React.FC = () => {
                 พร้อมฝึกซ้อมหรือยัง?
               </span>
               <h2 className="text-2xl font-black text-slate-700 mt-2">
-                เริ่มเซสชันแบบเปิด (Empty Workout)
+                เริ่มเซสชันการฝึกซ้อม
               </h2>
               <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-medium">
-                เริ่มยกเวททันที แล้วเลือกท่าฝึกที่ต้องการแบบยืดหยุ่น ติ๊กเซ็ตและน้ำหนักเรียลไทม์
+                เลือกรูปแบบการฝึกที่ต้องการ เริ่มยกเวทแบบยืดหยุ่น หรือเริ่มเซสชันคาร์ดิโอ/เดินชัน บันทึกเรียลไทม์
               </p>
-              <div className="mt-5">
+              <div className="mt-5 flex items-center gap-3 flex-wrap">
                 <button
                   onClick={() => startWorkout('การฝึกวันนี้')}
-                  className="py-3 px-6 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-400 hover:opacity-95 text-white font-bold text-sm flex items-center gap-2 shadow-md shadow-pink-200 active:scale-95 transition cursor-pointer"
+                  className="py-3 px-5 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-400 hover:opacity-95 text-white font-bold text-sm flex items-center gap-2 shadow-md shadow-pink-200 active:scale-95 transition cursor-pointer"
                 >
                   <Play size={16} fill="currentColor" />
-                  <span>เริ่มเซสชันใหม่เดี๋ยวนี้</span>
+                  <span>เริ่มยกเวท (Empty Workout)</span>
+                </button>
+                <button
+                  onClick={() => startCardioSession('เดินชัน / คาร์ดิโอ')}
+                  className="py-3 px-5 rounded-2xl bg-white hover:bg-pink-50 text-rose-600 font-bold text-sm flex items-center gap-2 border-2 border-pink-200 hover:border-pink-300 shadow-sm active:scale-95 transition cursor-pointer"
+                >
+                  <Footprints size={16} className="text-rose-500" />
+                  <span>เริ่มคาร์ดิโอ / เดินชัน 🏃</span>
                 </button>
               </div>
             </div>
@@ -792,16 +1245,36 @@ export const WorkoutView: React.FC = () => {
                 </p>
               </div>
 
-              <button
-                onClick={() => {
-                  setEditingProgram(null);
-                  setShowRoutineModal(true);
-                }}
-                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:opacity-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-pink-200 transition active:scale-95 shrink-0 cursor-pointer"
-              >
-                <Plus size={15} />
-                + สร้าง Routine ใหม่
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (
+                      confirm(
+                        'ต้องการโหลดตารางฝึกแนะนำตามโค้ช (4 วันหลัก + เสาร์ Optional) แทนที่ Routine ปัจจุบันใช่หรือไม่?'
+                      )
+                    ) {
+                      resetProgramsToDefault();
+                    }
+                  }}
+                  className="px-3 py-2 rounded-xl bg-pink-50 hover:bg-pink-100 text-rose-600 font-bold text-xs flex items-center justify-center gap-1.5 border border-pink-200 shadow-xs transition active:scale-95 shrink-0 cursor-pointer"
+                  title="รีเซ็ตโปรแกรมกลับสู่ตารางฝึกมาตรฐานของโค้ช Magnum / Manow"
+                >
+                  <RotateCcw size={13} />
+                  <span>โหลดตารางแนะนำตามโค้ช</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setEditingProgram(null);
+                    setShowRoutineModal(true);
+                  }}
+                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:opacity-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-pink-200 transition active:scale-95 shrink-0 cursor-pointer"
+                >
+                  <Plus size={15} />
+                  + สร้าง Routine ใหม่
+                </button>
+              </div>
             </div>
 
             {/* Routine Search Input Bar */}

@@ -114,6 +114,29 @@ export interface Program {
   items?: ProgramItem[];
 }
 
+export type CardioType =
+  | 'incline_treadmill'
+  | 'treadmill_run'
+  | 'elliptical'
+  | 'stationary_bike'
+  | 'stairmaster'
+  | 'outdoor_walk'
+  | 'outdoor_run'
+  | 'other';
+
+export interface CardioActivity {
+  id?: string;
+  type: CardioType;
+  machine_name: string;
+  duration_minutes: number;
+  incline_pct?: number;
+  speed_kmh?: number;
+  distance_km?: number;
+  calories_kcal?: number;
+  heart_rate_bpm?: number;
+  note?: string;
+}
+
 export interface WorkoutSet {
   set_id: string;
   session_id: string;
@@ -126,6 +149,7 @@ export interface WorkoutSet {
   rpe?: number;
   done: boolean;
   is_warmup?: boolean;
+  note?: string;
 }
 
 export interface WorkoutSession {
@@ -139,6 +163,7 @@ export interface WorkoutSession {
   end_time?: string;
   note?: string;
   sets?: WorkoutSet[];
+  cardio?: CardioActivity[];
 }
 
 export interface Micronutrients {
