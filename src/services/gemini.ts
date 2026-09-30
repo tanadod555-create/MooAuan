@@ -127,12 +127,14 @@ export async function analyzeFoodImage({
   apiKey,
   proxyUrl,
   useProxy = false,
+  userNotes,
 }: {
   base64Image: string;
   mimeType: string;
   apiKey?: string;
   proxyUrl?: string;
   useProxy?: boolean;
+  userNotes?: string;
 }): Promise<GeminiAnalysisResponse> {
   if (useProxy && proxyUrl) {
     // Call via proxy (Cloudflare Worker or Apps Script)
@@ -142,6 +144,7 @@ export async function analyzeFoodImage({
       body: JSON.stringify({
         image: base64Image,
         mimeType: mimeType,
+        userNotes: userNotes?.trim() || undefined,
       }),
     });
 
@@ -171,11 +174,15 @@ export async function analyzeFoodImage({
     'gemini-3.5-flash-lite',
   ];
 
+  const promptText = userNotes && userNotes.trim()
+    ? `${SYSTEM_PROMPT}\n\nCRITICAL USER NOTES / CUSTOM CONTEXT (Strictly adjust portion size, exclude ingredients if requested, and compute nutrition accordingly): "${userNotes.trim()}"`
+    : SYSTEM_PROMPT;
+
   const requestBody = {
     contents: [
       {
         parts: [
-          { text: SYSTEM_PROMPT },
+          { text: promptText },
           {
             inline_data: {
               mime_type: mimeType,

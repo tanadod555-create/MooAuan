@@ -9,6 +9,8 @@ interface CircularProgressProps {
   bgColor?: string;
   label?: string;
   sublabel?: string;
+  labelClassName?: string;
+  sublabelClassName?: string;
   className?: string;
 }
 
@@ -17,11 +19,13 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
   max,
   size = 140,
   strokeWidth = 10,
-  color = '#10b981',
-  bgColor = '#1e293b',
+  color = '#f472b6',
+  bgColor = '#fce7f3',
   label,
   sublabel,
   className = '',
+  labelClassName = 'text-slate-700',
+  sublabelClassName = 'text-slate-400',
 }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -54,14 +58,14 @@ export const CircularProgress: React.FC<CircularProgressProps> = ({
           strokeLinecap="round"
           className="transition-all duration-1000 ease-out"
           style={{
-            filter: `drop-shadow(0 0 6px ${color}80)`,
+            filter: `drop-shadow(0 0 6px ${color}50)`,
           }}
         />
       </svg>
       {/* Center Label */}
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none pointer-events-none">
-        {label && <span className="text-xl font-black text-white leading-none">{label}</span>}
-        {sublabel && <span className="text-[10px] text-slate-400 mt-1 font-semibold">{sublabel}</span>}
+        {label && <span className={`text-xl font-black leading-none ${labelClassName}`}>{label}</span>}
+        {sublabel && <span className={`text-[10px] mt-1 font-semibold ${sublabelClassName}`}>{sublabel}</span>}
       </div>
     </div>
   );

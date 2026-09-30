@@ -328,7 +328,7 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
             <PigMascot size="sm" expression={currentGoalConfig.mascot} />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-black text-pink-950 text-base sm:text-lg">
+                <h3 className="font-black text-slate-700 text-base sm:text-lg">
                   คำนวณเป้าหมาย & สารอาหาร (Smart Goal Setup) 🎯
                 </h3>
                 <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200 font-bold">
@@ -353,7 +353,7 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
           {/* STEP 1: Select Goal */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-pink-950 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                 <Target size={15} className="text-rose-500" />
                 ขั้นที่ 1: เลือกเป้าหมายรูปร่างที่ต้องการ
               </span>
@@ -382,7 +382,7 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
                       <div className="flex items-center justify-between">
                         <h4
                           className={`text-xs sm:text-sm font-black truncate ${
-                            isSelected ? 'text-rose-700' : 'text-pink-950'
+                            isSelected ? 'text-rose-700' : 'text-slate-700'
                           }`}
                         >
                           {opt.title.split(' (')[0]}
@@ -403,7 +403,7 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
 
           {/* STEP 2: Body Stats & Activity */}
           <div className="space-y-3 p-4 rounded-3xl bg-pink-50/50 border border-pink-200/90">
-            <span className="text-xs font-black text-pink-950 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="text-xs font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
               <Scale size={15} className="text-rose-500" />
               ขั้นที่ 2: สรีระและระดับกิจกรรมของ {targetProfile.name}
             </span>
@@ -443,7 +443,7 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
                   max="100"
                   value={age}
                   onChange={(e) => setAge(parseInt(e.target.value) || 20)}
-                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-1.5 text-pink-950 font-bold font-mono focus:outline-none focus:border-rose-400"
+                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-1.5 text-slate-700 font-bold font-mono focus:outline-none focus:border-rose-400"
                 />
               </div>
 
@@ -474,7 +474,7 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
                   max="230"
                   value={heightCm}
                   onChange={(e) => setHeightCm(parseFloat(e.target.value) || 165)}
-                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-1.5 text-pink-950 font-bold font-mono focus:outline-none focus:border-rose-400"
+                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-1.5 text-slate-700 font-bold font-mono focus:outline-none focus:border-rose-400"
                 />
               </div>
             </div>
@@ -487,7 +487,7 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
               <select
                 value={activity}
                 onChange={(e) => setActivity(e.target.value as ActivityLevel)}
-                className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-xs font-bold text-pink-950 focus:outline-none focus:border-rose-400 cursor-pointer shadow-xs"
+                className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 focus:outline-none focus:border-rose-400 cursor-pointer shadow-xs"
               >
                 {(Object.keys(ACTIVITY_MULTIPLIERS) as ActivityLevel[]).map((actKey) => (
                   <option key={actKey} value={actKey}>
@@ -503,7 +503,7 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <Sparkles size={18} className="text-rose-500" />
-                <h4 className="text-sm font-black text-pink-950">
+                <h4 className="text-sm font-black text-slate-700">
                   ผลลัพธ์คำนวณเป้าหมายประจำวัน (Nutrition Blueprint)
                 </h4>
               </div>
@@ -634,7 +634,7 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
           <div className="space-y-3">
             {/* Recommendations Box */}
             <div className="p-4 rounded-3xl bg-pink-50/70 border border-pink-200 space-y-2.5">
-              <h4 className="text-xs font-black text-pink-950 flex items-center gap-1.5">
+              <h4 className="text-xs font-black text-slate-700 flex items-center gap-1.5">
                 <Award size={15} className="text-rose-500" />
                 คำแนะนำในการปฏิบัติตามเป้าหมายนี้:
               </h4>
@@ -644,7 +644,7 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
                   <span className="font-bold text-rose-600 block mb-0.5 flex items-center gap-1">
                     <TrendingUp size={13} /> อัตราเป้าหมายรายสัปดาห์
                   </span>
-                  <p className="text-[11px] text-pink-950 font-medium">
+                  <p className="text-[11px] text-slate-700 font-medium">
                     {currentGoalConfig.targetWeeklyChange}
                   </p>
                 </div>
@@ -653,7 +653,7 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
                   <span className="font-bold text-sky-700 block mb-0.5 flex items-center gap-1">
                     <Dumbbell size={13} /> แนวทางการฝึกซ้อม (Training)
                   </span>
-                  <p className="text-[11px] text-pink-950 font-medium">
+                  <p className="text-[11px] text-slate-700 font-medium">
                     {currentGoalConfig.trainingFocus}
                   </p>
                 </div>
@@ -663,7 +663,7 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
                 <span className="font-bold text-amber-700 block mb-0.5 flex items-center gap-1">
                   <Flame size={13} /> เคล็ดลับโภชนาการ (Nutrition Tip)
                 </span>
-                <p className="text-[11px] text-pink-950 font-medium leading-relaxed">
+                <p className="text-[11px] text-slate-700 font-medium leading-relaxed">
                   {currentGoalConfig.nutritionTip}
                 </p>
               </div>
@@ -755,7 +755,7 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
           <button
             type="button"
             onClick={handleApplyToProfile}
-            className="flex-1 sm:flex-initial py-3 px-6 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-200 active:scale-95 transition cursor-pointer"
+            className="flex-1 sm:flex-initial py-3 px-6 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm shadow-pink-200/50 active:scale-95 transition cursor-pointer"
           >
             <CheckCircle2 size={18} />
             <span>ปรับใช้เป็นเป้าหมายของ {targetProfile.name} ทันที 🚀</span>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { FoodLog, MealType } from '../types';
 import {
@@ -27,7 +27,6 @@ import {
   Search,
   FileSpreadsheet,
   ExternalLink,
-  Users,
   Target,
 } from 'lucide-react';
 import { MagicCard } from '../components/ui/MagicCard';
@@ -52,7 +51,16 @@ export const FoodView: React.FC = () => {
     openUnifiedSpreadsheet,
   } = useApp();
 
-  const [viewFilter, setViewFilter] = useState<'all' | 'primary' | 'partner'>('all');
+  // User Selection: Track food per person separately (default to active profile)
+  const [selectedUserKey, setSelectedUserKey] = useState<'primary' | 'partner'>(activeProfileKey);
+
+  useEffect(() => {
+    setSelectedUserKey(activeProfileKey);
+  }, [activeProfileKey]);
+
+  const activeTargetProfile = selectedUserKey === 'partner' ? partnerProfile : primaryProfile;
+
+  // Goal modal state
   const [showGoalModal, setShowGoalModal] = useState(false);
 
   // Date Navigator state (Default to today)
@@ -78,19 +86,20 @@ export const FoodView: React.FC = () => {
     setSelectedDate(today);
   };
 
-  // Filter food logs for selected date
-  const allSelectedLogs = (allFoodLogs || []).filter((l) => l.date === selectedDate);
-  const magnumSelectedLogs = allSelectedLogs.filter((l) => (l.user_id || 'primary') === 'primary');
-  const manaoSelectedLogs = allSelectedLogs.filter((l) => l.user_id === 'partner');
+  // Filter food logs for selected date & selected user ONLY (no combined food)
+  const todayLogs = (allFoodLogs || []).filter(
+    (l) => l.date === selectedDate && (l.user_id || 'primary') === selectedUserKey
+  );
 
-  const todayLogs =
-    viewFilter === 'all'
-      ? allSelectedLogs
-      : viewFilter === 'primary'
-      ? magnumSelectedLogs
-      : manaoSelectedLogs;
+  // Count logs for switcher pills
+  const magnumDayCount = (allFoodLogs || []).filter(
+    (l) => l.date === selectedDate && (l.user_id || 'primary') === 'primary'
+  ).length;
+  const manaoDayCount = (allFoodLogs || []).filter(
+    (l) => l.date === selectedDate && l.user_id === 'partner'
+  ).length;
 
-  // Calculate daily totals for current view
+  // Calculate daily totals for selected user
   const totalKcal = todayLogs.reduce((sum, l) => sum + (l.kcal || 0), 0);
   const totalProtein = todayLogs.reduce((sum, l) => sum + (l.protein_g || 0), 0);
   const totalCarb = todayLogs.reduce((sum, l) => sum + (l.carb_g || 0), 0);
@@ -99,33 +108,25 @@ export const FoodView: React.FC = () => {
   const totalFiber = todayLogs.reduce((sum, l) => sum + (l.fiber_g || 0), 0);
   const totalSugar = todayLogs.reduce((sum, l) => sum + (l.sugar_g || 0), 0);
 
-  // Totals for individual breakdown on selected date
-  const magnumKcal = magnumSelectedLogs.reduce((sum, l) => sum + (l.kcal || 0), 0);
-  const manaoKcal = manaoSelectedLogs.reduce((sum, l) => sum + (l.kcal || 0), 0);
+  // Targets strictly for selected user
+  const targetKcal = activeTargetProfile.kcal_target || (selectedUserKey === 'primary' ? 2400 : 1750);
+  const targetProtein = activeTargetProfile.protein_target_g || (selectedUserKey === 'primary' ? 150 : 110);
+  const targetCarb = activeTargetProfile.carb_target_g || (selectedUserKey === 'primary' ? 260 : 180);
+  const targetFat = activeTargetProfile.fat_target_g || (selectedUserKey === 'primary' ? 65 : 45);
 
-  // Search Results across all dates
+  // Search Results across all dates for selected user
   const searchResults = foodSearchQuery.trim()
     ? (allFoodLogs || []).filter((l) => {
+        const matchesUser = (l.user_id || 'primary') === selectedUserKey;
         const q = foodSearchQuery.toLowerCase();
         return (
-          l.name.toLowerCase().includes(q) ||
-          (l.user_name && l.user_name.toLowerCase().includes(q)) ||
-          l.meal.toLowerCase().includes(q) ||
-          l.date.includes(q)
+          matchesUser &&
+          (l.name.toLowerCase().includes(q) ||
+            l.meal.toLowerCase().includes(q) ||
+            l.date.includes(q))
         );
       })
     : [];
-
-  // Targets based on viewFilter
-  const targetKcal =
-    viewFilter === 'all'
-      ? (primaryProfile.kcal_target || 2400) + (partnerProfile.kcal_target || 1750)
-      : viewFilter === 'primary'
-      ? primaryProfile.kcal_target || 2400
-      : partnerProfile.kcal_target || 1750;
-  const targetProtein = currentProfile.protein_target_g || 140;
-  const targetCarb = currentProfile.carb_target_g || 240;
-  const targetFat = currentProfile.fat_target_g || 60;
 
   // Image Upload & AI Analysis State
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -137,9 +138,14 @@ export const FoodView: React.FC = () => {
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [aiResultItems, setAiResultItems] = useState<GeminiFoodItem[]>([]);
+  const [baseAiItems, setBaseAiItems] = useState<GeminiFoodItem[]>([]); // Stored original before multiplier
+  const [portionMultiplier, setPortionMultiplier] = useState<number>(1.0);
   const [aiNotes, setAiNotes] = useState<string>('');
   const [selectedMeal, setSelectedMeal] = useState<MealType>('lunch');
   const [showAiResultModal, setShowAiResultModal] = useState(false);
+
+  // Custom User Note for AI Prompt (เช่น กินแค่ครึ่งเดียว, ไม่กินผัก)
+  const [aiUserNote, setAiUserNote] = useState<string>('');
 
   // Manual Add Modal State (With Micronutrients)
   const [showManualModal, setShowManualModal] = useState(false);
@@ -261,6 +267,7 @@ export const FoodView: React.FC = () => {
         apiKey: settings.geminiApiKey || effectiveGeminiKey,
         proxyUrl: settings.geminiProxyUrl,
         useProxy: settings.useProxy,
+        userNotes: aiUserNote,
       });
 
       if (!result.items || result.items.length === 0) {
@@ -268,6 +275,8 @@ export const FoodView: React.FC = () => {
       }
 
       setAiResultItems(result.items);
+      setBaseAiItems(result.items);
+      setPortionMultiplier(1.0);
       setAiNotes(result.notes || '');
       setShowAiResultModal(true);
     } catch (err: any) {
@@ -280,6 +289,24 @@ export const FoodView: React.FC = () => {
       if (cameraInputRef.current) cameraInputRef.current.value = '';
       if (galleryInputRef.current) galleryInputRef.current.value = '';
     }
+  };
+
+  // Apply portion multiplier (e.g. 0.5x, 0.75x, 1x, 1.5x)
+  const handleApplyPortionMultiplier = (factor: number) => {
+    setPortionMultiplier(factor);
+    setAiResultItems(
+      baseAiItems.map((item) => ({
+        ...item,
+        grams: Math.round(item.grams * factor),
+        kcal: Math.round(item.kcal * factor),
+        protein_g: Math.round(item.protein_g * factor * 10) / 10,
+        carb_g: Math.round(item.carb_g * factor * 10) / 10,
+        fat_g: Math.round(item.fat_g * factor * 10) / 10,
+        fiber_g: typeof item.fiber_g === 'number' ? Math.round(item.fiber_g * factor * 10) / 10 : undefined,
+        sugar_g: typeof item.sugar_g === 'number' ? Math.round(item.sugar_g * factor * 10) / 10 : undefined,
+        sodium_mg: typeof item.sodium_mg === 'number' ? Math.round(item.sodium_mg * factor) : undefined,
+      }))
+    );
   };
 
   // Confirm and save AI detected items
@@ -306,12 +333,14 @@ export const FoodView: React.FC = () => {
         micros: item.micros,
         source: 'ai',
         confidence: item.confidence,
+        user_id: selectedUserKey,
       });
     }
 
     setShowAiResultModal(false);
     setPreviewImage(null);
     setAiResultItems([]);
+    setBaseAiItems([]);
   };
 
   // Update item in AI modal before confirming
@@ -354,6 +383,7 @@ export const FoodView: React.FC = () => {
       },
       source: 'manual',
       confidence: 1.0,
+      user_id: selectedUserKey,
     });
 
     setShowManualModal(false);
@@ -368,160 +398,73 @@ export const FoodView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-24 animate-fadeIn">
+    <div className="space-y-5 pb-24 animate-fadeIn">
       {/* Cute Pig Mascot Kitchen Greeting Card */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-pink-100/90 via-pink-50/80 to-rose-100/90 border border-pink-200 shadow-sm shadow-pink-100 flex items-center gap-3.5">
-        <PigMascot size="lg" expression="eating" className="shrink-0 drop-shadow-sm" />
+      <div className="p-4 sm:p-5 rounded-3xl bg-white/90 border border-pink-200/70 shadow-sm shadow-pink-100/40 flex items-center gap-3.5">
+        <PigMascot size="lg" expression="eating" className="shrink-0 drop-shadow-xs" />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-500 text-white shadow-xs">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 border border-pink-200/60 shadow-2xs">
               ครัวหมูอ้วน 🍓
             </span>
-            <span className="text-xs text-rose-700 font-bold">
-              โภชนาการวันนี้ของ {currentProfile.name}
+            <span className="text-xs text-slate-500 font-medium">
+              โภชนาการของ {activeTargetProfile.name}
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-pink-950 font-bold mt-1 leading-snug">
+          <p className="text-xs sm:text-sm text-slate-700 font-bold mt-1 leading-snug">
             "กินให้อิ่มอย่างถูกหลักสารอาหาร กินให้ฟิน ไม่ต้องอดนะหมูอ้วน 🥗🐽"
           </p>
         </div>
       </div>
 
-      {/* Unified Google Sheet Direct Access Card (Pastel Pink & Cream) */}
-      <div className="p-4 rounded-3xl bg-white/95 border border-pink-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm shadow-pink-100/50">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center shrink-0">
-            <FileSpreadsheet size={22} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-pink-950">Google Sheets รวมข้อมูล</h3>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-100 text-rose-700 border border-pink-200 font-bold">
-                แม็กนั่ม & มะนาว
-              </span>
-            </div>
-            <p className="text-xs text-pink-800/70 mt-0.5">
-              ข้อมูลทั้ง 2 คนบันทึกลงใน Spreadsheet เดียวกันอัตโนมัติ เปิดดูตารางรวมได้ทันที
-            </p>
-          </div>
-        </div>
+      {/* User Switcher Pills: Clean 2-person toggle (NO combined data) */}
+      <div className="flex items-center p-1.5 bg-white/90 rounded-2xl border border-pink-200/70 gap-1.5 shadow-2xs">
         <button
-          onClick={openUnifiedSpreadsheet}
-          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-xs shrink-0 flex items-center justify-center gap-2 shadow-sm shadow-rose-200 active:scale-95 transition"
+          onClick={() => setSelectedUserKey('primary')}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+            selectedUserKey === 'primary'
+              ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
+              : 'text-slate-500 hover:text-slate-700 hover:bg-pink-50/50'
+          }`}
         >
-          <span>📊 เปิด Google Sheets รวม</span>
-          <ExternalLink size={14} className="stroke-[2.5]" />
+          <span>🏋️‍♂️ บันทึกของแม็กนั่ม ({magnumDayCount})</span>
+        </button>
+        <button
+          onClick={() => setSelectedUserKey('partner')}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+            selectedUserKey === 'partner'
+              ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
+              : 'text-slate-500 hover:text-slate-700 hover:bg-pink-50/50'
+          }`}
+        >
+          <span>🌸 บันทึกของมะนาว ({manaoDayCount})</span>
         </button>
       </div>
-
-      {/* View Filter Pill Switcher (รวมทั้งสองคน / แม็กนั่ม / มะนาว) */}
-      <div className="flex items-center p-1.5 bg-white/95 rounded-2xl border border-pink-200/90 gap-1.5 shadow-xs">
-        <button
-          onClick={() => setViewFilter('all')}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-            viewFilter === 'all'
-              ? 'bg-rose-500 text-white shadow-sm'
-              : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
-          }`}
-        >
-          <Users size={14} />
-          <span>รวมทั้งสองคน ({allSelectedLogs.length})</span>
-        </button>
-        <button
-          onClick={() => setViewFilter('primary')}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-            viewFilter === 'primary'
-              ? 'bg-rose-500 text-white shadow-sm'
-              : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
-          }`}
-        >
-          <span>🏋️‍♂️ แม็กนั่ม ({magnumSelectedLogs.length})</span>
-        </button>
-        <button
-          onClick={() => setViewFilter('partner')}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
-            viewFilter === 'partner'
-              ? 'bg-rose-500 text-white shadow-sm'
-              : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
-          }`}
-        >
-          <span>🌸 มะนาว ({manaoSelectedLogs.length})</span>
-        </button>
-      </div>
-
-      {/* Dual Progress Comparison Bar when in 'all' view */}
-      {viewFilter === 'all' && (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="p-3.5 rounded-2xl bg-white/95 border border-pink-200/80 shadow-xs">
-            <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="font-bold text-pink-900 flex items-center gap-1">
-                🏋️‍♂️ แม็กนั่ม
-              </span>
-              <span className="font-mono text-pink-950 font-bold">
-                {Math.round(magnumKcal)} / {primaryProfile.kcal_target || 2400} kcal
-              </span>
-            </div>
-            <div className="w-full h-2 bg-pink-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-rose-500 rounded-full transition-all"
-                style={{
-                  width: `${Math.min(
-                    100,
-                    (magnumKcal / (primaryProfile.kcal_target || 2400)) * 100
-                  )}%`,
-                }}
-              />
-            </div>
-          </div>
-
-          <div className="p-3.5 rounded-2xl bg-white/95 border border-pink-200/80 shadow-xs">
-            <div className="flex items-center justify-between text-xs mb-1.5">
-              <span className="font-bold text-rose-700 flex items-center gap-1">
-                🌸 มะนาว
-              </span>
-              <span className="font-mono text-pink-950 font-bold">
-                {Math.round(manaoKcal)} / {partnerProfile.kcal_target || 1750} kcal
-              </span>
-            </div>
-            <div className="w-full h-2 bg-pink-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-pink-500 rounded-full transition-all"
-                style={{
-                  width: `${Math.min(
-                    100,
-                    (manaoKcal / (partnerProfile.kcal_target || 1750)) * 100
-                  )}%`,
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Date Navigation & Search Controls */}
-      <div className="p-3 bg-white/95 rounded-2xl border border-pink-200/90 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+      <div className="p-3 bg-white/90 rounded-2xl border border-pink-200/70 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
           <button
             onClick={handlePrevDay}
-            className="p-2 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-200 transition active:scale-95"
+            className="p-2 rounded-xl bg-pink-50/70 hover:bg-pink-100 text-slate-700 border border-pink-200/70 transition active:scale-95"
             title="ดูวันก่อนหน้า (ย้อนหลัง)"
           >
             <ChevronLeft size={18} />
           </button>
 
-          <div className="flex items-center gap-2 bg-pink-50/80 px-3 py-1.5 rounded-xl border border-pink-200">
-            <Calendar size={16} className="text-rose-500 shrink-0" />
+          <div className="flex items-center gap-2 bg-pink-50/50 px-3 py-1.5 rounded-xl border border-pink-200/60">
+            <Calendar size={15} className="text-pink-400 shrink-0" />
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
-              className="bg-transparent text-xs text-pink-950 font-bold focus:outline-none cursor-pointer"
+              className="bg-transparent text-xs text-slate-700 font-bold focus:outline-none cursor-pointer"
             />
           </div>
 
           <button
             onClick={handleNextDay}
-            className="p-2 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-200 transition active:scale-95"
+            className="p-2 rounded-xl bg-pink-50/70 hover:bg-pink-100 text-slate-700 border border-pink-200/70 transition active:scale-95"
             title="ดูวันถัดไป"
           >
             <ChevronRight size={18} />
@@ -530,7 +473,7 @@ export const FoodView: React.FC = () => {
           {!isToday && (
             <button
               onClick={handleToday}
-              className="px-2.5 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold hover:bg-rose-100 transition active:scale-95"
+              className="px-2.5 py-1.5 rounded-xl bg-pink-100/70 text-pink-700 border border-pink-200/70 text-xs font-bold hover:bg-pink-100 transition active:scale-95"
             >
               กลับสู่วันนี้
             </button>
@@ -540,20 +483,20 @@ export const FoodView: React.FC = () => {
         {/* Search Past Meals Input */}
         <div className="relative w-full sm:w-64">
           <Search
-            size={15}
+            size={14}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-400 pointer-events-none"
           />
           <input
             type="text"
-            placeholder="ค้นหาเมนูย้อนหลังทุกวัน..."
+            placeholder={`ค้นหาอาหารของ ${activeTargetProfile.name}...`}
             value={foodSearchQuery}
             onChange={(e) => setFoodSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-8 py-2 bg-pink-50/60 border border-pink-200 rounded-xl text-xs text-pink-950 placeholder-pink-400 focus:outline-none focus:border-rose-400 focus:bg-white"
+            className="w-full pl-9 pr-8 py-2 bg-pink-50/40 border border-pink-200/70 rounded-xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-pink-300 focus:bg-white transition"
           />
           {foodSearchQuery && (
             <button
               onClick={() => setFoodSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-pink-400 hover:text-pink-700"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
             >
               <X size={14} />
             </button>
@@ -563,21 +506,21 @@ export const FoodView: React.FC = () => {
 
       {/* Historical Search Results Panel */}
       {foodSearchQuery.trim() && (
-        <div className="p-4 bg-white/95 rounded-2xl border border-pink-300 space-y-3 shadow-md animate-fadeIn">
+        <div className="p-4 bg-white/95 rounded-2xl border border-pink-200 space-y-3 shadow-sm animate-fadeIn">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-bold text-rose-600 flex items-center gap-1.5">
-              <Search size={14} /> ผลการค้นหาย้อนหลังสำหรับ "{foodSearchQuery}" ({searchResults.length}{' '}
-              รายการ)
+            <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <Search size={14} className="text-pink-400" />
+              ผลการค้นหาสำหรับ "{foodSearchQuery}" ({searchResults.length} รายการ)
             </h4>
             <button
               onClick={() => setFoodSearchQuery('')}
-              className="text-xs text-pink-700 hover:text-rose-600"
+              className="text-xs text-pink-600 hover:text-pink-700 font-semibold"
             >
               ปิดผลค้นหา
             </button>
           </div>
           {searchResults.length === 0 ? (
-            <p className="text-xs text-pink-700/60 text-center py-3">ไม่พบรายการที่ตรงกับคำค้นหา</p>
+            <p className="text-xs text-slate-400 text-center py-3">ไม่พบรายการที่ตรงกับคำค้นหา</p>
           ) : (
             <div className="divide-y divide-pink-100 max-h-60 overflow-y-auto pr-1 space-y-1">
               {searchResults.map((item) => (
@@ -587,30 +530,21 @@ export const FoodView: React.FC = () => {
                 >
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-pink-950">{item.name}</span>
-                      <span
-                        className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                          item.user_id === 'partner'
-                            ? 'bg-rose-100 text-rose-700'
-                            : 'bg-pink-100 text-pink-800'
-                        }`}
-                      >
-                        {item.user_id === 'partner' ? '🌸 มะนาว' : '🏋️‍♂️ แม็กนั่ม'}
-                      </span>
+                      <span className="font-bold text-slate-700">{item.name}</span>
                     </div>
-                    <p className="text-[11px] text-pink-800/70 mt-0.5">
-                      วันที่: <strong className="text-pink-950">{item.date}</strong> ({item.time}) ·{' '}
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      วันที่: <strong className="text-slate-700">{item.date}</strong> ({item.time}) ·{' '}
                       {item.grams}g · {item.meal}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="font-mono font-bold text-rose-600">{item.kcal} kcal</span>
+                    <span className="font-mono font-bold text-pink-600">{item.kcal} kcal</span>
                     <button
                       onClick={() => {
                         setSelectedDate(item.date);
                         setFoodSearchQuery('');
                       }}
-                      className="block text-[10px] text-rose-500 hover:underline mt-0.5"
+                      className="block text-[10px] text-pink-500 hover:underline mt-0.5 font-semibold"
                     >
                       ดูวันนี้นี้ →
                     </button>
@@ -622,43 +556,45 @@ export const FoodView: React.FC = () => {
         </div>
       )}
 
-      {/* Top Header & Daily Macro Tracker using MagicCard & CircularProgress */}
-      <MagicCard spotlightColor="rgba(244, 63, 94, 0.12)" className="p-6">
+      {/* Top Header & Daily Macro Tracker for Selected User */}
+      <MagicCard spotlightColor="rgba(244, 114, 182, 0.08)" className="p-5 sm:p-6 bg-white/90 border-pink-200/70 shadow-sm shadow-pink-100/30">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           {/* Left: Animated Circular Progress Ring */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-5 sm:gap-6">
             <CircularProgress
               value={totalKcal}
               max={targetKcal}
               size={130}
               strokeWidth={11}
-              color={totalKcal > targetKcal ? '#e11d48' : '#f43f5e'}
-              bgColor="#ffe4e6"
+              color={totalKcal > targetKcal ? '#f472b6' : '#f472b6'}
+              bgColor="#fce7f3"
               label={`${Math.round(totalKcal)}`}
               sublabel={isToday ? 'kcal วันนี้' : `kcal (${selectedDate})`}
+              labelClassName="text-slate-700 font-black"
+              sublabelClassName="text-slate-400 font-medium"
             />
             <div>
-              <span className="text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200 uppercase tracking-wider">
-                โภชนาการประจำวันที่ {selectedDate} {isToday ? '(วันนี้)' : ''}
+              <span className="text-[10px] font-bold text-pink-700 bg-pink-100/80 px-2.5 py-0.5 rounded-full border border-pink-200/70 uppercase tracking-wider">
+                เป้าหมายของ {activeTargetProfile.name}
               </span>
-              <h2 className="text-xl font-black text-pink-950 mt-1">เป้าหมายพลังงาน</h2>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-700 mt-1">เป้าหมายพลังงาน</h2>
               <div className="flex items-center gap-2 mt-1">
-                <p className="text-xs text-pink-800/70">
-                  เป้าหมายรายวัน: <strong className="text-pink-950">{targetKcal.toLocaleString()} kcal</strong>
+                <p className="text-xs text-slate-500">
+                  เป้าหมาย: <strong className="text-slate-700">{targetKcal.toLocaleString()} kcal</strong>
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowGoalModal(true)}
-                  className="px-2 py-0.5 rounded-full bg-pink-100 hover:bg-pink-200 text-rose-700 border border-pink-200 text-[10px] font-bold flex items-center gap-1 transition active:scale-95"
+                  className="px-2 py-0.5 rounded-full bg-pink-100/70 hover:bg-pink-200 text-pink-700 border border-pink-200/70 text-[10px] font-bold flex items-center gap-1 transition active:scale-95"
                   title="คำนวณเป้าหมายและสารอาหารอัตโนมัติ"
                 >
-                  <Sparkles size={11} className="text-rose-500" />
+                  <Sparkles size={11} className="text-pink-400" />
                   <span>คำนวณ Goal</span>
                 </button>
               </div>
-              <div className="flex items-center gap-2 mt-2">
-                <span className="text-xs text-pink-800/70">คงเหลือ:</span>
-                <span className="text-sm font-black text-rose-600 font-mono">
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="text-xs text-slate-500">คงเหลือ:</span>
+                <span className="text-sm font-black text-pink-600 font-mono">
                   {Math.max(0, targetKcal - totalKcal).toLocaleString()} kcal
                 </span>
               </div>
@@ -669,48 +605,48 @@ export const FoodView: React.FC = () => {
           <div className="flex flex-col gap-2.5 w-full sm:w-48">
             <div className="grid grid-cols-3 sm:grid-cols-1 gap-2.5">
               {/* Protein */}
-              <div className="bg-sky-50/70 p-2.5 rounded-2xl border border-sky-200">
+              <div className="bg-sky-50/60 p-2.5 rounded-2xl border border-sky-100">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-bold text-sky-700">โปรตีน</span>
-                  <span className="text-sky-950 font-bold font-mono">
+                  <span className="text-slate-700 font-bold font-mono">
                     <NumberTicker value={Math.round(totalProtein)} /> / {targetProtein}g
                   </span>
                 </div>
-                <div className="w-full h-1.5 bg-sky-200/60 rounded-full mt-1.5 overflow-hidden">
+                <div className="w-full h-1.5 bg-sky-100 rounded-full mt-1.5 overflow-hidden">
                   <div
-                    className="h-full bg-sky-500 rounded-full transition-all"
+                    className="h-full bg-sky-400 rounded-full transition-all"
                     style={{ width: `${Math.min(100, (totalProtein / targetProtein) * 100)}%` }}
                   />
                 </div>
               </div>
 
               {/* Carbs */}
-              <div className="bg-amber-50/70 p-2.5 rounded-2xl border border-amber-200">
+              <div className="bg-amber-50/60 p-2.5 rounded-2xl border border-amber-100">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-bold text-amber-700">คาร์บ</span>
-                  <span className="text-amber-950 font-bold font-mono">
+                  <span className="text-slate-700 font-bold font-mono">
                     <NumberTicker value={Math.round(totalCarb)} /> / {targetCarb}g
                   </span>
                 </div>
-                <div className="w-full h-1.5 bg-amber-200/60 rounded-full mt-1.5 overflow-hidden">
+                <div className="w-full h-1.5 bg-amber-100 rounded-full mt-1.5 overflow-hidden">
                   <div
-                    className="h-full bg-amber-500 rounded-full transition-all"
+                    className="h-full bg-amber-400 rounded-full transition-all"
                     style={{ width: `${Math.min(100, (totalCarb / targetCarb) * 100)}%` }}
                   />
                 </div>
               </div>
 
               {/* Fat */}
-              <div className="bg-rose-50/70 p-2.5 rounded-2xl border border-rose-200">
+              <div className="bg-rose-50/60 p-2.5 rounded-2xl border border-rose-100">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-rose-700">ไขมัน</span>
-                  <span className="text-rose-950 font-bold font-mono">
+                  <span className="font-bold text-rose-600">ไขมัน</span>
+                  <span className="text-slate-700 font-bold font-mono">
                     <NumberTicker value={Math.round(totalFat)} /> / {targetFat}g
                   </span>
                 </div>
-                <div className="w-full h-1.5 bg-rose-200/60 rounded-full mt-1.5 overflow-hidden">
+                <div className="w-full h-1.5 bg-rose-100 rounded-full mt-1.5 overflow-hidden">
                   <div
-                    className="h-full bg-rose-500 rounded-full transition-all"
+                    className="h-full bg-rose-400 rounded-full transition-all"
                     style={{ width: `${Math.min(100, (totalFat / targetFat) * 100)}%` }}
                   />
                 </div>
@@ -720,9 +656,9 @@ export const FoodView: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowGoalModal(true)}
-              className="w-full py-1.5 px-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-xs transition active:scale-95"
+              className="w-full py-1.5 px-2 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-700 font-bold text-[11px] flex items-center justify-center gap-1.5 border border-pink-200/70 transition active:scale-95"
             >
-              <Target size={13} />
+              <Target size={13} className="text-pink-500" />
               <span>🎯 ปรับคำนวณ Goal โภชนาการ</span>
             </button>
           </div>
@@ -730,20 +666,20 @@ export const FoodView: React.FC = () => {
 
         {/* Micronutrients Summary Bar if present */}
         {(totalSodium > 0 || totalFiber > 0 || totalSugar > 0) && (
-          <div className="mt-4 pt-3 border-t border-pink-100 flex items-center gap-2 flex-wrap text-xs font-semibold text-pink-900">
-            <span className="text-[11px] text-pink-700 font-bold">สารอาหารรอง (Micros รวม):</span>
+          <div className="mt-4 pt-3 border-t border-pink-100 flex items-center gap-2 flex-wrap text-xs font-semibold text-slate-600">
+            <span className="text-[11px] text-pink-600 font-bold">สารอาหารรอง (Micros):</span>
             {totalSodium > 0 && (
-              <span className="px-2 py-0.5 rounded-lg bg-amber-100/70 text-amber-800 border border-amber-200">
+              <span className="px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200/60">
                 โซเดียม: {Math.round(totalSodium)} mg
               </span>
             )}
             {totalFiber > 0 && (
-              <span className="px-2 py-0.5 rounded-lg bg-emerald-100/70 text-emerald-800 border border-emerald-200">
+              <span className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                 ใยอาหาร: {Math.round(totalFiber)} g
               </span>
             )}
             {totalSugar > 0 && (
-              <span className="px-2 py-0.5 rounded-lg bg-rose-100/70 text-rose-800 border border-rose-200">
+              <span className="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200/60">
                 น้ำตาล: {Math.round(totalSugar)} g
               </span>
             )}
@@ -751,17 +687,84 @@ export const FoodView: React.FC = () => {
         )}
       </MagicCard>
 
+      {/* AI Custom Prompt / Food Notes Section (เช่น กินครึ่งเดียว, ไม่กินผัก) */}
+      <div className="p-4 rounded-3xl bg-white/90 border border-pink-200/70 shadow-2xs space-y-2.5">
+        <div className="flex items-center justify-between">
+          <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+            <Sparkles size={14} className="text-pink-400" />
+            <span>ระบุหมายเหตุอาหารให้ AI รู้ (ช่วยคำนวณแม่นยำขึ้น):</span>
+          </label>
+          {aiUserNote && (
+            <button
+              type="button"
+              onClick={() => setAiUserNote('')}
+              className="text-[11px] text-pink-500 hover:text-pink-600 font-semibold"
+            >
+              ล้างข้อความ
+            </button>
+          )}
+        </div>
+
+        <input
+          type="text"
+          placeholder="เช่น กินแค่ครึ่งเดียว (50%), ไม่กินผัก, ไม่เอาหนัง, ไม่ซดน้ำซุป, ข้าวครึ่งทัพพี..."
+          value={aiUserNote}
+          onChange={(e) => setAiUserNote(e.target.value)}
+          className="w-full px-3.5 py-2.5 bg-pink-50/40 border border-pink-200/70 rounded-2xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-pink-300 focus:bg-white transition"
+        />
+
+        {/* Quick Chips */}
+        <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+          {[
+            { label: '🍽️ กินแค่ครึ่งเดียว (50%)', text: 'กินแค่ครึ่งเดียว (50%)' },
+            { label: '🥗 ไม่กินผัก', text: 'ไม่กินผัก' },
+            { label: '🍗 ไม่เอาหนัง/มัน', text: 'ไม่กินหนังและมัน' },
+            { label: '🥣 ไม่ซดน้ำซุป', text: 'ไม่ซดน้ำซุป' },
+            { label: '🍚 ข้าวครึ่งจาน', text: 'ข้าวครึ่งจาน' },
+            { label: '🍳 เพิ่มไข่ดาว 1 ฟอง', text: 'เพิ่มไข่ดาว 1 ฟอง' },
+          ].map((chip) => {
+            const isSelected = aiUserNote.includes(chip.text);
+            return (
+              <button
+                key={chip.text}
+                type="button"
+                onClick={() => {
+                  if (isSelected) {
+                    setAiUserNote((prev) =>
+                      prev
+                        .replace(chip.text, '')
+                        .replace(/,\s*,/g, ',')
+                        .replace(/^,\s*|,\s*$/g, '')
+                        .trim()
+                    );
+                  } else {
+                    setAiUserNote((prev) => (prev ? `${prev}, ${chip.text}` : chip.text));
+                  }
+                }}
+                className={`px-2.5 py-1 rounded-xl transition active:scale-95 font-medium ${
+                  isSelected
+                    ? 'bg-pink-200 text-slate-800 border border-pink-300 shadow-2xs'
+                    : 'bg-pink-50/70 hover:bg-pink-100 text-slate-600 border border-pink-200/60'
+                }`}
+              >
+                {chip.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Gemini AI API Connection Status Banner */}
-      <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-white/95 border border-pink-200 text-xs shadow-xs">
+      <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-white/90 border border-pink-200/70 text-xs shadow-2xs">
         <div className="flex items-center gap-2">
           <span
             className={`w-2.5 h-2.5 rounded-full ${
-              effectiveGeminiKey ? 'bg-emerald-500 animate-ping' : 'bg-amber-400'
+              effectiveGeminiKey ? 'bg-emerald-400 animate-ping' : 'bg-amber-300'
             }`}
           />
-          <span className={effectiveGeminiKey ? 'text-pink-950 font-bold' : 'text-amber-700 font-medium'}>
+          <span className={effectiveGeminiKey ? 'text-slate-700 font-bold' : 'text-amber-700 font-medium'}>
             {effectiveGeminiKey
-              ? '✨ Gemini Multimodal AI: เชื่อมต่อระบบอัตโนมัติแล้ว (พร้อมสแกนทันที)'
+              ? '✨ Gemini Multimodal AI: พร้อมสแกนวิเคราะห์ภาพอาหารทันที'
               : 'ยังไม่ได้ระบุ Gemini API Key (จำเป็นสำหรับการสแกนรูป)'}
           </span>
         </div>
@@ -770,7 +773,7 @@ export const FoodView: React.FC = () => {
             setApiKeyInput(effectiveGeminiKey);
             setShowApiKeyModal(true);
           }}
-          className="text-xs text-rose-600 hover:text-rose-700 font-bold underline"
+          className="text-xs text-pink-600 hover:text-pink-700 font-bold underline"
         >
           {effectiveGeminiKey ? 'ตั้งค่า Key' : 'เชื่อมต่อ Key ด่วน'}
         </button>
@@ -808,13 +811,13 @@ export const FoodView: React.FC = () => {
             cameraInputRef.current?.click();
           }}
           disabled={analyzing}
-          className="p-4 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold flex items-center justify-center gap-3 shadow-md shadow-rose-200 active:scale-[0.98] transition group cursor-pointer"
+          className="p-4 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold flex items-center justify-center gap-3 shadow-sm shadow-pink-200/50 active:scale-[0.98] transition group cursor-pointer"
         >
           <Camera size={22} className="stroke-[2.5]" />
           <div className="text-left">
-            <span className="text-sm font-black block">ถ่ายรูปอาหาร</span>
-            <span className="text-[10px] text-white/90 font-medium block">
-              เปิดกล้องถ่ายสด → AI วิเคราะห์ทันที
+            <span className="text-sm font-bold block">ถ่ายรูปอาหาร</span>
+            <span className="text-[10px] text-white/90 font-normal block">
+              เปิดกล้องถ่ายสด → AI คำนวณตามหมายเหตุ
             </span>
           </div>
         </button>
@@ -830,14 +833,14 @@ export const FoodView: React.FC = () => {
             galleryInputRef.current?.click();
           }}
           disabled={analyzing}
-          className="p-4 rounded-2xl bg-white hover:bg-pink-50 border border-pink-200 text-pink-950 font-bold flex items-center justify-center gap-3 shadow-xs active:scale-[0.98] transition group cursor-pointer"
+          className="p-4 rounded-2xl bg-white/90 hover:bg-pink-50/70 border border-pink-200/70 text-slate-700 font-bold flex items-center justify-center gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer"
         >
-          <div className="w-9 h-9 rounded-xl bg-pink-100 text-rose-600 flex items-center justify-center group-hover:scale-110 transition">
+          <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center group-hover:scale-110 transition">
             <Upload size={18} />
           </div>
           <div className="text-left">
             <span className="text-sm font-bold block">อัปโหลดจากอัลบั้ม</span>
-            <span className="text-[10px] text-pink-700/70 font-normal block">
+            <span className="text-[10px] text-slate-400 font-normal block">
               เลือกรูปจากคลังภาพ / ไฟล์
             </span>
           </div>
@@ -846,14 +849,14 @@ export const FoodView: React.FC = () => {
         {/* Manual Add Button */}
         <button
           onClick={() => setShowManualModal(true)}
-          className="p-4 rounded-2xl bg-white hover:bg-pink-50 border border-pink-200 text-pink-950 font-bold flex items-center justify-center gap-3 shadow-xs active:scale-[0.98] transition group cursor-pointer"
+          className="p-4 rounded-2xl bg-white/90 hover:bg-pink-50/70 border border-pink-200/70 text-slate-700 font-bold flex items-center justify-center gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer"
         >
-          <div className="w-9 h-9 rounded-xl bg-pink-100 text-rose-600 flex items-center justify-center group-hover:scale-110 transition">
+          <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center group-hover:scale-110 transition">
             <Plus size={18} />
           </div>
           <div className="text-left">
             <span className="text-sm font-bold block">กรอกรายการเอง</span>
-            <span className="text-[10px] text-pink-700/70 font-normal block">
+            <span className="text-[10px] text-slate-400 font-normal block">
               พิมพ์แคลอรี่ & Micro nutrients
             </span>
           </div>
@@ -862,191 +865,217 @@ export const FoodView: React.FC = () => {
 
       {/* Analyzing Indicator */}
       {analyzing && (
-        <div className="p-6 rounded-3xl bg-white/95 border border-pink-300 text-center space-y-3 shadow-md animate-pulse">
-          <div className="w-12 h-12 mx-auto rounded-full bg-pink-100 flex items-center justify-center text-rose-500 animate-spin">
+        <div className="p-6 rounded-3xl bg-white/95 border border-pink-200 text-center space-y-3 shadow-sm animate-pulse">
+          <div className="w-12 h-12 mx-auto rounded-full bg-pink-100 flex items-center justify-center text-pink-500 animate-spin">
             <Sparkles size={24} />
           </div>
-          <h4 className="text-sm font-bold text-pink-950">กำลังวิเคราะห์อาหารด้วย Gemini Multimodal...</h4>
-          <p className="text-xs text-pink-800/70">
-            ย่อขนาดภาพและประเมินขนาดจาน ส่วนประกอบ แคลอรี่ และโภชนาการ
+          <h4 className="text-sm font-bold text-slate-700">กำลังวิเคราะห์อาหารด้วย Gemini Multimodal...</h4>
+          <p className="text-xs text-slate-500">
+            {aiUserNote ? `คำนวณตามหมายเหตุ: "${aiUserNote}"` : 'กำลังประเมินขนาดจาน ส่วนประกอบ และโภชนาการ'}
           </p>
         </div>
       )}
 
       {/* Error alert */}
       {analysisError && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3 text-rose-800 text-xs shadow-xs">
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3 text-rose-700 text-xs shadow-2xs">
           <AlertTriangle size={18} className="shrink-0 text-rose-500 mt-0.5" />
           <div>
-            <span className="font-bold block">เกิดข้อผิดพลาด:</span>
-            <span>{analysisError}</span>
+            <p className="font-bold">เกิดข้อผิดพลาดในการวิเคราะห์</p>
+            <p className="mt-0.5">{analysisError}</p>
           </div>
         </div>
       )}
 
-      {/* Today's Meals Grouped by Type */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-bold text-pink-950 flex items-center gap-2">
-          <UtensilsCrossed size={18} className="text-rose-500" />
-          บันทึกอาหารวันนี้ ({todayLogs.length} รายการ)
-        </h3>
+      {/* Today's Logged Food List */}
+      <div className="bg-white/90 p-5 rounded-3xl border border-pink-200/70 shadow-sm shadow-pink-100/30 space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-pink-100">
+          <div>
+            <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
+              <UtensilsCrossed size={18} className="text-pink-400" />
+              รายการอาหารของ {activeTargetProfile.name} ({todayLogs.length} รายการ)
+            </h3>
+            <p className="text-xs text-slate-400">
+              วันที่ {selectedDate} {isToday ? '(วันนี้)' : ''}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowManualModal(true)}
+            className="px-3 py-1.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 border border-pink-200/70 text-xs font-bold flex items-center gap-1.5 transition active:scale-95"
+          >
+            <Plus size={14} />
+            <span>เพิ่มอาหาร</span>
+          </button>
+        </div>
 
-        {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map((mealType) => {
-          const mealLogs = todayLogs.filter((l) => l.meal === mealType);
-          const mealKcal = mealLogs.reduce((sum, l) => sum + (l.kcal || 0), 0);
-
-          const mealTitleTh = {
-            breakfast: 'มื้อเช้า (Breakfast)',
-            lunch: 'มื้อกลางวัน (Lunch)',
-            dinner: 'มื้อเย็น (Dinner)',
-            snack: 'ของว่าง / ขนม (Snack)',
-          }[mealType];
-
-          return (
-            <div
-              key={mealType}
-              className="bg-white/95 rounded-3xl border border-pink-200/90 overflow-hidden shadow-sm"
-            >
-              <div className="p-3.5 bg-pink-50/70 border-b border-pink-200/80 flex items-center justify-between">
-                <span className="text-xs font-bold text-pink-950 capitalize">
-                  {mealTitleTh}
-                </span>
-                <span className="text-xs font-mono font-bold text-rose-600">
-                  {mealKcal} kcal
-                </span>
-              </div>
-
-              {mealLogs.length === 0 ? (
-                <div className="p-4 text-center text-xs text-pink-700/60">ยังไม่มีรายการในมื้อนี้</div>
-              ) : (
-                <div className="divide-y divide-pink-100">
-                  {mealLogs.map((log) => (
-                    <div
-                      key={log.log_id}
-                      className="p-3.5 flex items-center justify-between hover:bg-pink-50/40 transition"
-                    >
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-bold text-pink-950">{log.name}</span>
-                          <span
-                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
-                              log.user_id === 'partner'
-                                ? 'bg-rose-100 text-rose-700 border border-rose-200'
-                                : 'bg-pink-100 text-pink-800 border border-pink-200'
-                            }`}
-                          >
-                            {log.user_id === 'partner' ? '🌸 มะนาว' : '🏋️‍♂️ แม็กนั่ม'}
-                          </span>
-                          {log.source === 'ai' && (
-                            <span className="text-[10px] bg-rose-50 text-rose-600 px-1.5 py-0.5 rounded border border-rose-200 font-semibold flex items-center gap-0.5">
-                              <Sparkles size={10} /> AI ({Math.round((log.confidence || 0.8) * 100)}%)
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Macros summary */}
-                        <p className="text-xs text-pink-800/80 font-medium">
-                          {log.time} · {log.grams}g · P: {log.protein_g}g | C: {log.carb_g}g | F: {log.fat_g}g
-                        </p>
-
-                        {/* Micronutrients Badges if present */}
-                        <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                          {Boolean(log.sodium_mg) && (
-                            <span className="text-[10px] bg-amber-50 text-amber-800 px-1.5 py-0.2 rounded border border-amber-200 font-semibold">
-                              โซเดียม {log.sodium_mg}mg
-                            </span>
-                          )}
-                          {Boolean(log.fiber_g) && (
-                            <span className="text-[10px] bg-emerald-50 text-emerald-800 px-1.5 py-0.2 rounded border border-emerald-200 font-semibold">
-                              ไฟเบอร์ {log.fiber_g}g
-                            </span>
-                          )}
-                          {Boolean(log.sugar_g) && (
-                            <span className="text-[10px] bg-rose-50 text-rose-800 px-1.5 py-0.2 rounded border border-rose-200 font-semibold">
-                              น้ำตาล {log.sugar_g}g
-                            </span>
-                          )}
-                          {Boolean(log.micros?.vitC_mg) && (
-                            <span className="text-[10px] bg-orange-50 text-orange-800 px-1.5 py-0.2 rounded border border-orange-200 font-semibold">
-                              Vit C {log.micros?.vitC_mg}mg
-                            </span>
-                          )}
-                          {Boolean(log.micros?.iron_mg) && (
-                            <span className="text-[10px] bg-red-50 text-red-800 px-1.5 py-0.2 rounded border border-red-200 font-semibold">
-                              ธาตุเหล็ก {log.micros?.iron_mg}mg
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-black text-rose-600 font-mono">
-                          {log.kcal} kcal
-                        </span>
-
-                        {/* Edit Button requested by user */}
-                        <button
-                          onClick={() => handleOpenEdit(log)}
-                          className="p-2 text-pink-700 hover:text-rose-600 hover:bg-pink-100 rounded-xl transition cursor-pointer active:scale-95"
-                          title="แก้ไขรายการอาหารนี้"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => deleteFoodLog(log.log_id)}
-                          className="p-2 text-pink-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer active:scale-95"
-                          title="ลบรายการนี้"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+        {todayLogs.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 space-y-2">
+            <PigMascot size="md" expression="eating" className="mx-auto opacity-70" />
+            <p className="text-xs font-medium">ยังไม่มีรายการอาหารของ {activeTargetProfile.name} ในวันนี้</p>
+            <p className="text-[11px] text-slate-400">
+              กดถ่ายรูปอาหารด้วย AI หรือกด "เพิ่มอาหาร" เพื่อเริ่มบันทึกได้เลย
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {todayLogs.map((log) => (
+              <div
+                key={log.log_id}
+                className="p-3.5 rounded-2xl bg-pink-50/40 border border-pink-200/60 flex items-center justify-between gap-3 text-xs hover:border-pink-300 transition"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-bold text-slate-700 text-sm truncate">{log.name}</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-100/70 text-pink-700 border border-pink-200/60 font-semibold capitalize">
+                      {log.meal}
+                    </span>
+                    {log.source === 'ai' && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-50 text-sky-600 border border-sky-200/60 font-medium">
+                        ✨ AI
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500 flex-wrap">
+                    <span>⏰ {log.time}</span>
+                    <span>·</span>
+                    <span>⚖️ {log.grams}g</span>
+                    <span>·</span>
+                    <span>🥩 P: {log.protein_g}g</span>
+                    <span>·</span>
+                    <span>🍚 C: {log.carb_g}g</span>
+                    <span>·</span>
+                    <span>🥑 F: {log.fat_g}g</span>
+                    {log.sodium_mg && log.sodium_mg > 0 ? (
+                      <>
+                        <span>·</span>
+                        <span>🧂 Na: {log.sodium_mg}mg</span>
+                      </>
+                    ) : null}
+                  </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="font-mono font-bold text-pink-600 text-sm">{log.kcal} kcal</span>
+                  <button
+                    onClick={() => handleOpenEdit(log)}
+                    className="p-1.5 rounded-lg bg-white hover:bg-pink-100 text-slate-500 hover:text-slate-700 border border-pink-200/70 transition"
+                    title="แก้ไขรายการ"
+                  >
+                    <Edit2 size={13} />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm(`ต้องการลบรายการ "${log.name}" หรือไม่?`)) {
+                        deleteFoodLog(log.log_id);
+                      }
+                    }}
+                    className="p-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-500 border border-pink-200/70 transition"
+                    title="ลบรายการ"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* AI Analysis Confirmation Modal */}
+      {/* Unified Google Sheet Direct Access Card */}
+      <div className="p-4 rounded-3xl bg-white/90 border border-pink-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
+            <FileSpreadsheet size={20} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-700">Google Sheets รวมศูนย์</h3>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 border border-pink-200/60 font-bold">
+                แม็กนั่ม & มะนาว
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              ข้อมูลแยกแถวและระบุชื่อคนกำกับชัดเจน บันทึกอัตโนมัติ
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={openUnifiedSpreadsheet}
+          className="px-4 py-2 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-700 font-bold text-xs shrink-0 flex items-center justify-center gap-1.5 border border-pink-200/70 active:scale-95 transition"
+        >
+          <span>📊 เปิด Sheet รวม</span>
+          <ExternalLink size={13} />
+        </button>
+      </div>
+
+      {/* AI Food Analysis Result Modal */}
       {showAiResultModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-xl max-h-[90vh] bg-white border border-pink-200 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
-            {/* Modal Header */}
-            <div className="p-4 border-b border-pink-200 bg-pink-50/80 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-lg max-h-[92vh] bg-white border border-pink-200 rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+            {/* Header */}
+            <div className="p-4 border-b border-pink-100 bg-pink-50/60 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles size={18} className="text-rose-500" />
-                <h3 className="font-bold text-pink-950 text-base">ผลการวิเคราะห์จากภาพ (ตรวจสอบ & แก้ไข)</h3>
+                <Sparkles size={18} className="text-pink-500" />
+                <div>
+                  <h3 className="font-bold text-slate-700 text-base">ผลการวิเคราะห์อาหาร (AI)</h3>
+                  <p className="text-[11px] text-slate-500">บันทึกลงโปรไฟล์ของ {activeTargetProfile.name}</p>
+                </div>
               </div>
               <button
                 onClick={() => setShowAiResultModal(false)}
-                className="text-pink-400 hover:text-pink-700"
+                className="w-7 h-7 rounded-full bg-white hover:bg-pink-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs border border-pink-200/70"
               >
-                <X size={20} />
+                ✕
               </button>
             </div>
 
-            {/* Modal Scrollable Body */}
-            <div className="overflow-y-auto p-5 space-y-4">
-              {/* Preview image if available */}
+            {/* Modal Body */}
+            <div className="p-4 overflow-y-auto space-y-4 text-xs">
+              {/* Preview Image */}
               {previewImage && (
-                <div className="w-full h-40 rounded-2xl overflow-hidden border border-pink-200 bg-pink-50 flex items-center justify-center">
-                  <img
-                    src={previewImage}
-                    alt="Food preview"
-                    className="w-full h-full object-cover"
-                  />
+                <div className="w-full h-40 rounded-2xl overflow-hidden bg-pink-50 relative border border-pink-100">
+                  <img src={previewImage} alt="Food Preview" className="w-full h-full object-cover" />
                 </div>
               )}
 
+              {/* Active User Notes Context */}
+              {aiUserNote && (
+                <div className="p-2.5 rounded-xl bg-pink-50/80 border border-pink-200/70 text-[11px] text-slate-600">
+                  <span className="font-bold text-pink-600">📝 หมายเหตุที่ส่งให้ AI:</span> "{aiUserNote}"
+                </div>
+              )}
+
+              {/* Quick Portion Multiplier (กินครึ่งเดียว, 3/4, เต็มจาน) */}
+              <div className="p-3 rounded-2xl bg-pink-50/50 border border-pink-200/70 space-y-1.5">
+                <span className="text-[11px] font-bold text-slate-700 block">
+                  🍽️ ปรับสัดส่วนจานด่วน (คำนวณใหม่ทันที):
+                </span>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[
+                    { factor: 0.5, label: '0.5x (ครึ่งจาน)' },
+                    { factor: 0.75, label: '0.75x (3/4 จาน)' },
+                    { factor: 1.0, label: '1.0x (เต็มจาน)' },
+                    { factor: 1.5, label: '1.5x (จานใหญ่)' },
+                  ].map((p) => (
+                    <button
+                      key={p.factor}
+                      type="button"
+                      onClick={() => handleApplyPortionMultiplier(p.factor)}
+                      className={`py-1.5 rounded-xl font-bold text-[11px] transition active:scale-95 ${
+                        portionMultiplier === p.factor
+                          ? 'bg-pink-300 text-slate-800 border border-pink-400 shadow-2xs'
+                          : 'bg-white text-slate-600 border border-pink-200/70 hover:bg-pink-100'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Meal Selector */}
               <div>
-                <label className="block text-xs font-bold text-pink-900 mb-1.5">
-                  เลือกมื้ออาหาร:
-                </label>
+                <label className="block font-bold text-slate-700 mb-1">เลือกมื้ออาหาร:</label>
                 <div className="grid grid-cols-4 gap-2">
                   {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map((meal) => (
                     <button
@@ -1055,8 +1084,8 @@ export const FoodView: React.FC = () => {
                       onClick={() => setSelectedMeal(meal)}
                       className={`py-2 rounded-xl text-xs font-bold capitalize transition ${
                         selectedMeal === meal
-                          ? 'bg-rose-500 text-white shadow-sm'
-                          : 'bg-pink-50 text-pink-800 hover:bg-pink-100 border border-pink-200'
+                          ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
+                          : 'bg-pink-50/60 text-slate-600 hover:bg-pink-100 border border-pink-200/70'
                       }`}
                     >
                       {meal}
@@ -1067,47 +1096,47 @@ export const FoodView: React.FC = () => {
 
               {/* Editable Items */}
               <div className="space-y-3">
-                <span className="text-xs font-bold text-pink-900 block">
+                <span className="text-xs font-bold text-slate-700 block">
                   รายการอาหารที่ตรวจพบ (แก้ไขตัวเลขได้):
                 </span>
                 {aiResultItems.map((item, idx) => (
                   <div
                     key={idx}
-                    className="bg-pink-50/60 p-4 rounded-2xl border border-pink-200 space-y-3"
+                    className="bg-pink-50/40 p-3.5 rounded-2xl border border-pink-200/70 space-y-2.5"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <input
                         type="text"
                         value={item.name}
                         onChange={(e) => handleUpdateAiItem(idx, 'name', e.target.value)}
-                        className="bg-white border border-pink-200 rounded-xl px-3 py-1.5 text-sm font-bold text-pink-950 flex-1"
+                        className="bg-white border border-pink-200/80 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 flex-1"
                       />
-                      <span className="text-[11px] text-rose-600 font-bold bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                      <span className="text-[10px] text-pink-600 font-bold bg-pink-100/70 px-2 py-0.5 rounded border border-pink-200/60">
                         แม่นยำ {Math.round((item.confidence || 0.8) * 100)}%
                       </span>
                     </div>
 
                     <div className="grid grid-cols-4 gap-2 text-xs">
                       <div>
-                        <span className="text-[10px] text-pink-800 font-bold block mb-0.5">ปริมาณ (g)</span>
+                        <span className="text-[10px] text-slate-500 font-semibold block mb-0.5">กรัม (g)</span>
                         <input
                           type="number"
                           value={item.grams}
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'grams', parseFloat(e.target.value) || 0)
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-2 py-1 text-center font-bold text-pink-950"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700"
                         />
                       </div>
                       <div>
-                        <span className="text-[10px] text-rose-600 font-bold block mb-0.5">พลังงาน (kcal)</span>
+                        <span className="text-[10px] text-pink-600 font-bold block mb-0.5">kcal</span>
                         <input
                           type="number"
                           value={item.kcal}
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'kcal', parseFloat(e.target.value) || 0)
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-2 py-1 text-center font-bold text-rose-600"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-pink-600"
                         />
                       </div>
                       <div>
@@ -1118,7 +1147,7 @@ export const FoodView: React.FC = () => {
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'protein_g', parseFloat(e.target.value) || 0)
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-2 py-1 text-center font-bold text-sky-700"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-sky-700"
                         />
                       </div>
                       <div>
@@ -1129,21 +1158,21 @@ export const FoodView: React.FC = () => {
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'carb_g', parseFloat(e.target.value) || 0)
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-2 py-1 text-center font-bold text-amber-700"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-amber-700"
                         />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-2 text-xs pt-1 border-t border-pink-100">
                       <div>
-                        <span className="text-[10px] text-rose-700 font-bold block mb-0.5">ไขมัน (g)</span>
+                        <span className="text-[10px] text-rose-600 font-bold block mb-0.5">ไขมัน (g)</span>
                         <input
                           type="number"
                           value={item.fat_g}
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'fat_g', parseFloat(e.target.value) || 0)
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-2 py-1 text-center font-bold text-rose-700"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-rose-600"
                         />
                       </div>
                       <div>
@@ -1154,7 +1183,7 @@ export const FoodView: React.FC = () => {
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'sodium_mg', parseFloat(e.target.value) || 0)
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-2 py-1 text-center font-bold text-amber-800"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700"
                         />
                       </div>
                       <div>
@@ -1165,7 +1194,7 @@ export const FoodView: React.FC = () => {
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'fiber_g', parseFloat(e.target.value) || 0)
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-2 py-1 text-center font-bold text-emerald-800"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700"
                         />
                       </div>
                     </div>
@@ -1174,24 +1203,24 @@ export const FoodView: React.FC = () => {
               </div>
 
               {aiNotes && (
-                <p className="text-xs text-pink-800 bg-pink-50 p-3 rounded-2xl border border-pink-200">
+                <p className="text-xs text-slate-600 bg-pink-50/70 p-3 rounded-2xl border border-pink-200/70">
                   💡 หมายเหตุจาก AI: {aiNotes}
                 </p>
               )}
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-pink-200 bg-pink-50/80 flex items-center gap-3">
+            <div className="p-4 border-t border-pink-100 bg-pink-50/60 flex items-center gap-3">
               <button
                 onClick={handleConfirmAiFood}
-                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm shadow-rose-200 active:scale-95 transition"
+                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition"
               >
-                <CheckCircle2 size={18} />
-                ยืนยันและบันทึกลง Sheet
+                <CheckCircle2 size={16} />
+                บันทึกลงโปรไฟล์ของ {activeTargetProfile.name}
               </button>
               <button
                 onClick={() => setShowAiResultModal(false)}
-                className="py-3 px-4 rounded-xl bg-white hover:bg-pink-100 text-pink-800 border border-pink-200 text-xs font-bold"
+                className="py-2.5 px-4 rounded-xl bg-white hover:bg-pink-100 text-slate-600 border border-pink-200/70 text-xs font-bold"
               >
                 ยกเลิก
               </button>
@@ -1203,37 +1232,39 @@ export const FoodView: React.FC = () => {
       {/* Manual Entry Modal (With Micronutrients) */}
       {showManualModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-md bg-white border border-pink-200 rounded-3xl overflow-hidden shadow-2xl p-6">
-            <div className="flex items-center justify-between pb-3 border-b border-pink-200">
+          <div className="relative w-full max-w-md bg-white border border-pink-200 rounded-3xl overflow-hidden shadow-2xl p-5 sm:p-6">
+            <div className="flex items-center justify-between pb-3 border-b border-pink-100">
               <div className="flex items-center gap-2">
-                <UtensilsCrossed size={18} className="text-rose-500" />
-                <h3 className="font-bold text-pink-950 text-base">กรอกข้อมูลอาหาร</h3>
+                <UtensilsCrossed size={18} className="text-pink-500" />
+                <h3 className="font-bold text-slate-700 text-base">
+                  กรอกข้อมูลอาหาร ({activeTargetProfile.name})
+                </h3>
               </div>
-              <button onClick={() => setShowManualModal(false)} className="text-pink-400 hover:text-pink-700">
-                <X size={20} />
+              <button onClick={() => setShowManualModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleSaveManual} className="space-y-4 mt-4 text-xs max-h-[75vh] overflow-y-auto pr-1">
               <div>
-                <label className="block font-bold text-pink-900 mb-1">ชื่ออาหาร *</label>
+                <label className="block font-bold text-slate-700 mb-1">ชื่ออาหาร *</label>
                 <input
                   type="text"
                   required
                   placeholder="เช่น อกไก่ย่าง ข้าวกล้อง สลัดแซลมอน"
                   value={manualName}
                   onChange={(e) => setManualName(e.target.value)}
-                  className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-sm text-pink-950 focus:outline-none focus:border-rose-400 focus:bg-white"
+                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-pink-300 focus:bg-white"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-pink-900 mb-1">มื้ออาหาร</label>
+                  <label className="block font-bold text-slate-700 mb-1">มื้ออาหาร</label>
                   <select
                     value={manualMeal}
                     onChange={(e) => setManualMeal(e.target.value as MealType)}
-                    className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-pink-950 focus:outline-none focus:border-rose-400 font-bold"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-pink-300 font-bold"
                   >
                     <option value="breakfast">มื้อเช้า</option>
                     <option value="lunch">มื้อกลางวัน</option>
@@ -1242,25 +1273,25 @@ export const FoodView: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-pink-900 mb-1">ปริมาณ (กรัม)</label>
+                  <label className="block font-bold text-slate-700 mb-1">ปริมาณ (กรัม)</label>
                   <input
                     type="number"
                     value={manualGrams}
                     onChange={(e) => setManualGrams(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-pink-950 font-bold focus:outline-none focus:border-rose-400"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 font-bold focus:outline-none focus:border-pink-300"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-rose-600 mb-1">พลังงาน (kcal) *</label>
+                  <label className="block font-bold text-pink-600 mb-1">พลังงาน (kcal) *</label>
                   <input
                     type="number"
                     required
                     value={manualKcal}
                     onChange={(e) => setManualKcal(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-rose-600 font-black focus:outline-none focus:border-rose-400 text-sm"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-pink-600 font-black focus:outline-none focus:border-pink-300 text-sm"
                   />
                 </div>
                 <div>
@@ -1269,7 +1300,7 @@ export const FoodView: React.FC = () => {
                     type="number"
                     value={manualProtein}
                     onChange={(e) => setManualProtein(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-sky-800 font-bold focus:outline-none focus:border-rose-400"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-sky-700 font-bold focus:outline-none focus:border-pink-300"
                   />
                 </div>
               </div>
@@ -1281,90 +1312,90 @@ export const FoodView: React.FC = () => {
                     type="number"
                     value={manualCarb}
                     onChange={(e) => setManualCarb(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-amber-800 font-bold focus:outline-none focus:border-rose-400"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-amber-700 font-bold focus:outline-none focus:border-pink-300"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-rose-700 mb-1">ไขมัน (g)</label>
+                  <label className="block font-bold text-rose-600 mb-1">ไขมัน (g)</label>
                   <input
                     type="number"
                     value={manualFat}
                     onChange={(e) => setManualFat(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-rose-800 font-bold focus:outline-none focus:border-rose-400"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-rose-600 font-bold focus:outline-none focus:border-pink-300"
                   />
                 </div>
               </div>
 
               {/* Micronutrients Section */}
               <div className="pt-2 border-t border-pink-100">
-                <span className="block font-bold text-pink-950 mb-2">
+                <span className="block font-bold text-slate-700 mb-2">
                   สารอาหารรอง & วิตามิน (Micronutrients)
                 </span>
                 <div className="grid grid-cols-3 gap-2.5">
                   <div>
-                    <label className="block text-[11px] font-bold text-amber-800 mb-1">โซเดียม (mg)</label>
+                    <label className="block text-[11px] font-bold text-amber-700 mb-1">โซเดียม (mg)</label>
                     <input
                       type="number"
                       value={manualSodium}
                       onChange={(e) => setManualSodium(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 font-bold"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-emerald-800 mb-1">ไฟเบอร์ (g)</label>
+                    <label className="block text-[11px] font-bold text-emerald-700 mb-1">ไฟเบอร์ (g)</label>
                     <input
                       type="number"
                       value={manualFiber}
                       onChange={(e) => setManualFiber(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 font-bold"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-rose-800 mb-1">น้ำตาล (g)</label>
+                    <label className="block text-[11px] font-bold text-rose-600 mb-1">น้ำตาล (g)</label>
                     <input
                       type="number"
                       value={manualSugar}
                       onChange={(e) => setManualSugar(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 font-bold"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-4 gap-2 mt-2">
                   <div>
-                    <label className="block text-[10px] font-bold text-pink-800 mb-0.5">Vit C (mg)</label>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Vit C (mg)</label>
                     <input
                       type="number"
                       value={manualVitC}
                       onChange={(e) => setManualVitC(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-pink-950 text-xs"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-pink-800 mb-0.5">ธาตุเหล็ก (mg)</label>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-0.5">เหล็ก (mg)</label>
                     <input
                       type="number"
                       value={manualIron}
                       onChange={(e) => setManualIron(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-pink-950 text-xs"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-pink-800 mb-0.5">แคลเซียม (mg)</label>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-0.5">แคลเซียม</label>
                     <input
                       type="number"
                       value={manualCalcium}
                       onChange={(e) => setManualCalcium(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-pink-950 text-xs"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-pink-800 mb-0.5">โพแทสเซียม</label>
+                    <label className="block text-[10px] font-bold text-slate-500 mb-0.5">โพแทสเซียม</label>
                     <input
                       type="number"
                       value={manualPotassium}
                       onChange={(e) => setManualPotassium(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-pink-950 text-xs"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs"
                     />
                   </div>
                 </div>
@@ -1374,13 +1405,13 @@ export const FoodView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowManualModal(false)}
-                  className="px-4 py-2 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-800 border border-pink-200 font-bold"
+                  className="px-4 py-2 rounded-xl bg-pink-50/70 hover:bg-pink-100 text-slate-600 border border-pink-200/70 font-bold"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold shadow-md shadow-rose-200"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold shadow-xs"
                 >
                   บันทึกอาหาร
                 </button>
@@ -1390,41 +1421,41 @@ export const FoodView: React.FC = () => {
         </div>
       )}
 
-      {/* Edit Food Modal requested by user */}
+      {/* Edit Food Modal */}
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-md bg-white border border-pink-200 rounded-3xl overflow-hidden shadow-2xl p-6">
-            <div className="flex items-center justify-between pb-3 border-b border-pink-200">
+          <div className="relative w-full max-w-md bg-white border border-pink-200 rounded-3xl overflow-hidden shadow-2xl p-5 sm:p-6">
+            <div className="flex items-center justify-between pb-3 border-b border-pink-100">
               <div className="flex items-center gap-2">
-                <Edit2 size={18} className="text-rose-500" />
-                <h3 className="font-bold text-pink-950 text-base">แก้ไขรายการอาหาร</h3>
+                <Edit2 size={18} className="text-pink-500" />
+                <h3 className="font-bold text-slate-700 text-base">แก้ไขรายการอาหาร</h3>
               </div>
-              <button onClick={() => setShowEditModal(false)} className="text-pink-400 hover:text-pink-700">
-                <X size={20} />
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleSaveEdit} className="space-y-4 mt-4 text-xs max-h-[75vh] overflow-y-auto pr-1">
               <div>
-                <label className="block font-bold text-pink-900 mb-1">ชื่ออาหาร *</label>
+                <label className="block font-bold text-slate-700 mb-1">ชื่ออาหาร *</label>
                 <input
                   type="text"
                   required
                   value={editForm.name}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-sm text-pink-950 focus:outline-none focus:border-rose-400 focus:bg-white font-bold"
+                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-pink-300 focus:bg-white font-bold"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-pink-900 mb-1">มื้ออาหาร</label>
+                  <label className="block font-bold text-slate-700 mb-1">มื้ออาหาร</label>
                   <select
                     value={editForm.meal}
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, meal: e.target.value as MealType }))
                     }
-                    className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-pink-950 focus:outline-none focus:border-rose-400 font-bold"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-pink-300 font-bold"
                   >
                     <option value="breakfast">มื้อเช้า</option>
                     <option value="lunch">มื้อกลางวัน</option>
@@ -1433,7 +1464,7 @@ export const FoodView: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-pink-900 mb-1">ปริมาณ (กรัม)</label>
+                  <label className="block font-bold text-slate-700 mb-1">ปริมาณ (กรัม)</label>
                   <input
                     type="number"
                     value={editForm.grams}
@@ -1443,14 +1474,14 @@ export const FoodView: React.FC = () => {
                         grams: parseFloat(e.target.value) || 0,
                       }))
                     }
-                    className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-pink-950 font-bold focus:outline-none focus:border-rose-400"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 font-bold focus:outline-none focus:border-pink-300"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-rose-600 mb-1">พลังงาน (kcal) *</label>
+                  <label className="block font-bold text-pink-600 mb-1">พลังงาน (kcal) *</label>
                   <input
                     type="number"
                     required
@@ -1461,7 +1492,7 @@ export const FoodView: React.FC = () => {
                         kcal: parseFloat(e.target.value) || 0,
                       }))
                     }
-                    className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-rose-600 font-black focus:outline-none focus:border-rose-400 text-sm"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-pink-600 font-black focus:outline-none focus:border-pink-300 text-sm"
                   />
                 </div>
                 <div>
@@ -1475,7 +1506,7 @@ export const FoodView: React.FC = () => {
                         protein_g: parseFloat(e.target.value) || 0,
                       }))
                     }
-                    className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-sky-800 font-bold focus:outline-none focus:border-rose-400"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-sky-700 font-bold focus:outline-none focus:border-pink-300"
                   />
                 </div>
               </div>
@@ -1492,11 +1523,11 @@ export const FoodView: React.FC = () => {
                         carb_g: parseFloat(e.target.value) || 0,
                       }))
                     }
-                    className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-amber-800 font-bold focus:outline-none focus:border-rose-400"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-amber-700 font-bold focus:outline-none focus:border-pink-300"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-rose-700 mb-1">ไขมัน (g)</label>
+                  <label className="block font-bold text-rose-600 mb-1">ไขมัน (g)</label>
                   <input
                     type="number"
                     value={editForm.fat_g}
@@ -1506,19 +1537,19 @@ export const FoodView: React.FC = () => {
                         fat_g: parseFloat(e.target.value) || 0,
                       }))
                     }
-                    className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2 text-rose-800 font-bold focus:outline-none focus:border-rose-400"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-rose-600 font-bold focus:outline-none focus:border-pink-300"
                   />
                 </div>
               </div>
 
               {/* Micronutrients Section in Edit Modal */}
               <div className="pt-2 border-t border-pink-100">
-                <span className="block font-bold text-pink-950 mb-2">
+                <span className="block font-bold text-slate-700 mb-2">
                   สารอาหารรอง & วิตามิน (Micronutrients)
                 </span>
                 <div className="grid grid-cols-3 gap-2.5">
                   <div>
-                    <label className="block text-[11px] font-bold text-amber-800 mb-1">โซเดียม (mg)</label>
+                    <label className="block text-[11px] font-bold text-amber-700 mb-1">โซเดียม (mg)</label>
                     <input
                       type="number"
                       value={editForm.sodium_mg}
@@ -1528,11 +1559,11 @@ export const FoodView: React.FC = () => {
                           sodium_mg: parseFloat(e.target.value) || 0,
                         }))
                       }
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 font-bold"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-emerald-800 mb-1">ไฟเบอร์ (g)</label>
+                    <label className="block text-[11px] font-bold text-emerald-700 mb-1">ไฟเบอร์ (g)</label>
                     <input
                       type="number"
                       value={editForm.fiber_g}
@@ -1542,11 +1573,11 @@ export const FoodView: React.FC = () => {
                           fiber_g: parseFloat(e.target.value) || 0,
                         }))
                       }
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 font-bold"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-rose-800 mb-1">น้ำตาล (g)</label>
+                    <label className="block text-[11px] font-bold text-rose-600 mb-1">น้ำตาล (g)</label>
                     <input
                       type="number"
                       value={editForm.sugar_g}
@@ -1556,66 +1587,7 @@ export const FoodView: React.FC = () => {
                           sugar_g: parseFloat(e.target.value) || 0,
                         }))
                       }
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 font-bold"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-4 gap-2 mt-2">
-                  <div>
-                    <label className="block text-[10px] font-bold text-pink-800 mb-0.5">Vit C (mg)</label>
-                    <input
-                      type="number"
-                      value={editForm.vitC_mg}
-                      onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
-                          vitC_mg: parseFloat(e.target.value) || 0,
-                        }))
-                      }
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-pink-950 text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-pink-800 mb-0.5">ธาตุเหล็ก (mg)</label>
-                    <input
-                      type="number"
-                      value={editForm.iron_mg}
-                      onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
-                          iron_mg: parseFloat(e.target.value) || 0,
-                        }))
-                      }
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-pink-950 text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-pink-800 mb-0.5">แคลเซียม (mg)</label>
-                    <input
-                      type="number"
-                      value={editForm.calcium_mg}
-                      onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
-                          calcium_mg: parseFloat(e.target.value) || 0,
-                        }))
-                      }
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-pink-950 text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-pink-800 mb-0.5">โพแทสเซียม</label>
-                    <input
-                      type="number"
-                      value={editForm.potassium_mg}
-                      onChange={(e) =>
-                        setEditForm((prev) => ({
-                          ...prev,
-                          potassium_mg: parseFloat(e.target.value) || 0,
-                        }))
-                      }
-                      className="w-full bg-pink-50/60 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-pink-950 text-xs"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
                     />
                   </div>
                 </div>
@@ -1625,13 +1597,13 @@ export const FoodView: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-800 border border-pink-200 font-bold"
+                  className="px-4 py-2 rounded-xl bg-pink-50/70 hover:bg-pink-100 text-slate-600 border border-pink-200/70 font-bold"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold shadow-md shadow-rose-200"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold shadow-xs"
                 >
                   บันทึกการแก้ไข
                 </button>
@@ -1641,64 +1613,59 @@ export const FoodView: React.FC = () => {
         </div>
       )}
 
-      {/* Gemini API Key Config Modal */}
+      {/* API Key Modal */}
       {showApiKeyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-md bg-white border border-pink-200 rounded-3xl p-6 shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between pb-3 border-b border-pink-200">
+          <div className="relative w-full max-w-md bg-white border border-pink-200 rounded-3xl overflow-hidden shadow-2xl p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-pink-100">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center">
-                  <Sparkles size={18} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-pink-950">ตั้งค่า Gemini API Key</h3>
-                  <p className="text-xs text-pink-700/70">สำหรับวิเคราะห์อาหารจากภาพ</p>
-                </div>
+                <Sparkles size={18} className="text-pink-500" />
+                <h3 className="font-bold text-slate-700 text-base">การเชื่อมต่อ Gemini API</h3>
               </div>
-              <button
-                onClick={() => setShowApiKeyModal(false)}
-                className="text-pink-400 hover:text-pink-700"
-              >
-                <X size={18} />
+              <button onClick={() => setShowApiKeyModal(false)} className="text-slate-400 hover:text-slate-600">
+                ✕
               </button>
             </div>
 
-            <div className="py-4 space-y-3">
+            <div className="space-y-3 text-xs">
+              <p className="text-slate-500">
+                ระบบได้เชื่อมต่อ Gemini Multimodal AI อัตโนมัติให้แล้ว
+                หากต้องการใช้ API Key ส่วนตัว สามารถวางคีย์ด้านล่างได้เลยครับ
+              </p>
               <div>
-                <label className="block text-xs font-bold text-pink-900 mb-1.5">
-                  Gemini API Key ของคุณ:
-                </label>
+                <label className="block font-bold text-slate-700 mb-1">Gemini API Key:</label>
                 <input
-                  type="text"
+                  type="password"
+                  placeholder="AIzaSy..."
                   value={apiKeyInput}
                   onChange={(e) => setApiKeyInput(e.target.value)}
-                  placeholder="วาง API Key ที่นี่..."
-                  className="w-full bg-pink-50/60 border border-pink-200 rounded-xl px-3 py-2.5 text-xs text-pink-950 focus:outline-none focus:border-rose-400 font-mono"
+                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 font-mono focus:outline-none focus:border-pink-300"
                 />
               </div>
-
-              <div className="p-3.5 rounded-2xl bg-pink-50/80 border border-pink-200 text-[11px] text-pink-900 space-y-1">
-                <p className="text-rose-600 font-bold flex items-center gap-1.5">
-                  <CheckCircle2 size={13} /> คีย์ระบบเชื่อมต่อให้อัตโนมัติแล้ว
-                </p>
-                <p className="text-xs text-pink-900/80 leading-relaxed">
-                  ระบบได้เชื่อมต่อ Gemini API Key ประจำเว็บให้เรียบร้อยแล้ว สามารถถ่ายรูปหรืออัปโหลดสแกนสารอาหารได้ทันทีโดยไม่ต้องใส่คีย์เพิ่ม หรือจะเปลี่ยนเป็นคีย์ส่วนตัวของคุณเองก็ได้
-                </p>
+              <div className="flex items-center justify-between">
                 <button
                   type="button"
                   onClick={() => setApiKeyInput(getDefaultGeminiApiKey())}
-                  className="text-rose-600 hover:underline text-left font-bold block mt-1"
+                  className="text-pink-600 hover:underline font-semibold"
                 >
-                  🔄 คืนค่าเป็นคีย์อัตโนมัติของระบบ
+                  คืนค่าเริ่มต้นอัตโนมัติ
                 </button>
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-slate-500 hover:underline"
+                >
+                  รับ API Key ฟรี ↗
+                </a>
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-pink-200">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-pink-100">
               <button
                 type="button"
                 onClick={() => setShowApiKeyModal(false)}
-                className="px-4 py-2 rounded-xl bg-pink-50 text-xs font-bold text-pink-800 hover:bg-pink-100 border border-pink-200"
+                className="px-4 py-2 rounded-xl bg-pink-50/70 text-xs font-bold text-slate-600 hover:bg-pink-100 border border-pink-200/70"
               >
                 ยกเลิก
               </button>
@@ -1712,7 +1679,7 @@ export const FoodView: React.FC = () => {
                   }
                   setShowApiKeyModal(false);
                 }}
-                className="px-5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white text-xs font-bold shadow-md shadow-rose-200 active:scale-95 transition"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white text-xs font-bold shadow-xs active:scale-95 transition"
               >
                 บันทึกและเชื่อมต่อ
               </button>
@@ -1725,6 +1692,7 @@ export const FoodView: React.FC = () => {
       <GoalSetupModal
         isOpen={showGoalModal}
         onClose={() => setShowGoalModal(false)}
+        targetUserKey={selectedUserKey}
       />
     </div>
   );

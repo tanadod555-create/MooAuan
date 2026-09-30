@@ -199,7 +199,7 @@ export const WorkoutView: React.FC = () => {
           className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition ${
             workoutTab === 'workout'
               ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-sm shadow-rose-200'
-              : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
+              : 'text-pink-900/70 hover:text-slate-700 hover:bg-pink-50/60'
           }`}
         >
           <Dumbbell size={16} />
@@ -214,7 +214,7 @@ export const WorkoutView: React.FC = () => {
           className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition ${
             workoutTab === 'history'
               ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-sm shadow-rose-200'
-              : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
+              : 'text-pink-900/70 hover:text-slate-700 hover:bg-pink-50/60'
           }`}
         >
           <Clock size={16} />
@@ -230,7 +230,7 @@ export const WorkoutView: React.FC = () => {
         <div className="p-3 bg-pink-50 border border-pink-300 rounded-2xl flex items-center justify-between gap-3 animate-pulse shadow-xs">
           <div className="flex items-center gap-2 text-xs">
             <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
-            <span className="text-pink-950 font-bold">กำลังฝึก: {activeWorkout.name}</span>
+            <span className="text-slate-700 font-bold">กำลังฝึก: {activeWorkout.name}</span>
             <span className="text-rose-600 font-mono font-bold">
               ({formatSeconds(activeWorkout.elapsedSeconds)})
             </span>
@@ -263,7 +263,7 @@ export const WorkoutView: React.FC = () => {
                     กำลังฝึกซ้อมอยู่ (Active Session)
                   </span>
                 </div>
-                <h2 className="text-xl font-black text-pink-950 mt-1">{activeWorkout.name}</h2>
+                <h2 className="text-xl font-black text-slate-700 mt-1">{activeWorkout.name}</h2>
               </div>
               <div className="flex items-center gap-2">
                 {/* Rest Timer Button in header */}
@@ -291,7 +291,7 @@ export const WorkoutView: React.FC = () => {
                   </span>
                 </button>
 
-                <div className="bg-pink-50 px-3 py-2 rounded-xl border border-pink-200 flex items-center gap-1.5 text-sm font-mono font-bold text-pink-950">
+                <div className="bg-pink-50 px-3 py-2 rounded-xl border border-pink-200 flex items-center gap-1.5 text-sm font-mono font-bold text-slate-700">
                   <Clock size={16} className="text-rose-500" />
                   {formatSeconds(activeWorkout.elapsedSeconds)}
                 </div>
@@ -302,7 +302,7 @@ export const WorkoutView: React.FC = () => {
             <div className="mt-3.5 pt-3 border-t border-pink-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Timer size={15} className="text-rose-500" />
-                <span className="text-xs font-bold text-pink-950">
+                <span className="text-xs font-bold text-slate-700">
                   เวลาพักมาตรฐาน (จะเริ่มนับถอยหลังทันทีเมื่อติ๊กเสร็จเซ็ต):
                 </span>
               </div>
@@ -386,7 +386,7 @@ export const WorkoutView: React.FC = () => {
                       <span className="text-xs font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
                         #{exIdx + 1}
                       </span>
-                      <h3 className="text-base font-bold text-pink-950 group-hover:text-rose-600 transition">
+                      <h3 className="text-base font-bold text-slate-700 group-hover:text-rose-600 transition">
                         {exerciseData?.name_en || item.exercise_id}
                       </h3>
                     </div>
@@ -447,7 +447,7 @@ export const WorkoutView: React.FC = () => {
                               weight_kg: parseFloat(e.target.value) || 0,
                             })
                           }
-                          className="w-full max-w-[90px] h-11 bg-white border border-pink-200 rounded-xl px-2 text-center text-base font-bold font-mono text-pink-950 focus:outline-none focus:border-rose-400"
+                          className="w-full max-w-[90px] h-11 bg-white border border-pink-200 rounded-xl px-2 text-center text-base font-bold font-mono text-slate-700 focus:outline-none focus:border-rose-400"
                         />
                       </div>
 
@@ -463,7 +463,7 @@ export const WorkoutView: React.FC = () => {
                               reps: parseInt(e.target.value) || 0,
                             })
                           }
-                          className="w-full max-w-[75px] h-11 bg-white border border-pink-200 rounded-xl px-2 text-center text-base font-bold font-mono text-pink-950 focus:outline-none focus:border-rose-400"
+                          className="w-full max-w-[75px] h-11 bg-white border border-pink-200 rounded-xl px-2 text-center text-base font-bold font-mono text-slate-700 focus:outline-none focus:border-rose-400"
                         />
                       </div>
 
@@ -517,7 +517,7 @@ export const WorkoutView: React.FC = () => {
           {/* Add Exercise into Active Workout */}
           <button
             onClick={() => setShowAddExerciseDrawer(true)}
-            className="w-full py-4 rounded-3xl bg-white hover:bg-pink-50/80 border-2 border-dashed border-pink-300 text-pink-950 hover:text-rose-600 font-bold text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
+            className="w-full py-4 rounded-3xl bg-white hover:bg-pink-50/80 border-2 border-dashed border-pink-300 text-slate-700 hover:text-rose-600 font-bold text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-xs"
           >
             <Plus size={18} />
             เพิ่มท่าออกกำลังกายในเซสชันนี้
@@ -543,7 +543,7 @@ export const WorkoutView: React.FC = () => {
                     </span>
                     <span
                       className={`text-2xl font-black font-mono leading-none ${
-                        restTimerSeconds === 0 ? 'text-rose-600 animate-bounce' : 'text-pink-950'
+                        restTimerSeconds === 0 ? 'text-rose-600 animate-bounce' : 'text-slate-700'
                       }`}
                     >
                       {restTimerSeconds === 0 ? 'ลุยต่อเลย!' : formatSeconds(restTimerSeconds)}
@@ -598,7 +598,7 @@ export const WorkoutView: React.FC = () => {
                   สวัสดีคุณ {activeProfileKey === 'partner' ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-pink-950 font-bold mt-1 leading-snug">
+              <p className="text-xs sm:text-sm text-slate-700 font-bold mt-1 leading-snug">
                 "หมูอ้วนอย่างเราก็ฟิตเฟิร์มได้! วันนี้พร้อมเบิร์นหรือยัง ลุยไปด้วยกันนะ 🐽✨"
               </p>
             </div>
@@ -613,7 +613,7 @@ export const WorkoutView: React.FC = () => {
               <span className="text-xs font-bold text-rose-700 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
                 พร้อมฝึกซ้อมหรือยัง?
               </span>
-              <h2 className="text-2xl font-black text-pink-950 mt-2">
+              <h2 className="text-2xl font-black text-slate-700 mt-2">
                 เริ่มเซสชันแบบเปิด (Empty Workout)
               </h2>
               <p className="text-xs text-pink-800/80 mt-1.5 leading-relaxed font-medium">
@@ -636,7 +636,7 @@ export const WorkoutView: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-pink-950 flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-slate-700 flex items-center gap-2">
                     <Dumbbell size={18} className="text-rose-500" />
                     โปรแกรมการฝึกประจำสัปดาห์ (Routines)
                   </h3>
@@ -678,7 +678,7 @@ export const WorkoutView: React.FC = () => {
                 value={routineSearchQuery}
                 onChange={(e) => setRoutineSearchQuery(e.target.value)}
                 placeholder="ค้นหาโปรแกรม Routine (เช่น Push, Glute, ก้น, ขา, อก, Hip Thrust)..."
-                className="w-full bg-white border border-pink-200 rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm text-pink-950 placeholder-pink-400 focus:outline-none focus:border-rose-400 transition shadow-xs"
+                className="w-full bg-white border border-pink-200 rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm text-slate-700 placeholder-pink-400 focus:outline-none focus:border-rose-400 transition shadow-xs"
               />
               {routineSearchQuery && (
                 <button
@@ -693,7 +693,7 @@ export const WorkoutView: React.FC = () => {
             {filteredPrograms.length === 0 ? (
               <div className="p-8 text-center bg-white/95 rounded-3xl border border-pink-200 space-y-2 shadow-xs">
                 <Dumbbell size={28} className="mx-auto text-pink-300" />
-                <p className="text-sm text-pink-950 font-bold">
+                <p className="text-sm text-slate-700 font-bold">
                   ไม่พบโปรแกรม Routine ที่ตรงกับ "{routineSearchQuery}"
                 </p>
                 <button
@@ -721,7 +721,7 @@ export const WorkoutView: React.FC = () => {
                           return (
                             <div
                               key={idx}
-                              className="text-xs text-pink-950 flex items-center gap-1.5 truncate font-medium"
+                              className="text-xs text-slate-700 flex items-center gap-1.5 truncate font-medium"
                             >
                               <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                               <span className="truncate">{ex?.name_th || item.exercise_id}</span>
@@ -768,7 +768,7 @@ export const WorkoutView: React.FC = () => {
           {/* Recent Workout History Quick Preview */}
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-pink-950 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-700 flex items-center gap-2">
                 <Clock size={18} className="text-rose-500" />
                 ประวัติการฝึกซ้อมล่าสุด ({workoutHistory.length})
               </h3>
@@ -783,7 +783,7 @@ export const WorkoutView: React.FC = () => {
             {workoutHistory.length === 0 ? (
               <div className="bg-white/95 p-6 rounded-3xl border border-pink-200 text-center space-y-2 shadow-xs">
                 <Dumbbell size={28} className="mx-auto text-pink-300" />
-                <p className="text-sm text-pink-950 font-bold">ยังไม่มีประวัติการฝึกซ้อม</p>
+                <p className="text-sm text-slate-700 font-bold">ยังไม่มีประวัติการฝึกซ้อม</p>
                 <p className="text-xs text-pink-700/70">
                   กดเริ่มฝึกเพื่อบันทึกประวัติ หรือดูประวัติรวมของคู่ของคุณ
                 </p>
@@ -812,7 +812,7 @@ export const WorkoutView: React.FC = () => {
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-sm font-bold text-pink-950 group-hover:text-rose-600 transition">
+                          <span className="text-sm font-bold text-slate-700 group-hover:text-rose-600 transition">
                             {sess.program_name || 'เซสชันการฝึก'}
                           </span>
                           <span className="text-[11px] text-pink-800 bg-pink-50 px-2 py-0.5 rounded font-mono font-bold border border-pink-200">
@@ -832,7 +832,7 @@ export const WorkoutView: React.FC = () => {
                         </span>
                         <span
                           className={`text-sm sm:text-base font-black font-mono ${
-                            maxWeight > 0 ? 'text-rose-600' : 'text-pink-950'
+                            maxWeight > 0 ? 'text-rose-600' : 'text-slate-700'
                           }`}
                         >
                           {maxWeight > 0 ? `${maxWeight} kg` : `${exerciseCount} ท่า`}
@@ -863,7 +863,7 @@ export const WorkoutView: React.FC = () => {
             {/* Header */}
             <div className="p-4 border-b border-pink-200 flex items-center justify-between bg-pink-50/80">
               <div>
-                <h3 className="font-bold text-pink-950 text-base">ค้นหา & เลือกท่าออกกำลังกาย</h3>
+                <h3 className="font-bold text-slate-700 text-base">ค้นหา & เลือกท่าออกกำลังกาย</h3>
                 <p className="text-xs text-pink-800/70">เลือกท่าเพื่อเพิ่มลงในเซสชันการฝึกของคุณ</p>
               </div>
               <button
@@ -883,7 +883,7 @@ export const WorkoutView: React.FC = () => {
                   value={drawerSearch}
                   onChange={(e) => setDrawerSearch(e.target.value)}
                   placeholder="ค้นหาชื่อท่า (Bench Press, อก, ดัมเบล)..."
-                  className="w-full bg-white border border-pink-200 rounded-xl pl-9 pr-9 py-2.5 text-sm text-pink-950 placeholder-pink-400 focus:outline-none focus:border-rose-400 transition"
+                  className="w-full bg-white border border-pink-200 rounded-xl pl-9 pr-9 py-2.5 text-sm text-slate-700 placeholder-pink-400 focus:outline-none focus:border-rose-400 transition"
                   autoFocus
                 />
                 {drawerSearch && (
@@ -928,7 +928,7 @@ export const WorkoutView: React.FC = () => {
 
               {drawerFilteredExercises.length === 0 ? (
                 <div className="p-8 text-center space-y-2 bg-pink-50/50 rounded-2xl border border-pink-200">
-                  <p className="text-sm text-pink-950 font-bold">ไม่พบท่าออกกำลังกายที่ตรงกับการค้นหา</p>
+                  <p className="text-sm text-slate-700 font-bold">ไม่พบท่าออกกำลังกายที่ตรงกับการค้นหา</p>
                   <p className="text-xs text-pink-700/70">ลองเปลี่ยนคำค้นหา หรือเลือกหมวดกล้ามเนื้ออื่น</p>
                   <button
                     onClick={() => {
@@ -959,7 +959,7 @@ export const WorkoutView: React.FC = () => {
                         className="text-left flex-1 pr-2 group"
                       >
                         <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-bold text-pink-950 group-hover:text-rose-600 transition">
+                          <h4 className="text-sm font-bold text-slate-700 group-hover:text-rose-600 transition">
                             {ex.name_en}
                           </h4>
                           {isInSession && (

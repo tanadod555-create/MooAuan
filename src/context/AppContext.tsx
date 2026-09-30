@@ -922,11 +922,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addFoodLog = async (logData: Omit<FoodLog, 'log_id'>) => {
-    const currentName = activeProfileKey === 'partner' ? partnerProfile.name : primaryProfile.name;
+    const targetUserId = (logData.user_id as 'primary' | 'partner') || activeProfileKey;
+    const currentName = targetUserId === 'partner' ? partnerProfile.name : primaryProfile.name;
     const newLog: FoodLog = {
       ...logData,
       log_id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-      user_id: activeProfileKey,
+      user_id: targetUserId,
       user_name: currentName,
     };
     setAllFoodLogs(prev => [newLog, ...prev]);

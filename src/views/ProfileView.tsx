@@ -282,7 +282,7 @@ export const ProfileView: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-pink-950">{currentProfile.name}</h2>
+              <h2 className="text-xl font-black text-slate-700">{currentProfile.name}</h2>
               <span className="text-[11px] bg-pink-100 text-rose-700 border border-pink-200 px-2.5 py-0.5 rounded-full font-bold">
                 {activeProfileKey === 'primary' ? '🏋️‍♂️ หมูอ้วนเทรนเนอร์' : '🌸 หมูอ้วนหวานแหวว'}
               </span>
@@ -310,7 +310,7 @@ export const ProfileView: React.FC = () => {
           className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
             activeTab === 'stats'
               ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
-              : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
+              : 'text-pink-900/70 hover:text-slate-700 hover:bg-pink-50/60'
           }`}
         >
           <TrendingUp size={16} />
@@ -321,7 +321,7 @@ export const ProfileView: React.FC = () => {
           className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
             activeTab === 'profile'
               ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
-              : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
+              : 'text-pink-900/70 hover:text-slate-700 hover:bg-pink-50/60'
           }`}
         >
           <User size={16} />
@@ -332,7 +332,7 @@ export const ProfileView: React.FC = () => {
           className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
             activeTab === 'settings'
               ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
-              : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
+              : 'text-pink-900/70 hover:text-slate-700 hover:bg-pink-50/60'
           }`}
         >
           <SettingsIcon size={16} />
@@ -344,7 +344,7 @@ export const ProfileView: React.FC = () => {
       {activeTab === 'stats' && (
         <div className="space-y-4">
           {/* Smart Goal & Sports Nutrition Calculator Banner */}
-          <div className="bg-gradient-to-r from-pink-500 via-rose-500 to-pink-600 p-4 sm:p-5 rounded-3xl shadow-lg shadow-pink-500/20 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="bg-gradient-to-r from-pink-400 via-rose-300 to-pink-300 p-4 sm:p-5 rounded-3xl shadow-lg shadow-pink-500/20 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5">
               <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shadow-inner shrink-0">
                 🎯
@@ -375,7 +375,7 @@ export const ProfileView: React.FC = () => {
               <span className="text-xs text-pink-800/70 flex items-center gap-1 font-bold">
                 <Scale size={14} className="text-rose-500" /> น้ำหนักล่าสุด
               </span>
-              <p className="text-xl font-black text-pink-950 mt-1">
+              <p className="text-xl font-black text-slate-700 mt-1">
                 {currentWeightKg} <span className="text-xs text-pink-600 font-normal">kg</span>
               </p>
             </MagicCard>
@@ -384,14 +384,14 @@ export const ProfileView: React.FC = () => {
               <span className="text-xs text-pink-800/70 flex items-center gap-1 font-bold">
                 <Sparkles size={14} className="text-sky-500" /> Body Fat %
               </span>
-              <p className="text-xl font-black text-pink-950 mt-1">
+              <p className="text-xl font-black text-slate-700 mt-1">
                 {latestMetric?.body_fat_pct ? `${latestMetric.body_fat_pct}%` : '–'}
               </p>
             </MagicCard>
 
             <MagicCard spotlightColor="rgba(168, 85, 247, 0.12)" className="p-4 bg-white/95 border-pink-200/90 shadow-sm">
               <span className="text-xs text-pink-800/70 font-bold">ค่า BMI</span>
-              <p className="text-xl font-black text-pink-950 mt-1">
+              <p className="text-xl font-black text-slate-700 mt-1">
                 {bmi} <span className="text-xs text-emerald-600 font-bold">ปกติ</span>
               </p>
             </MagicCard>
@@ -409,7 +409,7 @@ export const ProfileView: React.FC = () => {
           <div className="bg-white/95 p-5 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base font-bold text-pink-950 flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
                   <Ruler size={18} className="text-rose-500" />
                   สัดส่วนร่างกายล่าสุด (Body Circumferences)
                 </h3>
@@ -516,7 +516,7 @@ export const ProfileView: React.FC = () => {
                           </span>
                         </div>
                         <div className="flex items-baseline justify-between mt-2">
-                          <span className="text-lg font-black text-pink-950">
+                          <span className="text-lg font-black text-slate-700">
                             {item.current ? `${item.current}` : '–'}{' '}
                             <span className="text-[11px] font-normal text-pink-700">cm</span>
                           </span>
@@ -544,7 +544,7 @@ export const ProfileView: React.FC = () => {
           <div className="bg-white/95 p-5 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 className="text-base font-bold text-pink-950 flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
                   <TrendingUp size={18} className="text-rose-500" />
                   กราฟแนวโน้มความก้าวหน้า
                 </h3>
@@ -580,7 +580,7 @@ export const ProfileView: React.FC = () => {
                   className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition active:scale-95 ${
                     chartMetric === opt.key
                       ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
-                      : 'bg-pink-50/70 text-pink-900/70 border border-pink-200/80 hover:bg-pink-100 hover:text-pink-950'
+                      : 'bg-pink-50/70 text-pink-900/70 border border-pink-200/80 hover:bg-pink-100 hover:text-slate-700'
                   }`}
                 >
                   {opt.label}
@@ -689,7 +689,7 @@ export const ProfileView: React.FC = () => {
                         <Calendar size={13} className="text-rose-500" /> {m.date}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-pink-950 bg-white border border-pink-200 px-2 py-0.5 rounded-lg shadow-2xs">
+                        <span className="font-bold text-slate-700 bg-white border border-pink-200 px-2 py-0.5 rounded-lg shadow-2xs">
                           {m.weight_kg} kg
                         </span>
                         {m.body_fat_pct && (
@@ -762,7 +762,7 @@ export const ProfileView: React.FC = () => {
         <form onSubmit={handleSaveProfile} className="bg-white/95 p-6 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-pink-100">
             <div>
-              <h3 className="text-base font-bold text-pink-950 flex items-center gap-2">
+              <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
                 <User size={18} className="text-rose-500" />
                 ข้อมูลผู้ใช้ & เป้าหมายโภชนาการ ({currentProfile.name})
               </h3>
@@ -787,7 +787,7 @@ export const ProfileView: React.FC = () => {
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2.5 text-pink-950 focus:outline-none focus:border-rose-400 focus:bg-white font-medium"
+                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-rose-400 focus:bg-white font-medium"
               />
             </div>
             <div>
@@ -796,7 +796,7 @@ export const ProfileView: React.FC = () => {
                 type="number"
                 value={editHeight}
                 onChange={(e) => setEditHeight(parseFloat(e.target.value) || 0)}
-                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2.5 text-pink-950 focus:outline-none focus:border-rose-400 focus:bg-white font-medium"
+                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-rose-400 focus:bg-white font-medium"
               />
             </div>
           </div>
@@ -807,7 +807,7 @@ export const ProfileView: React.FC = () => {
               type="text"
               value={editGoal}
               onChange={(e) => setEditGoal(e.target.value)}
-              className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2.5 text-pink-950 focus:outline-none focus:border-rose-400 focus:bg-white font-medium"
+              className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-rose-400 focus:bg-white font-medium"
             />
           </div>
 
@@ -854,7 +854,7 @@ export const ProfileView: React.FC = () => {
           {/* Body Circumferences Targets / Baselines */}
           <div className="p-4 rounded-2xl bg-pink-50/50 border border-pink-200/90 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-pink-950 flex items-center gap-1.5">
+              <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                 <Ruler size={15} className="text-rose-500" />
                 สัดส่วนร่างกายมาตรฐาน / ปัจจุบัน (ซม. - cm)
               </span>
@@ -870,7 +870,7 @@ export const ProfileView: React.FC = () => {
                   placeholder="เช่น 102"
                   value={editChest ?? ''}
                   onChange={(e) => setEditChest(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-pink-950 focus:outline-none focus:border-rose-400"
+                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
@@ -881,7 +881,7 @@ export const ProfileView: React.FC = () => {
                   placeholder="เช่น 118"
                   value={editShoulders ?? ''}
                   onChange={(e) => setEditShoulders(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-pink-950 focus:outline-none focus:border-rose-400"
+                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
@@ -892,7 +892,7 @@ export const ProfileView: React.FC = () => {
                   placeholder="เช่น 79"
                   value={editWaist ?? ''}
                   onChange={(e) => setEditWaist(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-pink-950 focus:outline-none focus:border-rose-400"
+                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
@@ -903,7 +903,7 @@ export const ProfileView: React.FC = () => {
                   placeholder="เช่น 94"
                   value={editHips ?? ''}
                   onChange={(e) => setEditHips(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-pink-950 focus:outline-none focus:border-rose-400"
+                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
@@ -914,7 +914,7 @@ export const ProfileView: React.FC = () => {
                   placeholder="เช่น 58"
                   value={editThigh ?? ''}
                   onChange={(e) => setEditThigh(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-pink-950 focus:outline-none focus:border-rose-400"
+                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
@@ -925,7 +925,7 @@ export const ProfileView: React.FC = () => {
                   placeholder="เช่น 36"
                   value={editArm ?? ''}
                   onChange={(e) => setEditArm(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-pink-950 focus:outline-none focus:border-rose-400"
+                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
@@ -936,7 +936,7 @@ export const ProfileView: React.FC = () => {
                   placeholder="เช่น 37"
                   value={editCalf ?? ''}
                   onChange={(e) => setEditCalf(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-pink-950 focus:outline-none focus:border-rose-400"
+                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
@@ -947,7 +947,7 @@ export const ProfileView: React.FC = () => {
                   placeholder="เช่น 38"
                   value={editNeck ?? ''}
                   onChange={(e) => setEditNeck(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-pink-950 focus:outline-none focus:border-rose-400"
+                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
             </div>
@@ -956,7 +956,7 @@ export const ProfileView: React.FC = () => {
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-black text-sm shadow-md shadow-rose-200 active:scale-95 transition"
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-rose-600 hover:to-pink-600 text-white font-black text-sm shadow-md shadow-rose-200 active:scale-95 transition"
             >
               บันทึกข้อมูลโปรไฟล์และสัดส่วน
             </button>
@@ -970,7 +970,7 @@ export const ProfileView: React.FC = () => {
           {/* Google Sheets Integration Card */}
           <div className="bg-white/95 p-6 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-pink-950 flex items-center gap-2">
+              <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
                 <Database size={18} className="text-rose-500" />
                 เชื่อมต่อ Google Sheets API v4
               </h3>
@@ -987,7 +987,7 @@ export const ProfileView: React.FC = () => {
 
             <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <p className="text-xs text-pink-950 font-bold flex items-center gap-1.5">
+                <p className="text-xs text-slate-700 font-bold flex items-center gap-1.5">
                   <FileSpreadsheet size={16} className="text-rose-500" />
                   Google Spreadsheet รวมศูนย์ (แม็กนั่ม & มะนาว)
                 </p>
@@ -998,7 +998,7 @@ export const ProfileView: React.FC = () => {
               <button
                 type="button"
                 onClick={openUnifiedSpreadsheet}
-                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-rose-200 shrink-0 active:scale-95 transition"
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-rose-200 shrink-0 active:scale-95 transition"
               >
                 <span>เปิด Sheet รวม</span>
                 <ExternalLink size={13} />
@@ -1016,7 +1016,7 @@ export const ProfileView: React.FC = () => {
                   placeholder="เช่น 123456789-xxxx.apps.googleusercontent.com"
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
-                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-xs text-pink-950 focus:outline-none focus:border-rose-400 font-mono"
+                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-rose-400 font-mono"
                 />
               </div>
 
@@ -1024,7 +1024,7 @@ export const ProfileView: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleGoogleLogin}
-                  className="py-2.5 px-4 rounded-xl bg-white hover:bg-pink-50 text-pink-950 font-bold text-xs flex items-center gap-2 border border-pink-200 shadow-sm transition active:scale-95"
+                  className="py-2.5 px-4 rounded-xl bg-white hover:bg-pink-50 text-slate-700 font-bold text-xs flex items-center gap-2 border border-pink-200 shadow-sm transition active:scale-95"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24">
                     <path
@@ -1072,7 +1072,7 @@ export const ProfileView: React.FC = () => {
                 placeholder="เช่น 1cBYIM2WiqqGHIJi8t_JiUF4py30g3CGgQhGWwKWH2_A"
                 value={spreadsheetId}
                 onChange={(e) => setSpreadsheetId(e.target.value)}
-                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs text-pink-950 focus:outline-none focus:border-rose-400 font-mono"
+                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-rose-400 font-mono"
               />
             </div>
 
@@ -1086,7 +1086,7 @@ export const ProfileView: React.FC = () => {
                 placeholder="https://script.google.com/macros/s/AKfycb.../exec"
                 value={appsScriptUrl}
                 onChange={(e) => setAppsScriptUrl(e.target.value)}
-                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs text-pink-950 focus:outline-none focus:border-rose-400 font-mono"
+                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-rose-400 font-mono"
               />
               <span className="text-[11px] text-pink-700/70 mt-1 block">
                 คัดลอกจาก Apps Script Project (ID: 1AzjOzJKjgrFqUehHtzhojd-_Im7mN3_sXHHKtosOmlJMsRs24Bl8_l0e) หลังกด Deploy
@@ -1096,7 +1096,7 @@ export const ProfileView: React.FC = () => {
 
           {/* Gemini AI Configuration Card */}
           <div className="bg-white/95 p-6 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-4">
-            <h3 className="text-base font-bold text-pink-950 flex items-center gap-2">
+            <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
               <Sparkles size={18} className="text-amber-500" />
               การตั้งค่า Gemini AI สำหรับวิเคราะห์อาหาร
             </h3>
@@ -1115,7 +1115,7 @@ export const ProfileView: React.FC = () => {
                 placeholder="AIzaSy..."
                 value={geminiKey}
                 onChange={(e) => setGeminiKey(e.target.value)}
-                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs text-pink-950 focus:outline-none focus:border-rose-400 font-mono"
+                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-rose-400 font-mono"
               />
               <div className="flex items-center justify-between mt-1">
                 <span className="text-[11px] text-pink-700/70 block">
@@ -1154,14 +1154,14 @@ export const ProfileView: React.FC = () => {
                   placeholder="https://my-gemini-proxy.workers.dev"
                   value={geminiProxy}
                   onChange={(e) => setGeminiProxy(e.target.value)}
-                  className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs text-pink-950 focus:outline-none focus:border-rose-400 font-mono"
+                  className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-rose-400 font-mono"
                 />
               )}
             </div>
 
             <button
               onClick={handleSaveSettings}
-              className="w-full py-2.5 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-950 font-bold text-xs border border-pink-200 transition"
+              className="w-full py-2.5 rounded-xl bg-pink-100 hover:bg-pink-200 text-slate-700 font-bold text-xs border border-pink-200 transition"
             >
               บันทึกการตั้งค่าทั้งหมด
             </button>
@@ -1169,7 +1169,7 @@ export const ProfileView: React.FC = () => {
 
           {/* Backup & Export JSON Card */}
           <div className="bg-white/95 p-6 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-3">
-            <h3 className="text-base font-bold text-pink-950 flex items-center gap-2">
+            <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
               <Download size={18} className="text-sky-500" />
               สำรองข้อมูล (Export Backup)
             </h3>
@@ -1198,7 +1198,7 @@ export const ProfileView: React.FC = () => {
                   <Ruler size={20} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-pink-950 text-base">บันทึกสัดส่วน & น้ำหนักตัว</h3>
+                  <h3 className="font-bold text-slate-700 text-base">บันทึกสัดส่วน & น้ำหนักตัว</h3>
                   <p className="text-xs text-pink-700">สำหรับ {currentProfile.name}</p>
                 </div>
               </div>
@@ -1214,7 +1214,7 @@ export const ProfileView: React.FC = () => {
             <form onSubmit={handleSaveMetric} className="p-5 space-y-4 overflow-y-auto text-xs">
               {/* Section 1: Date, Weight, Body Fat */}
               <div className="p-4 rounded-2xl bg-pink-50/50 border border-pink-200/80 space-y-3">
-                <div className="flex items-center gap-1.5 font-bold text-pink-950">
+                <div className="flex items-center gap-1.5 font-bold text-slate-700">
                   <Calendar size={14} className="text-rose-500" />
                   <span>ข้อมูลพื้นฐานการชั่ง</span>
                 </div>
@@ -1227,7 +1227,7 @@ export const ProfileView: React.FC = () => {
                       required
                       value={newMetricDate}
                       onChange={(e) => setNewMetricDate(e.target.value)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-pink-950 focus:outline-none focus:border-rose-400 font-medium"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400 font-medium"
                     />
                   </div>
 
@@ -1239,7 +1239,7 @@ export const ProfileView: React.FC = () => {
                       required
                       value={newMetricWeight}
                       onChange={(e) => setNewMetricWeight(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-pink-950 font-bold text-sm focus:outline-none focus:border-rose-400"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 font-bold text-sm focus:outline-none focus:border-rose-400"
                     />
                   </div>
 
@@ -1251,7 +1251,7 @@ export const ProfileView: React.FC = () => {
                       placeholder="เช่น 16.5"
                       value={newMetricFat ?? ''}
                       onChange={(e) => setNewMetricFat(e.target.value ? parseFloat(e.target.value) : undefined)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-pink-950 focus:outline-none focus:border-rose-400"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                     />
                   </div>
                 </div>
@@ -1260,7 +1260,7 @@ export const ProfileView: React.FC = () => {
               {/* Section 2: Body Circumferences */}
               <div className="p-4 rounded-2xl bg-pink-50/50 border border-pink-200/80 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 font-bold text-pink-950">
+                  <span className="flex items-center gap-1.5 font-bold text-slate-700">
                     <Ruler size={14} className="text-rose-500" />
                     <span>รอบสัดส่วนร่างกาย (ซม. - cm)</span>
                   </span>
@@ -1276,7 +1276,7 @@ export const ProfileView: React.FC = () => {
                       placeholder="เช่น 102"
                       value={newMetricChest ?? ''}
                       onChange={(e) => setNewMetricChest(e.target.value ? parseFloat(e.target.value) : undefined)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 focus:outline-none focus:border-rose-400"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
                     />
                   </div>
 
@@ -1288,7 +1288,7 @@ export const ProfileView: React.FC = () => {
                       placeholder="เช่น 118"
                       value={newMetricShoulders ?? ''}
                       onChange={(e) => setNewMetricShoulders(e.target.value ? parseFloat(e.target.value) : undefined)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 focus:outline-none focus:border-rose-400"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
                     />
                   </div>
 
@@ -1300,7 +1300,7 @@ export const ProfileView: React.FC = () => {
                       placeholder="เช่น 79"
                       value={newMetricWaist ?? ''}
                       onChange={(e) => setNewMetricWaist(e.target.value ? parseFloat(e.target.value) : undefined)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 focus:outline-none focus:border-rose-400"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
                     />
                   </div>
 
@@ -1312,7 +1312,7 @@ export const ProfileView: React.FC = () => {
                       placeholder="เช่น 94"
                       value={newMetricHips ?? ''}
                       onChange={(e) => setNewMetricHips(e.target.value ? parseFloat(e.target.value) : undefined)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 focus:outline-none focus:border-rose-400"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
                     />
                   </div>
 
@@ -1324,7 +1324,7 @@ export const ProfileView: React.FC = () => {
                       placeholder="เช่น 58"
                       value={newMetricThigh ?? ''}
                       onChange={(e) => setNewMetricThigh(e.target.value ? parseFloat(e.target.value) : undefined)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 focus:outline-none focus:border-rose-400"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
                     />
                   </div>
 
@@ -1336,7 +1336,7 @@ export const ProfileView: React.FC = () => {
                       placeholder="เช่น 36"
                       value={newMetricArm ?? ''}
                       onChange={(e) => setNewMetricArm(e.target.value ? parseFloat(e.target.value) : undefined)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 focus:outline-none focus:border-rose-400"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
                     />
                   </div>
 
@@ -1348,7 +1348,7 @@ export const ProfileView: React.FC = () => {
                       placeholder="เช่น 37"
                       value={newMetricCalf ?? ''}
                       onChange={(e) => setNewMetricCalf(e.target.value ? parseFloat(e.target.value) : undefined)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 focus:outline-none focus:border-rose-400"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
                     />
                   </div>
 
@@ -1360,7 +1360,7 @@ export const ProfileView: React.FC = () => {
                       placeholder="เช่น 38"
                       value={newMetricNeck ?? ''}
                       onChange={(e) => setNewMetricNeck(e.target.value ? parseFloat(e.target.value) : undefined)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-pink-950 focus:outline-none focus:border-rose-400"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
                     />
                   </div>
                 </div>
@@ -1374,7 +1374,7 @@ export const ProfileView: React.FC = () => {
                   placeholder="เช่น ชั่งตอนเช้าหลังตื่นนอน ท้องว่าง"
                   value={newMetricNote}
                   onChange={(e) => setNewMetricNote(e.target.value)}
-                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-pink-950 focus:outline-none focus:border-rose-400"
+                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
 
@@ -1389,7 +1389,7 @@ export const ProfileView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold shadow-md shadow-rose-200 active:scale-95 transition"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-rose-600 hover:to-pink-600 text-white font-bold shadow-md shadow-rose-200 active:scale-95 transition"
                 >
                   บันทึกสัดส่วน & น้ำหนัก
                 </button>
