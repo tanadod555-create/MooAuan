@@ -741,10 +741,8 @@ export const WorkoutView: React.FC = () => {
               <div className="space-y-2.5">
                 {workoutHistory.slice(0, 3).map((sess) => {
                   const completedSets = sess.sets?.filter((s) => s.done) || [];
-                  const totalVolumeKg = completedSets.reduce(
-                    (sum, s) => sum + s.weight_kg * s.reps,
-                    0
-                  );
+                  const exerciseCount = Array.from(new Set(sess.sets?.map((s) => s.exercise_id) || [])).length;
+                  const maxWeight = Math.max(...(sess.sets?.filter((s) => s.done).map((s) => s.weight_kg) || [0]));
                   return (
                     <div
                       key={sess.session_id}
@@ -762,13 +760,15 @@ export const WorkoutView: React.FC = () => {
                         </div>
                         <p className="text-xs text-slate-400">
                           {sess.start_time ? `เวลา: ${sess.start_time} - ${sess.end_time || 'เสร็จสิ้น'} · ` : ''}
-                          {completedSets.length} เซ็ตสำเร็จ
+                          {completedSets.length} เซ็ต ({exerciseCount} ท่า)
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="text-[11px] text-slate-500 block uppercase font-bold">Volume</span>
-                        <span className="text-sm sm:text-base font-black text-emerald-400 font-mono">
-                          {totalVolumeKg.toLocaleString()} kg
+                        <span className="text-[10px] text-amber-500/80 block uppercase font-bold">
+                          {maxWeight > 0 ? 'ยกหนักสุด' : 'ท่าฝึก'}
+                        </span>
+                        <span className={`text-sm sm:text-base font-black font-mono ${maxWeight > 0 ? 'text-amber-400' : 'text-pink-400'}`}>
+                          {maxWeight > 0 ? `${maxWeight} kg` : `${exerciseCount} ท่า`}
                         </span>
                       </div>
                     </div>

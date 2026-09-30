@@ -105,12 +105,31 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
     }
   };
 
+  // Calculate duration in minutes from HH:mm
+  const calculateDurationMinutes = (start?: string, end?: string): number => {
+    if (!start || !end) return 60;
+    const [sh, sm] = start.split(':').map(Number);
+    const [eh, em] = end.split(':').map(Number);
+    if (isNaN(sh) || isNaN(sm) || isNaN(eh) || isNaN(em)) return 60;
+    let diff = (eh * 60 + em) - (sh * 60 + sm);
+    if (diff <= 0) diff += 24 * 60;
+    return diff > 0 && diff < 360 ? diff : 60;
+  };
+
+  const formatHoursMinutes = (totalMins: number) => {
+    const hours = Math.floor(totalMins / 60);
+    const mins = totalMins % 60;
+    if (hours === 0) return `${mins} นาที`;
+    if (mins === 0) return `${hours} ชม.`;
+    return `${hours} ชม. ${mins} น.`;
+  };
+
   // Calculate statistics across scoped sessions
   const totalWorkouts = scopedHistory.length;
-  const totalVolumeKg = scopedHistory.reduce((sum, sess) => {
-    const doneSets = sess.sets?.filter((s) => s.done) || [];
-    return sum + doneSets.reduce((sSum, s) => sSum + s.weight_kg * s.reps, 0);
+  const totalMinutes = scopedHistory.reduce((sum, sess) => {
+    return sum + calculateDurationMinutes(sess.start_time, sess.end_time);
   }, 0);
+  const avgMinutes = totalWorkouts > 0 ? Math.round(totalMinutes / totalWorkouts) : 0;
   const totalCompletedSets = scopedHistory.reduce((sum, sess) => {
     return sum + (sess.sets?.filter((s) => s.done)?.length || 0);
   }, 0);
@@ -201,14 +220,16 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
 
         <div className="bg-slate-900/80 border border-slate-800 p-3.5 rounded-2xl flex flex-col justify-between">
           <div className="flex items-center justify-between text-slate-400">
-            <span className="text-[11px] font-semibold">น้ำหนักรวม (Volume)</span>
-            <TrendingUp size={15} className="text-emerald-400" />
+            <span className="text-[11px] font-semibold">เวลาซ้อมสะสม</span>
+            <Clock size={15} className="text-emerald-400" />
           </div>
-          <div className="mt-2 flex items-baseline gap-1">
+          <div className="mt-2 flex flex-col">
             <span className="text-xl sm:text-2xl font-black text-emerald-400 font-mono">
-              {totalVolumeKg.toLocaleString()}
+              {formatHoursMinutes(totalMinutes)}
             </span>
-            <span className="text-xs text-slate-400">kg</span>
+            <span className="text-[10px] text-slate-400 mt-0.5">
+              เฉลี่ย ~{avgMinutes} นาที/ครั้ง
+            </span>
           </div>
         </div>
 
@@ -333,8 +354,9 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
           {filteredHistory.map((sess) => {
             const isPartner = sess.user_id === 'partner';
             const completedSets = sess.sets?.filter((s) => s.done) || [];
-            const sessionVolumeKg = completedSets.reduce(
-              (sum, s) => sum + s.weight_kg * s.reps,
+            const sessionDurationMins = calculateDurationMinutes(sess.start_time, sess.end_time);
+            const sessionMaxWeight = Math.max(
+              ...completedSets.map((s) => s.weight_kg),
               0
             );
             const isExpanded = Boolean(expandedSessionIds[sess.session_id]);
@@ -365,7 +387,7 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                       {sess.start_time && (
                         <span className="text-xs text-slate-500 flex items-center gap-1 font-mono">
                           <Clock size={12} />
-                          {sess.start_time} - {sess.end_time || 'เสร็จสิ้น'}
+                          {sess.start_time} - {sess.end_time || 'เสร็จสิ้น'} ({sessionDurationMins} น.)
                         </span>
                       )}
                     </div>
@@ -381,20 +403,31 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                     )}
                   </div>
 
-                  {/* Summary Metric Badges */}
-                  <div className="flex items-center gap-2 self-start sm:self-center">
+                  {/* Summary Metric Badges (Duration, Top Weight, Completed Sets) */}
+                  <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
                     <div className="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-right">
                       <span className="text-[10px] text-slate-500 block uppercase font-bold">
-                        Volume
+                        ระยะเวลา
                       </span>
                       <span className="text-sm font-black text-emerald-400 font-mono">
-                        {sessionVolumeKg.toLocaleString()} kg
+                        {sessionDurationMins} นาที
                       </span>
                     </div>
 
+                    {sessionMaxWeight > 0 && (
+                      <div className="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-right">
+                        <span className="text-[10px] text-amber-500/80 block uppercase font-bold">
+                          ยกหนักสุด
+                        </span>
+                        <span className="text-sm font-black text-amber-400 font-mono">
+                          {sessionMaxWeight} kg
+                        </span>
+                      </div>
+                    )}
+
                     <div className="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-right">
                       <span className="text-[10px] text-slate-500 block uppercase font-bold">
-                        Sets
+                        เซ็ตสำเร็จ
                       </span>
                       <span className="text-sm font-black text-sky-400 font-mono">
                         {completedSets.length} เซ็ต
@@ -455,7 +488,7 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                             </div>
 
                             {/* Sets Table */}
-                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2 text-center text-xs">
+                            <div className="grid grid-cols-4 gap-2 text-center text-xs">
                               <div className="text-[11px] text-slate-500 font-semibold py-1 bg-slate-900 rounded-lg">
                                 เซ็ต
                               </div>
@@ -464,9 +497,6 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                               </div>
                               <div className="text-[11px] text-slate-500 font-semibold py-1 bg-slate-900 rounded-lg">
                                 จำนวนครั้ง
-                              </div>
-                              <div className="hidden sm:block text-[11px] text-slate-500 font-semibold py-1 bg-slate-900 rounded-lg">
-                                โวลุ่ม
                               </div>
                               <div className="text-[11px] text-slate-500 font-semibold py-1 bg-slate-900 rounded-lg">
                                 สถานะ
@@ -488,9 +518,6 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                                     </div>
                                     <div className="py-1 text-slate-200 font-mono font-bold">
                                       {s.reps} ครั้ง
-                                    </div>
-                                    <div className="hidden sm:block py-1 text-slate-400 font-mono text-[11px]">
-                                      {(s.weight_kg * s.reps).toLocaleString()} kg
                                     </div>
                                     <div className="py-1 flex items-center justify-center">
                                       {s.done ? (
