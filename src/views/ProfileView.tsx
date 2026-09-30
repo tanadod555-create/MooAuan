@@ -24,6 +24,7 @@ import {
   Ruler,
   Target,
   Flame,
+  Trash2,
 } from 'lucide-react';
 import { MagicCard } from '../components/ui/MagicCard';
 import { NumberTicker } from '../components/ui/NumberTicker';
@@ -39,7 +40,10 @@ export const ProfileView: React.FC = () => {
     partnerProfile,
     updateProfile,
     bodyMetrics,
+    allBodyMetrics,
     addBodyMetric,
+    deleteBodyMetric,
+    clearAllBodyMetrics,
     settings,
     updateSettings,
     workoutHistory,
@@ -677,81 +681,124 @@ export const ProfileView: React.FC = () => {
 
             {/* Metrics History Table with All Circumferences */}
             <div className="mt-4 pt-3 border-t border-pink-100">
-              <span className="text-xs font-bold text-pink-900 block mb-2">ประวัติการบันทึกสัดส่วน & น้ำหนัก:</span>
-              <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                {sortedMetrics.slice().reverse().map((m, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 rounded-2xl bg-pink-50/40 border border-pink-200/80 text-xs space-y-1.5"
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-pink-900 block">
+                  ประวัติการบันทึกสัดส่วน & น้ำหนัก ({sortedMetrics.length} บันทึก):
+                </span>
+                {allBodyMetrics.length > 0 && (
+                  <button
+                    onClick={() => {
+                      if (
+                        confirm(
+                          'คุณต้องการล้างประวัติการบันทึกสัดส่วนและน้ำหนักของทุกคนใช่หรือไม่?\n\n(หมายเหตุ: โปรแกรมการฝึก Routines และท่าออกกำลังกายจะถูกเก็บรักษาไว้ทั้งหมดเหมือนเดิม)'
+                        )
+                      ) {
+                        clearAllBodyMetrics();
+                        alert('ล้างประวัติสัดส่วนของทุกคนเรียบร้อยแล้ว!');
+                      }
+                    }}
+                    className="text-[11px] text-rose-500 hover:text-rose-700 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-pink-800/70 flex items-center gap-1.5 font-bold">
-                        <Calendar size={13} className="text-rose-500" /> {m.date}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-700 bg-white border border-pink-200 px-2 py-0.5 rounded-lg shadow-2xs">
-                          {m.weight_kg} kg
+                    <Trash2 size={12} />
+                    <span>ล้างประวัติสัดส่วนทั้งหมด</span>
+                  </button>
+                )}
+              </div>
+
+              {sortedMetrics.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400 bg-pink-50/30 rounded-2xl border border-pink-100 space-y-1.5">
+                  <p className="font-semibold text-slate-600">ยังไม่มีประวัติการบันทึกสัดส่วน & น้ำหนักตัว</p>
+                  <p className="text-[11px] text-slate-400">
+                    แตะปุ่ม "+ บันทึกสัดส่วน/น้ำหนัก" ด้านบน เพื่อเริ่มบันทึกครั้งแรก
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {sortedMetrics.slice().reverse().map((m, idx) => (
+                    <div
+                      key={m.id || idx}
+                      className="p-3 rounded-2xl bg-pink-50/40 border border-pink-200/80 text-xs space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-pink-800/70 flex items-center gap-1.5 font-bold">
+                          <Calendar size={13} className="text-rose-500" /> {m.date}
                         </span>
-                        {m.body_fat_pct && (
-                          <span className="text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-lg font-bold">
-                            {m.body_fat_pct}% fat
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-slate-700 bg-white border border-pink-200 px-2 py-0.5 rounded-lg shadow-2xs">
+                            {m.weight_kg} kg
+                          </span>
+                          {m.body_fat_pct && (
+                            <span className="text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-lg font-bold">
+                              {m.body_fat_pct}% fat
+                            </span>
+                          )}
+                          <button
+                            onClick={() => {
+                              if (confirm(`ต้องการลบบันทึกสัดส่วนวันที่ ${m.date} หรือไม่?`)) {
+                                deleteBodyMetric(m.id || m.date);
+                              }
+                            }}
+                            className="p-1 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition cursor-pointer"
+                            title="ลบบันทึกนี้"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Circumference Badges */}
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {m.waist_cm && (
+                          <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 border border-rose-200 text-[11px] font-medium">
+                            เอว {m.waist_cm} cm
+                          </span>
+                        )}
+                        {m.chest_cm && (
+                          <span className="px-2 py-0.5 rounded-md bg-sky-100 text-sky-800 border border-sky-200 text-[11px] font-medium">
+                            อก {m.chest_cm} cm
+                          </span>
+                        )}
+                        {m.shoulders_cm && (
+                          <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 border border-purple-200 text-[11px] font-medium">
+                            ไหล่ {m.shoulders_cm} cm
+                          </span>
+                        )}
+                        {m.hips_cm && (
+                          <span className="px-2 py-0.5 rounded-md bg-pink-100 text-pink-800 border border-pink-200 text-[11px] font-medium">
+                            สะโพก {m.hips_cm} cm
+                          </span>
+                        )}
+                        {m.thigh_cm && (
+                          <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200 text-[11px] font-medium">
+                            ต้นขา {m.thigh_cm} cm
+                          </span>
+                        )}
+                        {m.arm_cm && (
+                          <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 border border-indigo-200 text-[11px] font-medium">
+                            แขน {m.arm_cm} cm
+                          </span>
+                        )}
+                        {m.calf_cm && (
+                          <span className="px-2 py-0.5 rounded-md bg-teal-100 text-teal-800 border border-teal-200 text-[11px] font-medium">
+                            น่อง {m.calf_cm} cm
+                          </span>
+                        )}
+                        {m.neck_cm && (
+                          <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-800 border border-stone-200 text-[11px] font-medium">
+                            คอ {m.neck_cm} cm
                           </span>
                         )}
                       </div>
-                    </div>
 
-                    {/* Circumference Badges */}
-                    <div className="flex flex-wrap gap-1.5 pt-0.5">
-                      {m.waist_cm && (
-                        <span className="px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 border border-rose-200 text-[11px] font-medium">
-                          เอว {m.waist_cm} cm
-                        </span>
-                      )}
-                      {m.chest_cm && (
-                        <span className="px-2 py-0.5 rounded-md bg-sky-100 text-sky-800 border border-sky-200 text-[11px] font-medium">
-                          อก {m.chest_cm} cm
-                        </span>
-                      )}
-                      {m.shoulders_cm && (
-                        <span className="px-2 py-0.5 rounded-md bg-purple-100 text-purple-800 border border-purple-200 text-[11px] font-medium">
-                          ไหล่ {m.shoulders_cm} cm
-                        </span>
-                      )}
-                      {m.hips_cm && (
-                        <span className="px-2 py-0.5 rounded-md bg-pink-100 text-pink-800 border border-pink-200 text-[11px] font-medium">
-                          สะโพก {m.hips_cm} cm
-                        </span>
-                      )}
-                      {m.thigh_cm && (
-                        <span className="px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-200 text-[11px] font-medium">
-                          ต้นขา {m.thigh_cm} cm
-                        </span>
-                      )}
-                      {m.arm_cm && (
-                        <span className="px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-800 border border-indigo-200 text-[11px] font-medium">
-                          แขน {m.arm_cm} cm
-                        </span>
-                      )}
-                      {m.calf_cm && (
-                        <span className="px-2 py-0.5 rounded-md bg-teal-100 text-teal-800 border border-teal-200 text-[11px] font-medium">
-                          น่อง {m.calf_cm} cm
-                        </span>
-                      )}
-                      {m.neck_cm && (
-                        <span className="px-2 py-0.5 rounded-md bg-stone-100 text-stone-800 border border-stone-200 text-[11px] font-medium">
-                          คอ {m.neck_cm} cm
-                        </span>
+                      {m.note && (
+                        <p className="text-[11px] text-pink-900/80 italic bg-white/80 px-2 py-1 rounded-lg border border-pink-100">
+                          "{m.note}"
+                        </p>
                       )}
                     </div>
-
-                    {m.note && (
-                      <p className="text-[11px] text-pink-900/80 italic bg-white/80 px-2 py-1 rounded-lg border border-pink-100">
-                        "{m.note}"
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

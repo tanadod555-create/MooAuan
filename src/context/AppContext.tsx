@@ -72,6 +72,8 @@ interface AppContextType {
   bodyMetrics: BodyMetric[];
   allBodyMetrics: BodyMetric[];
   addBodyMetric: (metric: Omit<BodyMetric, 'id'>) => Promise<void>;
+  deleteBodyMetric: (metricIdOrDate: string) => void;
+  clearAllBodyMetrics: () => void;
 
   programs: Program[];
   addProgram: (program: Program) => void;
@@ -636,25 +638,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Unified Body Metrics (Combined for Magnum & Manow)
   const [allBodyMetrics, setAllBodyMetrics] = useState<BodyMetric[]>(() => {
+    // Migration: One-time clearing of legacy/mock body metrics as requested
+    const cleared = localStorage.getItem('ft_metrics_cleared_v2');
+    if (!cleared) {
+      localStorage.setItem('ft_metrics_cleared_v2', 'true');
+      localStorage.removeItem('ft_metrics_unified');
+      localStorage.removeItem('ft_metrics_primary');
+      localStorage.removeItem('ft_metrics_partner');
+      return [];
+    }
     const savedUnified = localStorage.getItem('ft_metrics_unified');
     if (savedUnified) {
-      try { return JSON.parse(savedUnified); } catch {}
+      try {
+        return JSON.parse(savedUnified);
+      } catch {}
     }
-    const primarySaved = localStorage.getItem('ft_metrics_primary');
-    const partnerSaved = localStorage.getItem('ft_metrics_partner');
-    const primaryM: BodyMetric[] = primarySaved ? JSON.parse(primarySaved) : [
-      { date: '2026-09-15', weight_kg: 72.5, body_fat_pct: 16.5, waist_cm: 80, chest_cm: 101, shoulders_cm: 117, thigh_cm: 57.5, hips_cm: 94.5, arm_cm: 35.5, calf_cm: 37, neck_cm: 38, note: 'เริ่มต้นโปรแกรม', user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' },
-      { date: '2026-09-22', weight_kg: 72.2, body_fat_pct: 16.2, waist_cm: 79.5, chest_cm: 101.5, shoulders_cm: 117.5, thigh_cm: 57.8, hips_cm: 94, arm_cm: 35.8, calf_cm: 37, neck_cm: 38, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' },
-      { date: '2026-09-29', weight_kg: 71.9, body_fat_pct: 15.9, waist_cm: 79.0, chest_cm: 102, shoulders_cm: 118, thigh_cm: 58.0, hips_cm: 94, arm_cm: 36.0, calf_cm: 37, neck_cm: 38, note: 'สัปดาห์ที่ 3 ฟิตขึ้น อก/ไหล่เริ่มขยาย เอวลดลง', user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' },
-    ];
-    const partnerM: BodyMetric[] = partnerSaved ? JSON.parse(partnerSaved) : [
-      { date: '2026-09-15', weight_kg: 49.5, body_fat_pct: 22.0, waist_cm: 64, chest_cm: 81.5, shoulders_cm: 94.5, thigh_cm: 51.5, hips_cm: 91.5, arm_cm: 25.2, calf_cm: 32, neck_cm: 31, note: 'เริ่มโปรแกรมกระชับก้น', user_id: 'partner', user_name: 'มะนาว (Manow)' },
-      { date: '2026-09-29', weight_kg: 49.0, body_fat_pct: 21.2, waist_cm: 62.5, chest_cm: 82, shoulders_cm: 95, thigh_cm: 51.0, hips_cm: 92.5, arm_cm: 24.8, calf_cm: 32, neck_cm: 31, note: 'เอวคอดลง ก้นเด้งขึ้นชัดเจน', user_id: 'partner', user_name: 'มะนาว (Manow)' },
-    ];
-    return [
-      ...primaryM.map(m => ({ ...m, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' })),
-      ...partnerM.map(m => ({ ...m, user_id: 'partner', user_name: 'มะนาว (Manow)' }))
-    ];
+    return [];
   });
 
   const bodyMetrics = allBodyMetrics.filter(m => (m.user_id || 'primary') === activeProfileKey);
@@ -1148,6 +1147,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const deleteBodyMetric = (metricIdOrDate: string) => {
+    setAllBodyMetrics(prev =>
+      prev.filter(m => (m.id ? m.id !== metricIdOrDate : m.date !== metricIdOrDate))
+    );
+  };
+
+  const clearAllBodyMetrics = () => {
+    setAllBodyMetrics([]);
+    localStorage.removeItem('ft_metrics_unified');
+    localStorage.removeItem('ft_metrics_primary');
+    localStorage.removeItem('ft_metrics_partner');
+  };
+
   const addProgram = (prog: Program) => {
     setPrograms(prev => [prog, ...prev]);
   };
@@ -1251,6 +1263,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         bodyMetrics,
         allBodyMetrics,
         addBodyMetric,
+        deleteBodyMetric,
+        clearAllBodyMetrics,
         programs,
         addProgram,
         updateProgram,
