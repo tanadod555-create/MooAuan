@@ -1,6 +1,7 @@
 import React from 'react';
 import { Exercise } from '../../types';
 import { MUSCLE_GROUPS } from '../../data/muscles';
+import { StickmanExerciseAnimation } from './StickmanExerciseAnimation';
 import { X, Plus, Dumbbell, Sparkles, AlertCircle, Wind, HeartPulse, CheckCircle2 } from 'lucide-react';
 
 interface ExerciseDetailModalProps {
@@ -57,18 +58,16 @@ export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Posture Art / Line Diagram Simulation */}
-          <div className="w-full h-36 bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl border border-pink-200 flex items-center justify-center relative overflow-hidden p-4">
-            <div className="flex flex-col items-center justify-center text-center z-10">
-              <div className="w-14 h-14 rounded-2xl bg-white border border-pink-200 shadow-xs flex items-center justify-center mb-2 text-rose-500">
-                <Dumbbell size={28} />
-              </div>
-              <span className="text-xs font-bold text-pink-950">
-                มัดหลัก: <strong className="text-rose-600">{primaryMuscle?.nameTh}</strong> ({exercise.muscle_primary})
+          {/* Interactive Stickman Animation & Custom Media Slot */}
+          <div className="space-y-2">
+            <StickmanExerciseAnimation exercise={exercise} />
+            <div className="flex items-center justify-between text-xs px-1 text-slate-500 flex-wrap gap-1">
+              <span>
+                มัดหลัก: <strong className="text-rose-600 font-bold">{primaryMuscle?.nameTh}</strong> ({exercise.muscle_primary})
               </span>
               {exercise.muscle_secondary && exercise.muscle_secondary.length > 0 && (
-                <span className="text-[11px] text-pink-700/80 mt-0.5">
-                  มัดรอง: {exercise.muscle_secondary.map(m => MUSCLE_GROUPS[m]?.nameTh || m).join(', ')}
+                <span className="text-[11px] text-slate-400">
+                  มัดรอง: {exercise.muscle_secondary.map((m) => MUSCLE_GROUPS[m]?.nameTh || m).join(', ')}
                 </span>
               )}
             </div>
