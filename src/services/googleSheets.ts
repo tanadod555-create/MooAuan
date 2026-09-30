@@ -18,6 +18,7 @@ export const SHEET_TABS = [
   'workout_sessions',
   'workout_sets',
   'food_logs',
+  'food_database',
 ] as const;
 
 export const SHEET_HEADERS: Record<string, string[]> = {
@@ -28,7 +29,8 @@ export const SHEET_HEADERS: Record<string, string[]> = {
   program_items: ['program_id', 'order', 'exercise_id', 'target_sets', 'target_reps', 'target_weight_kg'],
   workout_sessions: ['user_name', 'date', 'program_name', 'start_time', 'end_time', 'note', 'session_id'],
   workout_sets: ['user_name', 'date', 'exercise_name', 'set_no', 'weight_kg', 'reps', 'rpe', 'done', 'session_id'],
-  food_logs: ['user_name', 'date', 'time', 'meal', 'name', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'grams', 'source', 'log_id'],
+  food_logs: ['user_name', 'date', 'time', 'meal', 'name', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fiber_g', 'grams', 'source', 'log_id'],
+  food_database: ['name_th', 'name_en', 'category', 'serving_size', 'grams', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fiber_g', 'note'],
 };
 
 export class GoogleSheetsService {
@@ -188,7 +190,7 @@ export class GoogleSheetsService {
 
     if (!this.accessToken) return;
 
-    // Matches SHEET_HEADERS.food_logs: ['user_name', 'date', 'time', 'meal', 'name', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'grams', 'source', 'log_id']
+    // Matches SHEET_HEADERS.food_logs: ['user_name', 'date', 'time', 'meal', 'name', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fiber_g', 'grams', 'source', 'log_id']
     const row = [
       finalUserName,
       log.date,
@@ -199,11 +201,60 @@ export class GoogleSheetsService {
       log.protein_g,
       log.carb_g,
       log.fat_g,
+      log.fiber_g || 0,
       log.grams,
       log.source,
       log.log_id,
     ];
     return this.appendRow('food_logs', row);
+  }
+
+  /**
+   * Synchronize Predefined Food Database to Sheet
+   */
+  async syncFoodDatabase(foods: Array<{
+    name_th: string;
+    name_en: string;
+    category_label_th: string;
+    serving_size: string;
+    grams: number;
+    kcal: number;
+    protein_g: number;
+    carb_g: number;
+    fat_g: number;
+    fiber_g: number;
+    note?: string;
+  }>) {
+    if (this.appsScriptUrl) {
+      try {
+        await fetch(this.appsScriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'sync_food_database', data: foods }),
+        });
+      } catch (e) {
+        console.warn('Apps Script syncFoodDatabase error:', e);
+      }
+    }
+
+    if (!this.accessToken) return;
+
+    const rows = foods.map((f) => [
+      f.name_th,
+      f.name_en,
+      f.category_label_th,
+      f.serving_size,
+      f.grams,
+      f.kcal,
+      f.protein_g,
+      f.carb_g,
+      f.fat_g,
+      f.fiber_g,
+      f.note || '',
+    ]);
+
+    return this.appendRows('food_database', rows);
   }
 
   /**

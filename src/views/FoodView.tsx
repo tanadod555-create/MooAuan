@@ -28,12 +28,18 @@ import {
   FileSpreadsheet,
   ExternalLink,
   Target,
+  BookOpen,
+  Bot,
+  MessageCircle,
+  Leaf,
 } from 'lucide-react';
 import { MagicCard } from '../components/ui/MagicCard';
 import { CircularProgress } from '../components/ui/CircularProgress';
 import { NumberTicker } from '../components/ui/NumberTicker';
 import { PigMascot } from '../components/ui/PigMascot';
 import { GoalSetupModal } from '../components/goals/GoalSetupModal';
+import { FoodDatabaseModal } from '../components/food/FoodDatabaseModal';
+import { AiTrainerModal } from '../components/ai/AiTrainerModal';
 
 export const FoodView: React.FC = () => {
   const {
@@ -49,7 +55,12 @@ export const FoodView: React.FC = () => {
     settings,
     updateSettings,
     openUnifiedSpreadsheet,
+    syncFoodDatabaseToSheets,
   } = useApp();
+
+  // Quick Food Reference & AI Trainer Modal state
+  const [showFoodDbModal, setShowFoodDbModal] = useState(false);
+  const [showAiTrainerModal, setShowAiTrainerModal] = useState(false);
 
   // User Selection: Track food per person separately (default to active profile)
   const [selectedUserKey, setSelectedUserKey] = useState<'primary' | 'partner'>(activeProfileKey);
@@ -95,7 +106,7 @@ export const FoodView: React.FC = () => {
   const magnumDayCount = (allFoodLogs || []).filter(
     (l) => l.date === selectedDate && (l.user_id || 'primary') === 'primary'
   ).length;
-  const manaoDayCount = (allFoodLogs || []).filter(
+  const manowDayCount = (allFoodLogs || []).filter(
     (l) => l.date === selectedDate && l.user_id === 'partner'
   ).length;
 
@@ -437,7 +448,64 @@ export const FoodView: React.FC = () => {
               : 'text-slate-500 hover:text-slate-700 hover:bg-pink-50/50'
           }`}
         >
-          <span>🌸 บันทึกของมะนาว ({manaoDayCount})</span>
+          <span>🌸 บันทึกของมะนาว (Manow) ({manowDayCount})</span>
+        </button>
+      </div>
+
+      {/* Quick Access Banner: 1) Quick Food Database & 2) AI Trainer Live Chat */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {/* Quick Food Database */}
+        <button
+          type="button"
+          onClick={() => setShowFoodDbModal(true)}
+          className="p-3.5 rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50/60 to-pink-50 hover:from-pink-100/70 hover:to-rose-100/60 border border-pink-200/90 text-left transition active:scale-[0.99] shadow-xs group cursor-pointer flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-pink-100 text-rose-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition shadow-2xs">
+              <BookOpen size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h4 className="text-xs sm:text-sm font-black text-slate-800">
+                  ตารางโภชนาการด่วน & อาหารไทย 📖
+                </h4>
+                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-700 flex items-center gap-0.5">
+                  <Leaf size={10} /> ไฟเบอร์ครบ
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                เช็กแคล ไข่ต้ม, อกไก่, ข้าวสวย, กะเพรา + แตะลงมื้อทันที
+              </p>
+            </div>
+          </div>
+          <ChevronRight size={18} className="text-pink-400 group-hover:translate-x-0.5 transition shrink-0" />
+        </button>
+
+        {/* AI Trainer Chat */}
+        <button
+          type="button"
+          onClick={() => setShowAiTrainerModal(true)}
+          className="p-3.5 rounded-2xl bg-gradient-to-r from-rose-50 via-pink-50/60 to-rose-50 hover:from-rose-100/70 hover:to-pink-100/60 border border-pink-200/90 text-left transition active:scale-[0.99] shadow-xs group cursor-pointer flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition shadow-2xs">
+              <Bot size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h4 className="text-xs sm:text-sm font-black text-slate-800">
+                  คุยกับโค้ชหมูอ้วน AI (คุยสด) 💬
+                </h4>
+                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-600 flex items-center gap-0.5">
+                  <Sparkles size={9} /> Gemini
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+                วิเคราะห์การกินวันนี้ แนะนำเมนูถัดไป ปรึกษาฟอร์มและอาการล้า
+              </p>
+            </div>
+          </div>
+          <ChevronRight size={18} className="text-rose-400 group-hover:translate-x-0.5 transition shrink-0" />
         </button>
       </div>
 
@@ -601,18 +669,18 @@ export const FoodView: React.FC = () => {
             </div>
           </div>
 
-          {/* Right: Macro Breakdown Pills */}
-          <div className="flex flex-col gap-2.5 w-full sm:w-48">
-            <div className="grid grid-cols-3 sm:grid-cols-1 gap-2.5">
+          {/* Right: Macro Breakdown Pills (Protein, Carbs, Fat, Fiber) */}
+          <div className="flex flex-col gap-2.5 w-full sm:w-56">
+            <div className="grid grid-cols-2 sm:grid-cols-1 gap-2">
               {/* Protein */}
-              <div className="bg-sky-50/60 p-2.5 rounded-2xl border border-sky-100">
+              <div className="bg-sky-50/60 p-2 rounded-2xl border border-sky-100">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-bold text-sky-700">โปรตีน</span>
                   <span className="text-slate-700 font-bold font-mono">
                     <NumberTicker value={Math.round(totalProtein)} /> / {targetProtein}g
                   </span>
                 </div>
-                <div className="w-full h-1.5 bg-sky-100 rounded-full mt-1.5 overflow-hidden">
+                <div className="w-full h-1.5 bg-sky-100 rounded-full mt-1 overflow-hidden">
                   <div
                     className="h-full bg-sky-400 rounded-full transition-all"
                     style={{ width: `${Math.min(100, (totalProtein / targetProtein) * 100)}%` }}
@@ -621,14 +689,14 @@ export const FoodView: React.FC = () => {
               </div>
 
               {/* Carbs */}
-              <div className="bg-amber-50/60 p-2.5 rounded-2xl border border-amber-100">
+              <div className="bg-amber-50/60 p-2 rounded-2xl border border-amber-100">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-bold text-amber-700">คาร์บ</span>
                   <span className="text-slate-700 font-bold font-mono">
                     <NumberTicker value={Math.round(totalCarb)} /> / {targetCarb}g
                   </span>
                 </div>
-                <div className="w-full h-1.5 bg-amber-100 rounded-full mt-1.5 overflow-hidden">
+                <div className="w-full h-1.5 bg-amber-100 rounded-full mt-1 overflow-hidden">
                   <div
                     className="h-full bg-amber-400 rounded-full transition-all"
                     style={{ width: `${Math.min(100, (totalCarb / targetCarb) * 100)}%` }}
@@ -637,17 +705,35 @@ export const FoodView: React.FC = () => {
               </div>
 
               {/* Fat */}
-              <div className="bg-rose-50/60 p-2.5 rounded-2xl border border-rose-100">
+              <div className="bg-rose-50/60 p-2 rounded-2xl border border-rose-100">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-bold text-rose-600">ไขมัน</span>
                   <span className="text-slate-700 font-bold font-mono">
                     <NumberTicker value={Math.round(totalFat)} /> / {targetFat}g
                   </span>
                 </div>
-                <div className="w-full h-1.5 bg-rose-100 rounded-full mt-1.5 overflow-hidden">
+                <div className="w-full h-1.5 bg-rose-100 rounded-full mt-1 overflow-hidden">
                   <div
                     className="h-full bg-rose-400 rounded-full transition-all"
                     style={{ width: `${Math.min(100, (totalFat / targetFat) * 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Fiber (ใยอาหาร) */}
+              <div className="bg-emerald-50/70 p-2 rounded-2xl border border-emerald-200">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-emerald-700 flex items-center gap-1">
+                    <Leaf size={11} className="text-emerald-600" /> ไฟเบอร์
+                  </span>
+                  <span className="text-slate-700 font-bold font-mono">
+                    <NumberTicker value={Math.round(totalFiber * 10) / 10} /> / 25g
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-emerald-100 rounded-full mt-1 overflow-hidden">
+                  <div
+                    className="h-full bg-emerald-400 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, (totalFiber / 25) * 100)}%` }}
                   />
                 </div>
               </div>
@@ -779,8 +865,8 @@ export const FoodView: React.FC = () => {
         </button>
       </div>
 
-      {/* Action Buttons: Camera / Gallery / Manual Add */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {/* Action Buttons: Camera / Gallery / Quick Food DB / Manual Add */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Camera Hidden Input */}
         <input
           type="file"
@@ -817,7 +903,7 @@ export const FoodView: React.FC = () => {
           <div className="text-left">
             <span className="text-sm font-bold block">ถ่ายรูปอาหาร</span>
             <span className="text-[10px] text-white/90 font-normal block">
-              เปิดกล้องถ่ายสด → AI คำนวณตามหมายเหตุ
+              เปิดกล้องถ่ายสด → AI วิเคราะห์
             </span>
           </div>
         </button>
@@ -842,6 +928,27 @@ export const FoodView: React.FC = () => {
             <span className="text-sm font-bold block">อัปโหลดจากอัลบั้ม</span>
             <span className="text-[10px] text-slate-400 font-normal block">
               เลือกรูปจากคลังภาพ / ไฟล์
+            </span>
+          </div>
+        </button>
+
+        {/* Quick Food Database Reference Button */}
+        <button
+          onClick={() => setShowFoodDbModal(true)}
+          className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100/80 hover:to-teal-100/80 border border-emerald-200/80 text-slate-800 font-bold flex items-center justify-center gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer"
+        >
+          <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition">
+            <BookOpen size={18} />
+          </div>
+          <div className="text-left">
+            <div className="flex items-center gap-1">
+              <span className="text-sm font-bold block text-slate-800">ตารางอาหารด่วน</span>
+              <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-emerald-200 text-emerald-800">
+                ไฟเบอร์
+              </span>
+            </div>
+            <span className="text-[10px] text-slate-500 font-normal block">
+              ไข่, ไก่, ข้าว, กะเพรา + แตะลงมื้อ
             </span>
           </div>
         </button>
@@ -1693,6 +1800,25 @@ export const FoodView: React.FC = () => {
         isOpen={showGoalModal}
         onClose={() => setShowGoalModal(false)}
         targetUserKey={selectedUserKey}
+      />
+
+      {/* Quick Food Database & Nutrition Reference Modal */}
+      <FoodDatabaseModal
+        isOpen={showFoodDbModal}
+        onClose={() => setShowFoodDbModal(false)}
+        onAddFood={addFoodLog}
+        onSyncDatabaseToSheets={async (foods) => {
+          await syncFoodDatabaseToSheets(foods);
+        }}
+        selectedUserKey={selectedUserKey}
+        targetDate={selectedDate}
+      />
+
+      {/* Interactive AI Personal Trainer Modal */}
+      <AiTrainerModal
+        isOpen={showAiTrainerModal}
+        onClose={() => setShowAiTrainerModal(false)}
+        selectedDate={selectedDate}
       />
     </div>
   );

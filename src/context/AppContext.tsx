@@ -12,6 +12,7 @@ import {
   AppSettings,
 } from '../types';
 import { SEED_EXERCISES } from '../data/exercises';
+import { PREDEFINED_FOODS, PredefinedFood } from '../data/foodDatabase';
 import { GoogleSheetsService } from '../services/googleSheets';
 import { getDefaultGeminiApiKey } from '../services/gemini';
 
@@ -84,6 +85,7 @@ interface AppContextType {
   isSyncing: boolean;
   sheetsService: GoogleSheetsService;
   syncAllToGoogleSheets: () => Promise<{ success: boolean; message: string }>;
+  syncFoodDatabaseToSheets: (foods?: PredefinedFood[]) => Promise<{ success: boolean; message: string }>;
   unifiedSpreadsheetUrl: string;
   openUnifiedSpreadsheet: () => void;
 }
@@ -114,7 +116,7 @@ const DEFAULT_PRIMARY_PROFILE: UserProfile = {
 const DEFAULT_PARTNER_PROFILE: UserProfile = {
   user_id: 'user_partner',
   email: 'manao@example.com',
-  name: 'มะนาว (Manao)',
+  name: 'มะนาว (Manow)',
   sex: 'female',
   birth_year: 2000,
   height_cm: 162,
@@ -266,7 +268,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
   {
     session_id: 'hist_manao_1',
     user_id: 'partner',
-    user_name: 'มะนาว (Manao)',
+    user_name: 'มะนาว (Manow)',
     date: '2026-09-30',
     program_name: 'Glute & Hamstring Focus (ปั้นก้นกลม & ต้นขาหลัง)',
     start_time: '17:30',
@@ -278,7 +280,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
         session_id: 'hist_manao_1',
         exercise_id: 'ex_hip_thrust',
         exercise_name: 'บาร์เบล ฮิปทรัสต์ (Barbell Hip Thrust)',
-        user_name: 'มะนาว (Manao)',
+        user_name: 'มะนาว (Manow)',
         set_no: 1,
         weight_kg: 35,
         reps: 12,
@@ -289,7 +291,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
         session_id: 'hist_manao_1',
         exercise_id: 'ex_hip_thrust',
         exercise_name: 'บาร์เบล ฮิปทรัสต์ (Barbell Hip Thrust)',
-        user_name: 'มะนาว (Manao)',
+        user_name: 'มะนาว (Manow)',
         set_no: 2,
         weight_kg: 40,
         reps: 12,
@@ -300,7 +302,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
         session_id: 'hist_manao_1',
         exercise_id: 'ex_hip_thrust',
         exercise_name: 'บาร์เบล ฮิปทรัสต์ (Barbell Hip Thrust)',
-        user_name: 'มะนาว (Manao)',
+        user_name: 'มะนาว (Manow)',
         set_no: 3,
         weight_kg: 45,
         reps: 10,
@@ -311,7 +313,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
         session_id: 'hist_manao_1',
         exercise_id: 'ex_romanian_deadlift',
         exercise_name: 'โรมาเนียน เดดลิฟต์ (Romanian Deadlift)',
-        user_name: 'มะนาว (Manao)',
+        user_name: 'มะนาว (Manow)',
         set_no: 1,
         weight_kg: 30,
         reps: 10,
@@ -322,7 +324,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
         session_id: 'hist_manao_1',
         exercise_id: 'ex_romanian_deadlift',
         exercise_name: 'โรมาเนียน เดดลิฟต์ (Romanian Deadlift)',
-        user_name: 'มะนาว (Manao)',
+        user_name: 'มะนาว (Manow)',
         set_no: 2,
         weight_kg: 35,
         reps: 10,
@@ -333,7 +335,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
         session_id: 'hist_manao_1',
         exercise_id: 'ex_bulgarian_split_squat',
         exercise_name: 'บัลแกเรียน สปลิท สควอท (Bulgarian Split Squat)',
-        user_name: 'มะนาว (Manao)',
+        user_name: 'มะนาว (Manow)',
         set_no: 1,
         weight_kg: 8,
         reps: 10,
@@ -344,7 +346,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
         session_id: 'hist_manao_1',
         exercise_id: 'ex_bulgarian_split_squat',
         exercise_name: 'บัลแกเรียน สปลิท สควอท (Bulgarian Split Squat)',
-        user_name: 'มะนาว (Manao)',
+        user_name: 'มะนาว (Manow)',
         set_no: 2,
         weight_kg: 8,
         reps: 10,
@@ -355,7 +357,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
         session_id: 'hist_manao_1',
         exercise_id: 'ex_hip_abduction',
         exercise_name: 'แมชชีน ฮิปแอบดักชัน (Hip Abduction Machine)',
-        user_name: 'มะนาว (Manao)',
+        user_name: 'มะนาว (Manow)',
         set_no: 1,
         weight_kg: 30,
         reps: 15,
@@ -366,7 +368,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
         session_id: 'hist_manao_1',
         exercise_id: 'ex_hip_abduction',
         exercise_name: 'แมชชีน ฮิปแอบดักชัน (Hip Abduction Machine)',
-        user_name: 'มะนาว (Manao)',
+        user_name: 'มะนาว (Manow)',
         set_no: 2,
         weight_kg: 35,
         reps: 15,
@@ -477,7 +479,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
   {
     session_id: 'hist_manao_2',
     user_id: 'partner',
-    user_name: 'มะนาว (Manao)',
+    user_name: 'มะนาว (Manow)',
     date: '2026-09-27',
     program_name: 'Upper Body & Core Toning (หลังกระชับ ไหล่สวย & เอวเอส)',
     start_time: '18:00',
@@ -489,7 +491,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
         session_id: 'hist_manao_2',
         exercise_id: 'ex_lat_pulldown',
         exercise_name: 'แลท พูลดาวน์ (Lat Pulldown)',
-        user_name: 'มะนาว (Manao)',
+        user_name: 'มะนาว (Manow)',
         set_no: 1,
         weight_kg: 25,
         reps: 10,
@@ -500,7 +502,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
         session_id: 'hist_manao_2',
         exercise_id: 'ex_lat_pulldown',
         exercise_name: 'แลท พูลดาวน์ (Lat Pulldown)',
-        user_name: 'มะนาว (Manao)',
+        user_name: 'มะนาว (Manow)',
         set_no: 2,
         weight_kg: 30,
         reps: 10,
@@ -511,7 +513,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
         session_id: 'hist_manao_2',
         exercise_id: 'ex_lateral_raise',
         exercise_name: 'ดัมเบลล์ แลทเทอรัล เรส (Dumbbell Lateral Raise)',
-        user_name: 'มะนาว (Manao)',
+        user_name: 'มะนาว (Manow)',
         set_no: 1,
         weight_kg: 4,
         reps: 15,
@@ -522,7 +524,7 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
         session_id: 'hist_manao_2',
         exercise_id: 'ex_lateral_raise',
         exercise_name: 'ดัมเบลล์ แลทเทอรัล เรส (Dumbbell Lateral Raise)',
-        user_name: 'มะนาว (Manao)',
+        user_name: 'มะนาว (Manow)',
         set_no: 2,
         weight_kg: 4,
         reps: 15,
@@ -614,7 +616,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return activeProfileKey === 'partner' ? DEFAULT_PARTNER_PROGRAMS : DEFAULT_PROGRAMS;
   });
 
-  // Unified Food Logs (Combined for Magnum & Manao)
+  // Unified Food Logs (Combined for Magnum & Manow)
   const [allFoodLogs, setAllFoodLogs] = useState<FoodLog[]>(() => {
     const savedUnified = localStorage.getItem('ft_food_logs_unified');
     if (savedUnified) {
@@ -626,13 +628,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const partnerLogs: FoodLog[] = partnerSaved ? JSON.parse(partnerSaved) : [];
     return [
       ...primaryLogs.map(l => ({ ...l, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' })),
-      ...partnerLogs.map(l => ({ ...l, user_id: 'partner', user_name: 'มะนาว (Manao)' }))
+      ...partnerLogs.map(l => ({ ...l, user_id: 'partner', user_name: 'มะนาว (Manow)' }))
     ];
   });
 
   const foodLogs = allFoodLogs.filter(l => (l.user_id || 'primary') === activeProfileKey);
 
-  // Unified Body Metrics (Combined for Magnum & Manao)
+  // Unified Body Metrics (Combined for Magnum & Manow)
   const [allBodyMetrics, setAllBodyMetrics] = useState<BodyMetric[]>(() => {
     const savedUnified = localStorage.getItem('ft_metrics_unified');
     if (savedUnified) {
@@ -646,18 +648,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       { date: '2026-09-29', weight_kg: 71.9, body_fat_pct: 15.9, waist_cm: 79.0, chest_cm: 102, shoulders_cm: 118, thigh_cm: 58.0, hips_cm: 94, arm_cm: 36.0, calf_cm: 37, neck_cm: 38, note: 'สัปดาห์ที่ 3 ฟิตขึ้น อก/ไหล่เริ่มขยาย เอวลดลง', user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' },
     ];
     const partnerM: BodyMetric[] = partnerSaved ? JSON.parse(partnerSaved) : [
-      { date: '2026-09-15', weight_kg: 49.5, body_fat_pct: 22.0, waist_cm: 64, chest_cm: 81.5, shoulders_cm: 94.5, thigh_cm: 51.5, hips_cm: 91.5, arm_cm: 25.2, calf_cm: 32, neck_cm: 31, note: 'เริ่มโปรแกรมกระชับก้น', user_id: 'partner', user_name: 'มะนาว (Manao)' },
-      { date: '2026-09-29', weight_kg: 49.0, body_fat_pct: 21.2, waist_cm: 62.5, chest_cm: 82, shoulders_cm: 95, thigh_cm: 51.0, hips_cm: 92.5, arm_cm: 24.8, calf_cm: 32, neck_cm: 31, note: 'เอวคอดลง ก้นเด้งขึ้นชัดเจน', user_id: 'partner', user_name: 'มะนาว (Manao)' },
+      { date: '2026-09-15', weight_kg: 49.5, body_fat_pct: 22.0, waist_cm: 64, chest_cm: 81.5, shoulders_cm: 94.5, thigh_cm: 51.5, hips_cm: 91.5, arm_cm: 25.2, calf_cm: 32, neck_cm: 31, note: 'เริ่มโปรแกรมกระชับก้น', user_id: 'partner', user_name: 'มะนาว (Manow)' },
+      { date: '2026-09-29', weight_kg: 49.0, body_fat_pct: 21.2, waist_cm: 62.5, chest_cm: 82, shoulders_cm: 95, thigh_cm: 51.0, hips_cm: 92.5, arm_cm: 24.8, calf_cm: 32, neck_cm: 31, note: 'เอวคอดลง ก้นเด้งขึ้นชัดเจน', user_id: 'partner', user_name: 'มะนาว (Manow)' },
     ];
     return [
       ...primaryM.map(m => ({ ...m, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' })),
-      ...partnerM.map(m => ({ ...m, user_id: 'partner', user_name: 'มะนาว (Manao)' }))
+      ...partnerM.map(m => ({ ...m, user_id: 'partner', user_name: 'มะนาว (Manow)' }))
     ];
   });
 
   const bodyMetrics = allBodyMetrics.filter(m => (m.user_id || 'primary') === activeProfileKey);
 
-  // Unified Workout History (Combined for Magnum & Manao)
+  // Unified Workout History (Combined for Magnum & Manow)
   const [allWorkoutHistory, setAllWorkoutHistory] = useState<WorkoutSession[]>(() => {
     const savedUnified = localStorage.getItem('ft_history_unified');
     if (savedUnified) {
@@ -673,7 +675,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (primaryH.length > 0 || partnerH.length > 0) {
       return [
         ...primaryH.map(s => ({ ...s, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' })),
-        ...partnerH.map(s => ({ ...s, user_id: 'partner', user_name: 'มะนาว (Manao)' }))
+        ...partnerH.map(s => ({ ...s, user_id: 'partner', user_name: 'มะนาว (Manow)' }))
       ];
     }
     return DEFAULT_WORKOUT_HISTORY;
@@ -1196,6 +1198,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const syncFoodDatabaseToSheets = async (foods?: PredefinedFood[]) => {
+    const items = foods || PREDEFINED_FOODS;
+    try {
+      await sheetsService.syncFoodDatabase(items);
+      return {
+        success: true,
+        message: `ซิงค์รายการอาหาร ${items.length} รายการลง Google Sheet สำเร็จแล้ว`,
+      };
+    } catch (err: any) {
+      console.warn('Sync food database error:', err);
+      return { success: false, message: err.message || 'ซิงค์ตารางอาหารไม่สำเร็จ' };
+    }
+  };
+
   const currentProfile = activeProfileKey === 'primary' ? primaryProfile : partnerProfile;
 
   return (
@@ -1245,6 +1261,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isSyncing,
         sheetsService,
         syncAllToGoogleSheets,
+        syncFoodDatabaseToSheets,
         unifiedSpreadsheetUrl,
         openUnifiedSpreadsheet,
       }}

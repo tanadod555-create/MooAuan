@@ -88,7 +88,7 @@ export const ProfileGateModal: React.FC<ProfileGateModalProps> = ({ isOpen, onCl
             </div>
           </button>
 
-          {/* มะนาว (Manao) */}
+          {/* มะนาว (Manow) */}
           <button
             onClick={() => handleSelectProfile('partner')}
             className={`group relative p-4 rounded-2xl border text-left transition-all active:scale-[0.98] ${
