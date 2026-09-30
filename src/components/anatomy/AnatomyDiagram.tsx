@@ -17,20 +17,20 @@ export const AnatomyDiagram: React.FC<AnatomyDiagramProps> = ({
   onHoverMuscle,
 }) => {
   const getFill = (key: MuscleKey) => {
-    if (selectedMuscle === key) return '#10b981'; // Emerald glow
-    if (hoveredMuscle === key) return '#38bdf8'; // Sky blue
-    return '#1e293b'; // Slate dark body
+    if (selectedMuscle === key) return '#ec4899'; // Vibrant Pink
+    if (hoveredMuscle === key) return '#fb7185'; // Soft Rose
+    return '#334155'; // Sleek dark slate body
   };
 
   const getStroke = (key: MuscleKey) => {
-    if (selectedMuscle === key) return '#34d399';
-    if (hoveredMuscle === key) return '#7dd3fc';
-    return '#334155';
+    if (selectedMuscle === key) return '#f472b6';
+    if (hoveredMuscle === key) return '#fda4af';
+    return '#475569';
   };
 
   const getFilter = (key: MuscleKey) => {
-    if (selectedMuscle === key) return 'drop-shadow(0 0 10px rgba(16, 185, 129, 0.8))';
-    if (hoveredMuscle === key) return 'drop-shadow(0 0 8px rgba(56, 189, 248, 0.7))';
+    if (selectedMuscle === key) return 'drop-shadow(0 0 10px rgba(236, 72, 153, 0.7))';
+    if (hoveredMuscle === key) return 'drop-shadow(0 0 8px rgba(251, 113, 133, 0.6))';
     return 'none';
   };
 

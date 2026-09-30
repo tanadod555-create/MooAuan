@@ -27,11 +27,27 @@ export type ExerciseCategory = 'warmup' | 'cooldown' | 'strength';
 
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
+export interface SubMuscleDetail {
+  id: string;
+  nameTh: string;
+  nameEn: string;
+  latinName: string;
+  originInsertion?: string;
+  fiberOrientation: string;
+  planeOfMotion: 'Sagittal' | 'Frontal' | 'Transverse' | 'Multi-planar';
+  primaryActions: string[];
+  biomechanicsNote: string;
+  kinesiologyCues: string[];
+  recommendedExercises: string[];
+}
+
 export interface MuscleInfo {
   key: MuscleKey;
   nameTh: string;
+  nameEn?: string;
   latinName: string;
   submuscles: string[];
+  subdivisions?: SubMuscleDetail[];
   view: 'front' | 'back' | 'both';
   description?: string;
 }
