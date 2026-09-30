@@ -146,6 +146,48 @@ const DEFAULT_PROGRAMS: Program[] = [
   }
 ];
 
+const DEFAULT_PARTNER_PROGRAMS: Program[] = [
+  {
+    program_id: 'prog_glute_ham',
+    name: 'Glute & Hamstring Focus (ปั้นก้นกลม & ต้นขาหลัง)',
+    day_of_week: 'จันทร์',
+    note: 'เน้น Hip Thrust และ RDL โฟกัสบีบก้นช้าๆ คุมเวลาพัก',
+    items: [
+      { program_id: 'prog_glute_ham', order: 1, exercise_id: 'ex_hip_thrust', target_sets: 4, target_reps: 12, target_weight_kg: 35 },
+      { program_id: 'prog_glute_ham', order: 2, exercise_id: 'ex_romanian_deadlift', target_sets: 4, target_reps: 10, target_weight_kg: 30 },
+      { program_id: 'prog_glute_ham', order: 3, exercise_id: 'ex_bulgarian_split_squat', target_sets: 3, target_reps: 10, target_weight_kg: 8 },
+      { program_id: 'prog_glute_ham', order: 4, exercise_id: 'ex_lying_leg_curl', target_sets: 3, target_reps: 12, target_weight_kg: 20 },
+      { program_id: 'prog_glute_ham', order: 5, exercise_id: 'ex_hip_abduction', target_sets: 3, target_reps: 15, target_weight_kg: 25 },
+    ]
+  },
+  {
+    program_id: 'prog_upper_tone',
+    name: 'Upper Body & Core Toning (หลังกระชับ ไหล่สวย & เอวเอส)',
+    day_of_week: 'พุธ',
+    note: 'เน้นปีกหลังและไหล่ข้าง ปรับบุคลิกภาพสง่างาม ลดไขมันหลังแขน',
+    items: [
+      { program_id: 'prog_upper_tone', order: 1, exercise_id: 'ex_lat_pulldown', target_sets: 4, target_reps: 10, target_weight_kg: 25 },
+      { program_id: 'prog_upper_tone', order: 2, exercise_id: 'ex_incline_db_press', target_sets: 3, target_reps: 10, target_weight_kg: 8 },
+      { program_id: 'prog_upper_tone', order: 3, exercise_id: 'ex_lateral_raise', target_sets: 4, target_reps: 15, target_weight_kg: 4 },
+      { program_id: 'prog_upper_tone', order: 4, exercise_id: 'ex_face_pull', target_sets: 3, target_reps: 15, target_weight_kg: 15 },
+      { program_id: 'prog_upper_tone', order: 5, exercise_id: 'ex_hanging_leg_raise', target_sets: 3, target_reps: 12, target_weight_kg: 0 },
+    ]
+  },
+  {
+    program_id: 'prog_glute_pump',
+    name: 'Glute Pump & Quad Shape (ก้นเด้ง & ขาเพรียวกระชับ)',
+    day_of_week: 'ศุกร์',
+    note: 'เน้นซูโม่สควอท ขาใน และเคเบิลคิกแบ็กเน้นก้นบน',
+    items: [
+      { program_id: 'prog_glute_pump', order: 1, exercise_id: 'ex_db_sumo_squat', target_sets: 4, target_reps: 12, target_weight_kg: 16 },
+      { program_id: 'prog_glute_pump', order: 2, exercise_id: 'ex_leg_press', target_sets: 3, target_reps: 12, target_weight_kg: 50 },
+      { program_id: 'prog_glute_pump', order: 3, exercise_id: 'ex_cable_kickback', target_sets: 3, target_reps: 15, target_weight_kg: 10 },
+      { program_id: 'prog_glute_pump', order: 4, exercise_id: 'ex_romanian_deadlift', target_sets: 3, target_reps: 12, target_weight_kg: 25 },
+      { program_id: 'prog_glute_pump', order: 5, exercise_id: 'ex_hip_abduction', target_sets: 3, target_reps: 20, target_weight_kg: 20 },
+    ]
+  }
+];
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -209,7 +251,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Programs
   const [programs, setPrograms] = useState<Program[]>(() => {
     const saved = localStorage.getItem(`ft_programs_${activeProfileKey}`);
-    return saved ? JSON.parse(saved) : DEFAULT_PROGRAMS;
+    if (saved) return JSON.parse(saved);
+    return activeProfileKey === 'partner' ? DEFAULT_PARTNER_PROGRAMS : DEFAULT_PROGRAMS;
   });
 
   // Food Logs (keyed per active profile)
@@ -266,6 +309,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const savedActive = localStorage.getItem(`ft_active_workout_${activeProfileKey}`);
     setActiveWorkout(savedActive ? JSON.parse(savedActive) : null);
+
+    const savedPrograms = localStorage.getItem(`ft_programs_${activeProfileKey}`);
+    if (savedPrograms) {
+      setPrograms(JSON.parse(savedPrograms));
+    } else {
+      setPrograms(activeProfileKey === 'partner' ? DEFAULT_PARTNER_PROGRAMS : DEFAULT_PROGRAMS);
+    }
   }, [activeProfileKey]);
 
   useEffect(() => {
