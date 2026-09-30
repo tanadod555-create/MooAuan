@@ -27,6 +27,7 @@ interface AppContextType {
   activeProfileKey: 'primary' | 'partner';
   setActiveProfileKey: (key: 'primary' | 'partner') => void;
   currentProfile: UserProfile;
+  primaryProfile: UserProfile;
   partnerProfile: UserProfile;
   updateProfile: (profile: Partial<UserProfile>, isPartner?: boolean) => void;
   
@@ -65,12 +66,12 @@ interface AppContextType {
 
 const DEFAULT_PRIMARY_PROFILE: UserProfile = {
   user_id: 'user_primary',
-  email: 'owner@example.com',
-  name: 'Me (Trainer)',
+  email: 'magnum@example.com',
+  name: 'แม็กนั่ม (Magnum)',
   sex: 'male',
   birth_year: 1998,
   height_cm: 175,
-  goal: 'Hypertrophy & Strength',
+  goal: 'Hypertrophy & Strength (สร้างกล้ามเนื้อ)',
   kcal_target: 2400,
   protein_target_g: 150,
   carb_target_g: 270,
@@ -80,12 +81,12 @@ const DEFAULT_PRIMARY_PROFILE: UserProfile = {
 
 const DEFAULT_PARTNER_PROFILE: UserProfile = {
   user_id: 'user_partner',
-  email: 'partner@example.com',
-  name: 'แฟน (Babe)',
+  email: 'manao@example.com',
+  name: 'มะนาว (Manao)',
   sex: 'female',
   birth_year: 2000,
   height_cm: 162,
-  goal: 'Toning & Healthy Lifestyle',
+  goal: 'Toning & Healthy (หุ่นกระชับ & สุขภาพ)',
   kcal_target: 1750,
   protein_target_g: 110,
   carb_target_g: 190,
@@ -155,12 +156,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [primaryProfile, setPrimaryProfile] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('ft_profile_primary');
-    return saved ? JSON.parse(saved) : DEFAULT_PRIMARY_PROFILE;
+    if (!saved) return DEFAULT_PRIMARY_PROFILE;
+    try {
+      const p = JSON.parse(saved);
+      if (p.name === 'Me (Trainer)' || !p.name) p.name = DEFAULT_PRIMARY_PROFILE.name;
+      return p;
+    } catch {
+      return DEFAULT_PRIMARY_PROFILE;
+    }
   });
 
   const [partnerProfile, setPartnerProfile] = useState<UserProfile>(() => {
     const saved = localStorage.getItem('ft_profile_partner');
-    return saved ? JSON.parse(saved) : DEFAULT_PARTNER_PROFILE;
+    if (!saved) return DEFAULT_PARTNER_PROFILE;
+    try {
+      const p = JSON.parse(saved);
+      if (p.name === 'แฟน (Babe)' || !p.name) p.name = DEFAULT_PARTNER_PROFILE.name;
+      return p;
+    } catch {
+      return DEFAULT_PARTNER_PROFILE;
+    }
   });
 
   // Settings
@@ -564,6 +579,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeProfileKey,
         setActiveProfileKey,
         currentProfile,
+        primaryProfile,
         partnerProfile,
         updateProfile,
         exercises,

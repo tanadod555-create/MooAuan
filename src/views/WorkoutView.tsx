@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   ListPlus,
   X,
+  Search,
 } from 'lucide-react';
 import { BorderBeam } from '../components/ui/BorderBeam';
 import { ShimmerButton } from '../components/ui/ShimmerButton';
@@ -43,6 +44,8 @@ export const WorkoutView: React.FC = () => {
 
   const [activeExerciseModal, setActiveExerciseModal] = useState<Exercise | null>(null);
   const [showAddExerciseDrawer, setShowAddExerciseDrawer] = useState(false);
+  const [drawerSearch, setDrawerSearch] = useState('');
+  const [drawerMuscle, setDrawerMuscle] = useState<string>('all');
   const [restTimerSeconds, setRestTimerSeconds] = useState<number | null>(null);
   const [restTimerInitial, setRestTimerInitial] = useState(90);
   const [restTimerPaused, setRestTimerPaused] = useState(false);
@@ -101,6 +104,40 @@ export const WorkoutView: React.FC = () => {
 
     startWorkout(prog.name, matchedExercises);
   };
+
+  const MUSCLE_FILTER_CHIPS = [
+    { key: 'all', label: 'ทั้งหมด' },
+    { key: 'chest', label: 'อก' },
+    { key: 'back', label: 'หลัง' },
+    { key: 'shoulders', label: 'ไหล่' },
+    { key: 'legs', label: 'ขา / ก้น' },
+    { key: 'biceps', label: 'หน้าแขน' },
+    { key: 'triceps', label: 'หลังแขน' },
+    { key: 'core', label: 'หน้าท้อง' },
+  ];
+
+  const drawerFilteredExercises = exercises.filter((ex) => {
+    const q = drawerSearch.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      ex.name_en.toLowerCase().includes(q) ||
+      ex.name_th.toLowerCase().includes(q) ||
+      ex.muscle_primary.toLowerCase().includes(q) ||
+      ex.equipment.toLowerCase().includes(q);
+
+    let matchesMuscle = true;
+    if (drawerMuscle === 'legs') {
+      matchesMuscle = ['quads', 'hamstrings', 'glutes', 'calves', 'legs'].includes(ex.muscle_primary);
+    } else if (drawerMuscle === 'core') {
+      matchesMuscle = ['abs', 'core', 'obliques'].includes(ex.muscle_primary);
+    } else if (drawerMuscle !== 'all') {
+      matchesMuscle =
+        ex.muscle_primary.toLowerCase() === drawerMuscle ||
+        Boolean(ex.muscle_secondary?.some((m) => m.toLowerCase().includes(drawerMuscle)));
+    }
+
+    return matchesSearch && matchesMuscle;
+  });
 
   return (
     <div className="space-y-6 pb-24">
@@ -550,42 +587,144 @@ export const WorkoutView: React.FC = () => {
 
       {/* Add Exercise Modal / Drawer */}
       {showAddExerciseDrawer && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
           <div className="absolute inset-0" onClick={() => setShowAddExerciseDrawer(false)} />
-          <div className="relative w-full max-w-lg max-h-[85vh] bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-2xl overflow-hidden flex flex-col z-10">
-            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/60">
-              <h3 className="font-bold text-white text-base">เลือกท่าออกกำลังกาย</h3>
+          <div className="relative w-full max-w-lg max-h-[88vh] bg-slate-900 border border-slate-800 rounded-t-3xl sm:rounded-2xl overflow-hidden flex flex-col z-10 shadow-2xl">
+            {/* Header */}
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/80">
+              <div>
+                <h3 className="font-bold text-white text-base">ค้นหา & เลือกท่าออกกำลังกาย</h3>
+                <p className="text-xs text-slate-400">เลือกท่าเพื่อเพิ่มลงในเซสชันการฝึกของคุณ</p>
+              </div>
               <button
                 onClick={() => setShowAddExerciseDrawer(false)}
-                className="text-xs text-slate-400 hover:text-white"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
               >
-                ปิด
+                <X size={18} />
               </button>
             </div>
-            <div className="overflow-y-auto p-4 space-y-2">
-              {exercises.map((ex) => (
-                <div
-                  key={ex.exercise_id}
-                  className="flex items-center justify-between p-3 rounded-xl bg-slate-950/60 hover:bg-slate-800/80 border border-slate-800/80 transition"
-                >
-                  <div>
-                    <h4 className="text-sm font-bold text-white">{ex.name_en}</h4>
-                    <p className="text-xs text-slate-400">
-                      {ex.name_th} · <span className="capitalize">{ex.muscle_primary}</span>
-                    </p>
-                  </div>
+
+            {/* Search Input Bar */}
+            <div className="p-3 bg-slate-950/50 border-b border-slate-800/80 space-y-2.5">
+              <div className="relative">
+                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={drawerSearch}
+                  onChange={(e) => setDrawerSearch(e.target.value)}
+                  placeholder="ค้นหาชื่อท่า (Bench Press, อก, ดัมเบล)..."
+                  className="w-full bg-slate-900 border border-slate-700/80 rounded-xl pl-9 pr-9 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+                  autoFocus
+                />
+                {drawerSearch && (
+                  <button
+                    onClick={() => setDrawerSearch('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Muscle Filter Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                {MUSCLE_FILTER_CHIPS.map((chip) => {
+                  const isSelected = drawerMuscle === chip.key;
+                  return (
+                    <button
+                      key={chip.key}
+                      onClick={() => setDrawerMuscle(chip.key)}
+                      className={`whitespace-nowrap px-2.5 py-1 rounded-lg text-xs font-semibold transition active:scale-95 ${
+                        isSelected
+                          ? 'bg-emerald-500 text-slate-950 shadow-sm shadow-emerald-500/30'
+                          : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700 border border-slate-700/50'
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Exercises List */}
+            <div className="overflow-y-auto p-3 space-y-2 flex-1 max-h-[50vh]">
+              <div className="text-[11px] font-semibold text-slate-400 px-1 flex items-center justify-between">
+                <span>ผลลัพธ์ ({drawerFilteredExercises.length} ท่า)</span>
+                {drawerSearch && (
+                  <span className="text-emerald-400 truncate max-w-[180px]">คำค้น: "{drawerSearch}"</span>
+                )}
+              </div>
+
+              {drawerFilteredExercises.length === 0 ? (
+                <div className="p-8 text-center space-y-2 bg-slate-950/40 rounded-xl border border-slate-800">
+                  <p className="text-sm text-slate-300 font-bold">ไม่พบท่าออกกำลังกายที่ตรงกับการค้นหา</p>
+                  <p className="text-xs text-slate-500">ลองเปลี่ยนคำค้นหา หรือเลือกหมวดกล้ามเนื้ออื่น</p>
                   <button
                     onClick={() => {
-                      addExerciseToWorkout(ex);
-                      setShowAddExerciseDrawer(false);
+                      setDrawerSearch('');
+                      setDrawerMuscle('all');
                     }}
-                    className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-1"
+                    className="mt-2 px-3 py-1 bg-slate-800 text-xs text-emerald-400 rounded-lg hover:bg-slate-700"
                   >
-                    <Plus size={14} />
-                    เพิ่ม
+                    ล้างการค้นหา
                   </button>
                 </div>
-              ))}
+              ) : (
+                drawerFilteredExercises.map((ex) => {
+                  const isInSession = activeWorkout?.exercises.some(
+                    (e) => e.exercise_id === ex.exercise_id
+                  );
+                  return (
+                    <div
+                      key={ex.exercise_id}
+                      className={`flex items-center justify-between p-3 rounded-xl border transition ${
+                        isInSession
+                          ? 'bg-emerald-950/20 border-emerald-500/30'
+                          : 'bg-slate-950/60 hover:bg-slate-800/70 border-slate-800/80'
+                      }`}
+                    >
+                      <button
+                        onClick={() => setActiveExerciseModal(ex)}
+                        className="text-left flex-1 pr-2 group"
+                      >
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-bold text-white group-hover:text-emerald-400 transition">
+                            {ex.name_en}
+                          </h4>
+                          {isInSession && (
+                            <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.2 rounded border border-emerald-500/30">
+                              อยู่ในเซสชันแล้ว
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          {ex.name_th} · <span className="capitalize">{ex.muscle_primary}</span> ·{' '}
+                          <span className="text-slate-500 capitalize">{ex.equipment}</span>
+                        </p>
+                      </button>
+
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => {
+                            addExerciseToWorkout(ex);
+                            setShowAddExerciseDrawer(false);
+                            setDrawerSearch('');
+                          }}
+                          className={`px-3 py-1.5 rounded-lg font-bold text-xs flex items-center gap-1 active:scale-95 transition ${
+                            isInSession
+                              ? 'bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20'
+                          }`}
+                        >
+                          <Plus size={14} />
+                          {isInSession ? 'เพิ่มอีก' : 'เพิ่ม'}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
         </div>

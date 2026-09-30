@@ -4,20 +4,22 @@ import { Users, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface HeaderProps {
   onOpenSettings: () => void;
+  onOpenProfileModal?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenProfileModal }) => {
   const {
     activeProfileKey,
     setActiveProfileKey,
     currentProfile,
     partnerProfile,
+    primaryProfile,
     isSyncing,
     syncAllToGoogleSheets,
     settings,
   } = useApp();
 
-  const otherProfileName = activeProfileKey === 'primary' ? partnerProfile.name : 'เจ้าของ (Me)';
+  const otherProfileName = activeProfileKey === 'primary' ? 'มะนาว (แฟน)' : 'แม็กนั่ม';
 
   const handleQuickSync = async () => {
     const res = await syncAllToGoogleSheets();
@@ -31,11 +33,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
       <div className="max-w-4xl mx-auto flex items-center justify-between">
         {/* App Title & Active Profile Switcher */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-[1.5px] flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <button
+            onClick={onOpenProfileModal}
+            className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 p-[1.5px] flex items-center justify-center shadow-lg shadow-emerald-500/20 active:scale-95 transition"
+            title="กดเพื่อเลือกโปรไฟล์"
+          >
             <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
-              <span className="text-emerald-400 font-black text-sm tracking-tighter">FT</span>
+              <span className="text-emerald-400 font-black text-sm tracking-tighter">
+                {activeProfileKey === 'primary' ? '🏋️‍♂️' : '🌸'}
+              </span>
             </div>
-          </div>
+          </button>
           <div>
             <div className="flex items-center gap-1.5">
               <h1 className="font-extrabold text-sm sm:text-base text-white tracking-tight">FitTrack</h1>
@@ -44,7 +52,9 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
               </span>
             </div>
             <p className="text-xs text-slate-400 flex items-center gap-1">
-              โปรไฟล์: <strong className="text-slate-200">{currentProfile.name}</strong>
+              โปรไฟล์: <strong className={activeProfileKey === 'primary' ? 'text-emerald-400' : 'text-pink-400'}>
+                {activeProfileKey === 'primary' ? 'แม็กนั่ม (Magnum)' : 'มะนาว (Manao)'}
+              </strong>
             </p>
           </div>
         </div>
@@ -54,12 +64,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings }) => {
           {/* Quick Partner Switch Pill */}
           <button
             onClick={() => setActiveProfileKey(activeProfileKey === 'primary' ? 'partner' : 'primary')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-xs font-medium text-slate-200 transition active:scale-95 shadow-sm"
-            title={`สลับไปที่โปรไฟล์ ${otherProfileName}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition active:scale-95 shadow-sm ${
+              activeProfileKey === 'primary'
+                ? 'bg-slate-900 hover:bg-slate-800 border-slate-700/80 text-slate-200'
+                : 'bg-pink-950/30 hover:bg-pink-900/40 border-pink-500/30 text-pink-200'
+            }`}
+            title={`คลิกเพื่อสลับเป็น ${otherProfileName}`}
           >
-            <Users size={14} className={activeProfileKey === 'primary' ? 'text-blue-400' : 'text-pink-400'} />
+            <Users size={14} className={activeProfileKey === 'primary' ? 'text-pink-400' : 'text-emerald-400'} />
             <span className="hidden xs:inline">สลับเป็น:</span>
-            <span className="text-emerald-400 font-bold">{otherProfileName}</span>
+            <span className={activeProfileKey === 'primary' ? 'text-pink-400 font-bold' : 'text-emerald-400 font-bold'}>
+              {otherProfileName}
+            </span>
           </button>
 
           {/* Sync Button */}
