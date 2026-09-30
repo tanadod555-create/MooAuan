@@ -28,7 +28,7 @@ import { NumberTicker } from '../components/ui/NumberTicker';
 import { ShimmerButton } from '../components/ui/ShimmerButton';
 
 export const FoodView: React.FC = () => {
-  const { currentProfile, foodLogs, addFoodLog, deleteFoodLog, settings } = useApp();
+  const { currentProfile, foodLogs, addFoodLog, deleteFoodLog, settings, updateSettings } = useApp();
 
   // Filter food logs for today
   const today = new Date().toISOString().split('T')[0];
@@ -47,7 +47,12 @@ export const FoodView: React.FC = () => {
   const targetFat = currentProfile.fat_target_g || 60;
 
   // Image Upload & AI Analysis State
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState(
+    settings.geminiApiKey || localStorage.getItem('fittrack_gemini_key') || ''
+  );
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -102,7 +107,8 @@ export const FoodView: React.FC = () => {
       );
     } finally {
       setAnalyzing(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
     }
   };
 
@@ -262,46 +268,110 @@ export const FoodView: React.FC = () => {
         </div>
       </MagicCard>
 
-      {/* Action Buttons: AI Photo Scan with 21st.dev ShimmerButton & Manual Add */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Hidden File Input */}
+      {/* Gemini AI API Connection Status Banner */}
+      <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs">
+        <div className="flex items-center gap-2">
+          <span
+            className={`w-2.5 h-2.5 rounded-full ${
+              settings.geminiApiKey ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'
+            }`}
+          />
+          <span className={settings.geminiApiKey ? 'text-emerald-400 font-bold' : 'text-amber-400 font-medium'}>
+            {settings.geminiApiKey
+              ? 'Gemini Multimodal AI: พร้อมใช้งาน (เชื่อมต่อ API สำเร็จ)'
+              : 'ยังไม่ได้ระบุ Gemini API Key (จำเป็นสำหรับการสแกนรูป)'}
+          </span>
+        </div>
+        <button
+          onClick={() => {
+            setApiKeyInput(settings.geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY || '');
+            setShowApiKeyModal(true);
+          }}
+          className="text-xs text-sky-400 hover:text-sky-300 font-semibold underline"
+        >
+          {settings.geminiApiKey ? 'ตั้งค่า Key' : 'เชื่อมต่อ Key ด่วน'}
+        </button>
+      </div>
+
+      {/* Action Buttons: Camera / Gallery / Manual Add */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* Camera Hidden Input */}
         <input
           type="file"
           accept="image/*"
           capture="environment"
-          ref={fileInputRef}
+          ref={cameraInputRef}
           onChange={handlePhotoSelect}
           className="hidden"
         />
 
-        {/* 21st.dev Shimmer Button */}
-        <ShimmerButton
-          onClick={() => fileInputRef.current?.click()}
+        {/* Gallery Hidden Input */}
+        <input
+          type="file"
+          accept="image/*"
+          ref={galleryInputRef}
+          onChange={handlePhotoSelect}
+          className="hidden"
+        />
+
+        {/* Take Photo Button */}
+        <button
+          onClick={() => {
+            if (!settings.geminiApiKey && !import.meta.env.VITE_GEMINI_API_KEY) {
+              setApiKeyInput(import.meta.env.VITE_GEMINI_API_KEY || '');
+              setShowApiKeyModal(true);
+              return;
+            }
+            cameraInputRef.current?.click();
+          }}
           disabled={analyzing}
-          shimmerColor="#34d399"
-          className="w-full py-1"
+          className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-black flex items-center justify-center gap-3 shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition group"
         >
-          <Sparkles size={18} className="text-amber-300" />
-          <div className="text-left py-1">
-            <span className="text-sm font-bold block">สแกนอาหารด้วย Gemini AI</span>
-            <span className="text-[10px] text-emerald-200 font-normal block">
-              ถ่ายรูปหรืออัปโหลด → วิเคราะห์ Kcal & สารอาหารทันที
+          <Camera size={22} className="stroke-[2.5]" />
+          <div className="text-left">
+            <span className="text-sm block">ถ่ายรูปอาหาร</span>
+            <span className="text-[10px] text-slate-950/80 font-semibold block">
+              เปิดกล้องถ่ายสด → AI วิเคราะห์ทันที
             </span>
           </div>
-        </ShimmerButton>
+        </button>
+
+        {/* Choose from Gallery / Files */}
+        <button
+          onClick={() => {
+            if (!settings.geminiApiKey && !import.meta.env.VITE_GEMINI_API_KEY) {
+              setApiKeyInput(import.meta.env.VITE_GEMINI_API_KEY || '');
+              setShowApiKeyModal(true);
+              return;
+            }
+            galleryInputRef.current?.click();
+          }}
+          disabled={analyzing}
+          className="p-4 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold flex items-center justify-center gap-3 shadow-sm active:scale-[0.98] transition group"
+        >
+          <div className="w-9 h-9 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center group-hover:scale-110 transition">
+            <Upload size={18} />
+          </div>
+          <div className="text-left">
+            <span className="text-sm block">อัปโหลดจากอัลบั้ม</span>
+            <span className="text-[10px] text-slate-400 font-normal block">
+              เลือกรูปจากคลังภาพ / ไฟล์
+            </span>
+          </div>
+        </button>
 
         {/* Manual Add Button */}
         <button
           onClick={() => setShowManualModal(true)}
-          className="p-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold flex items-center justify-center gap-3 shadow-sm active:scale-[0.98] transition group"
+          className="p-4 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-200 font-bold flex items-center justify-center gap-3 shadow-sm active:scale-[0.98] transition group"
         >
           <div className="w-9 h-9 rounded-xl bg-slate-800 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition">
             <Plus size={18} />
           </div>
           <div className="text-left">
-            <span className="text-sm block">กรอกรายการอาหารเอง</span>
+            <span className="text-sm block">กรอกรายการเอง</span>
             <span className="text-[10px] text-slate-400 font-normal block">
-              ระบุแคลอรี่และสารอาหารด้วยตนเอง
+              พิมพ์แคลอรี่และสารอาหารด้วยตนเอง
             </span>
           </div>
         </button>
@@ -669,6 +739,86 @@ export const FoodView: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Gemini API Key Config Modal */}
+      {showApiKeyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                  <Sparkles size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">ตั้งค่า Gemini API Key</h3>
+                  <p className="text-xs text-slate-400">สำหรับวิเคราะห์อาหารจากภาพ</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowApiKeyModal(false)}
+                className="text-slate-400 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="py-4 space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Gemini API Key ของคุณ:
+                </label>
+                <input
+                  type="text"
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  placeholder="วาง API Key ที่นี่..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400 space-y-1">
+                <p className="text-slate-300 font-semibold">💡 วิธีการเชื่อมต่อ:</p>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  นำ Gemini API Key จาก Google AI Studio มาวางในช่องด้านบน แล้วกด "บันทึกและเชื่อมต่อ" กุญแจจะถูกบันทึกในอุปกรณ์ของคุณอย่างปลอดภัย
+                </p>
+                {import.meta.env.VITE_GEMINI_API_KEY && (
+                  <button
+                    type="button"
+                    onClick={() => setApiKeyInput(import.meta.env.VITE_GEMINI_API_KEY || '')}
+                    className="text-emerald-400 hover:underline text-left font-mono block mt-1"
+                  >
+                    คลิกเพื่อนำเข้าคีย์จากไฟล์ระบบ (.env)
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowApiKeyModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-xs font-semibold text-slate-300 hover:text-white"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const cleaned = apiKeyInput.trim();
+                  updateSettings({ geminiApiKey: cleaned });
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('fittrack_gemini_key', cleaned);
+                  }
+                  setShowApiKeyModal(false);
+                }}
+                className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-lg shadow-emerald-500/20 active:scale-95 transition"
+              >
+                บันทึกและเชื่อมต่อ
+              </button>
+            </div>
           </div>
         </div>
       )}

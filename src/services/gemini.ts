@@ -142,7 +142,13 @@ export async function analyzeFoodImage({
     throw new Error('กรุณาระบุ Gemini API Key ในหน้าการตั้งค่า หรือเชื่อมต่อผ่าน Proxy');
   }
 
-  let endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${activeKey}`;
+  const candidateModels = [
+    'gemini-3.8-flash',
+    'gemini-3.5-flash',
+    'gemini-flash-latest',
+    'gemini-2.5-flash',
+    'gemini-3.5-flash-lite',
+  ];
 
   const requestBody = {
     contents: [
@@ -164,25 +170,32 @@ export async function analyzeFoodImage({
     },
   };
 
-  let response = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(requestBody),
-  });
+  let response: Response | null = null;
+  let lastErrorText = '';
 
-  // If 503 (high demand) or 404, fallback to gemini-3.5-flash-lite
-  if (!response.ok && (response.status === 503 || response.status === 404)) {
-    endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${activeKey}`;
-    response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(requestBody),
-    });
+  for (const model of candidateModels) {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (res.ok) {
+        response = res;
+        break;
+      } else {
+        lastErrorText = await res.text();
+        console.warn(`Model ${model} returned ${res.status}`);
+      }
+    } catch (err: any) {
+      lastErrorText = err.message;
+    }
   }
 
-  if (!response.ok) {
-    const errorDetails = await response.text();
-    throw new Error(`Gemini API error (${response.status}): ${errorDetails}`);
+  if (!response || !response.ok) {
+    throw new Error(`Gemini API error: ${lastErrorText || 'ไม่สามารถเชื่อมต่อ Gemini API ได้ กรุณาตรวจสอบ API Key'}`);
   }
 
   const json = await response.json();
