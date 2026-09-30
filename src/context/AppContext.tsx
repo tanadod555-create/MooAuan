@@ -47,6 +47,7 @@ interface AppContextType {
 
   workoutHistory: WorkoutSession[];
   allWorkoutHistory: WorkoutSession[];
+  deleteWorkoutSession: (sessionId: string) => void;
   
   foodLogs: FoodLog[];
   allFoodLogs: FoodLog[];
@@ -212,6 +213,276 @@ const DEFAULT_PARTNER_PROGRAMS: Program[] = [
   }
 ];
 
+const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
+  {
+    session_id: 'hist_manao_1',
+    user_id: 'partner',
+    user_name: 'มะนาว (Manao)',
+    date: '2026-09-30',
+    program_name: 'Glute & Hamstring Focus (ปั้นก้นกลม & ต้นขาหลัง)',
+    start_time: '17:30',
+    end_time: '18:45',
+    note: 'เน้นโฟกัสบีบก้นช้าๆ คุมเวลาพัก 90 วินาที ฟีลก้นดีมาก',
+    sets: [
+      {
+        set_id: 's_m1',
+        session_id: 'hist_manao_1',
+        exercise_id: 'ex_hip_thrust',
+        exercise_name: 'บาร์เบล ฮิปทรัสต์ (Barbell Hip Thrust)',
+        user_name: 'มะนาว (Manao)',
+        set_no: 1,
+        weight_kg: 35,
+        reps: 12,
+        done: true,
+      },
+      {
+        set_id: 's_m2',
+        session_id: 'hist_manao_1',
+        exercise_id: 'ex_hip_thrust',
+        exercise_name: 'บาร์เบล ฮิปทรัสต์ (Barbell Hip Thrust)',
+        user_name: 'มะนาว (Manao)',
+        set_no: 2,
+        weight_kg: 40,
+        reps: 12,
+        done: true,
+      },
+      {
+        set_id: 's_m3',
+        session_id: 'hist_manao_1',
+        exercise_id: 'ex_hip_thrust',
+        exercise_name: 'บาร์เบล ฮิปทรัสต์ (Barbell Hip Thrust)',
+        user_name: 'มะนาว (Manao)',
+        set_no: 3,
+        weight_kg: 45,
+        reps: 10,
+        done: true,
+      },
+      {
+        set_id: 's_m4',
+        session_id: 'hist_manao_1',
+        exercise_id: 'ex_romanian_deadlift',
+        exercise_name: 'โรมาเนียน เดดลิฟต์ (Romanian Deadlift)',
+        user_name: 'มะนาว (Manao)',
+        set_no: 1,
+        weight_kg: 30,
+        reps: 10,
+        done: true,
+      },
+      {
+        set_id: 's_m5',
+        session_id: 'hist_manao_1',
+        exercise_id: 'ex_romanian_deadlift',
+        exercise_name: 'โรมาเนียน เดดลิฟต์ (Romanian Deadlift)',
+        user_name: 'มะนาว (Manao)',
+        set_no: 2,
+        weight_kg: 35,
+        reps: 10,
+        done: true,
+      },
+      {
+        set_id: 's_m6',
+        session_id: 'hist_manao_1',
+        exercise_id: 'ex_bulgarian_split_squat',
+        exercise_name: 'บัลแกเรียน สปลิท สควอท (Bulgarian Split Squat)',
+        user_name: 'มะนาว (Manao)',
+        set_no: 1,
+        weight_kg: 8,
+        reps: 10,
+        done: true,
+      },
+      {
+        set_id: 's_m7',
+        session_id: 'hist_manao_1',
+        exercise_id: 'ex_bulgarian_split_squat',
+        exercise_name: 'บัลแกเรียน สปลิท สควอท (Bulgarian Split Squat)',
+        user_name: 'มะนาว (Manao)',
+        set_no: 2,
+        weight_kg: 8,
+        reps: 10,
+        done: true,
+      },
+      {
+        set_id: 's_m8',
+        session_id: 'hist_manao_1',
+        exercise_id: 'ex_hip_abduction',
+        exercise_name: 'แมชชีน ฮิปแอบดักชัน (Hip Abduction Machine)',
+        user_name: 'มะนาว (Manao)',
+        set_no: 1,
+        weight_kg: 30,
+        reps: 15,
+        done: true,
+      },
+      {
+        set_id: 's_m9',
+        session_id: 'hist_manao_1',
+        exercise_id: 'ex_hip_abduction',
+        exercise_name: 'แมชชีน ฮิปแอบดักชัน (Hip Abduction Machine)',
+        user_name: 'มะนาว (Manao)',
+        set_no: 2,
+        weight_kg: 35,
+        reps: 15,
+        done: true,
+      }
+    ]
+  },
+  {
+    session_id: 'hist_magnum_1',
+    user_id: 'primary',
+    user_name: 'แม็กนั่ม (Magnum)',
+    date: '2026-09-29',
+    program_name: 'Push Day (อก ไหล่ หลังแขน)',
+    start_time: '18:15',
+    end_time: '19:35',
+    note: 'บาร์เบลเบนช์เพรสดันได้ดี ฟอร์มกระชับ อกบนตึงเปรี๊ยะ',
+    sets: [
+      {
+        set_id: 's_p1',
+        session_id: 'hist_magnum_1',
+        exercise_id: 'ex_bench_press',
+        exercise_name: 'บาร์เบล เบนช์เพรส (Barbell Bench Press)',
+        user_name: 'แม็กนั่ม (Magnum)',
+        set_no: 1,
+        weight_kg: 60,
+        reps: 8,
+        done: true,
+      },
+      {
+        set_id: 's_p2',
+        session_id: 'hist_magnum_1',
+        exercise_id: 'ex_bench_press',
+        exercise_name: 'บาร์เบล เบนช์เพรส (Barbell Bench Press)',
+        user_name: 'แม็กนั่ม (Magnum)',
+        set_no: 2,
+        weight_kg: 70,
+        reps: 8,
+        done: true,
+      },
+      {
+        set_id: 's_p3',
+        session_id: 'hist_magnum_1',
+        exercise_id: 'ex_bench_press',
+        exercise_name: 'บาร์เบล เบนช์เพรส (Barbell Bench Press)',
+        user_name: 'แม็กนั่ม (Magnum)',
+        set_no: 3,
+        weight_kg: 75,
+        reps: 6,
+        done: true,
+      },
+      {
+        set_id: 's_p4',
+        session_id: 'hist_magnum_1',
+        exercise_id: 'ex_incline_db_press',
+        exercise_name: 'อินไคลน์ ดัมเบลล์ เพรส (Incline Dumbbell Press)',
+        user_name: 'แม็กนั่ม (Magnum)',
+        set_no: 1,
+        weight_kg: 22,
+        reps: 10,
+        done: true,
+      },
+      {
+        set_id: 's_p5',
+        session_id: 'hist_magnum_1',
+        exercise_id: 'ex_incline_db_press',
+        exercise_name: 'อินไคลน์ ดัมเบลล์ เพรส (Incline Dumbbell Press)',
+        user_name: 'แม็กนั่ม (Magnum)',
+        set_no: 2,
+        weight_kg: 24,
+        reps: 8,
+        done: true,
+      },
+      {
+        set_id: 's_p6',
+        session_id: 'hist_magnum_1',
+        exercise_id: 'ex_lateral_raise',
+        exercise_name: 'ดัมเบลล์ แลทเทอรัล เรส (Dumbbell Lateral Raise)',
+        user_name: 'แม็กนั่ม (Magnum)',
+        set_no: 1,
+        weight_kg: 10,
+        reps: 12,
+        done: true,
+      },
+      {
+        set_id: 's_p7',
+        session_id: 'hist_magnum_1',
+        exercise_id: 'ex_lateral_raise',
+        exercise_name: 'ดัมเบลล์ แลทเทอรัล เรส (Dumbbell Lateral Raise)',
+        user_name: 'แม็กนั่ม (Magnum)',
+        set_no: 2,
+        weight_kg: 12,
+        reps: 10,
+        done: true,
+      },
+      {
+        set_id: 's_p8',
+        session_id: 'hist_magnum_1',
+        exercise_id: 'ex_tricep_rope_pushdown',
+        exercise_name: 'ไตรเซป โรป พุชดาวน์ (Tricep Rope Pushdown)',
+        user_name: 'แม็กนั่ม (Magnum)',
+        set_no: 1,
+        weight_kg: 25,
+        reps: 12,
+        done: true,
+      }
+    ]
+  },
+  {
+    session_id: 'hist_manao_2',
+    user_id: 'partner',
+    user_name: 'มะนาว (Manao)',
+    date: '2026-09-27',
+    program_name: 'Upper Body & Core Toning (หลังกระชับ ไหล่สวย & เอวเอส)',
+    start_time: '18:00',
+    end_time: '19:05',
+    note: 'ดึงหลังโฟกัสบีบปีก ไหล่กลมสวย กระชับแขน',
+    sets: [
+      {
+        set_id: 's_u1',
+        session_id: 'hist_manao_2',
+        exercise_id: 'ex_lat_pulldown',
+        exercise_name: 'แลท พูลดาวน์ (Lat Pulldown)',
+        user_name: 'มะนาว (Manao)',
+        set_no: 1,
+        weight_kg: 25,
+        reps: 10,
+        done: true,
+      },
+      {
+        set_id: 's_u2',
+        session_id: 'hist_manao_2',
+        exercise_id: 'ex_lat_pulldown',
+        exercise_name: 'แลท พูลดาวน์ (Lat Pulldown)',
+        user_name: 'มะนาว (Manao)',
+        set_no: 2,
+        weight_kg: 30,
+        reps: 10,
+        done: true,
+      },
+      {
+        set_id: 's_u3',
+        session_id: 'hist_manao_2',
+        exercise_id: 'ex_lateral_raise',
+        exercise_name: 'ดัมเบลล์ แลทเทอรัล เรส (Dumbbell Lateral Raise)',
+        user_name: 'มะนาว (Manao)',
+        set_no: 1,
+        weight_kg: 4,
+        reps: 15,
+        done: true,
+      },
+      {
+        set_id: 's_u4',
+        session_id: 'hist_manao_2',
+        exercise_id: 'ex_lateral_raise',
+        exercise_name: 'ดัมเบลล์ แลทเทอรัล เรส (Dumbbell Lateral Raise)',
+        user_name: 'มะนาว (Manao)',
+        set_no: 2,
+        weight_kg: 4,
+        reps: 15,
+        done: true,
+      }
+    ]
+  }
+];
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -335,16 +606,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [allWorkoutHistory, setAllWorkoutHistory] = useState<WorkoutSession[]>(() => {
     const savedUnified = localStorage.getItem('ft_history_unified');
     if (savedUnified) {
-      try { return JSON.parse(savedUnified); } catch {}
+      try {
+        const parsed = JSON.parse(savedUnified);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
     }
     const primarySaved = localStorage.getItem('ft_history_primary');
     const partnerSaved = localStorage.getItem('ft_history_partner');
     const primaryH: WorkoutSession[] = primarySaved ? JSON.parse(primarySaved) : [];
     const partnerH: WorkoutSession[] = partnerSaved ? JSON.parse(partnerSaved) : [];
-    return [
-      ...primaryH.map(s => ({ ...s, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' })),
-      ...partnerH.map(s => ({ ...s, user_id: 'partner', user_name: 'มะนาว (Manao)' }))
-    ];
+    if (primaryH.length > 0 || partnerH.length > 0) {
+      return [
+        ...primaryH.map(s => ({ ...s, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' })),
+        ...partnerH.map(s => ({ ...s, user_id: 'partner', user_name: 'มะนาว (Manao)' }))
+      ];
+    }
+    return DEFAULT_WORKOUT_HISTORY;
   });
 
   const workoutHistory = allWorkoutHistory.filter(s => (s.user_id || 'primary') === activeProfileKey);
@@ -539,6 +816,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.error('Auto sync workout failed:', err);
       }
     }
+  };
+
+  const deleteWorkoutSession = (sessionId: string) => {
+    setAllWorkoutHistory(prev => prev.filter(s => s.session_id !== sessionId));
   };
 
   const addExerciseToWorkout = (exercise: Exercise) => {
@@ -755,6 +1036,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateSet,
         workoutHistory,
         allWorkoutHistory,
+        deleteWorkoutSession,
         foodLogs,
         allFoodLogs,
         addFoodLog,

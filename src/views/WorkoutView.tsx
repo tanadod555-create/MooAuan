@@ -29,6 +29,7 @@ import { BentoGrid, BentoCard } from '../components/ui/BentoGrid';
 import { MagicCard } from '../components/ui/MagicCard';
 import { RestTimer } from '../components/workout/RestTimer';
 import { RoutineEditModal } from '../components/workout/RoutineEditModal';
+import { WorkoutHistorySection } from '../components/workout/WorkoutHistorySection';
 import { PigMascot } from '../components/ui/PigMascot';
 
 export const WorkoutView: React.FC = () => {
@@ -48,11 +49,13 @@ export const WorkoutView: React.FC = () => {
     updateProgram,
     deleteProgram,
     workoutHistory,
+    allWorkoutHistory,
     activeProfileKey,
     currentProfile,
     openUnifiedSpreadsheet,
   } = useApp();
 
+  const [workoutTab, setWorkoutTab] = useState<'workout' | 'history'>('workout');
   const [activeExerciseModal, setActiveExerciseModal] = useState<Exercise | null>(null);
   const [showAddExerciseDrawer, setShowAddExerciseDrawer] = useState(false);
   const [drawerSearch, setDrawerSearch] = useState('');
@@ -173,8 +176,64 @@ export const WorkoutView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24">
-      {/* If Active Workout is in progress: Show Hevy-style Session Logger */}
-      {activeWorkout ? (
+      {/* Top Tab Switcher: Workout vs History */}
+      <div className="flex items-center gap-1.5 p-1.5 bg-slate-900/90 border border-slate-800 rounded-2xl">
+        <button
+          onClick={() => setWorkoutTab('workout')}
+          className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition ${
+            workoutTab === 'workout'
+              ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Dumbbell size={16} />
+          <span>ออกกำลังกาย / ซ้อม</span>
+          {activeWorkout && (
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping ml-1" />
+          )}
+        </button>
+
+        <button
+          onClick={() => setWorkoutTab('history')}
+          className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition ${
+            workoutTab === 'history'
+              ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Clock size={16} />
+          <span>ประวัติการฝึกซ้อม</span>
+          <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">
+            {allWorkoutHistory.length}
+          </span>
+        </button>
+      </div>
+
+      {/* Active Workout Notification Bar while on History Tab */}
+      {activeWorkout && workoutTab === 'history' && (
+        <div className="p-3 bg-emerald-500/15 border border-emerald-500/40 rounded-2xl flex items-center justify-between gap-3 animate-pulse">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <span className="text-emerald-300 font-bold">กำลังฝึก: {activeWorkout.name}</span>
+            <span className="text-emerald-400 font-mono">({formatSeconds(activeWorkout.elapsedSeconds)})</span>
+          </div>
+          <button
+            onClick={() => setWorkoutTab('workout')}
+            className="px-3 py-1 bg-emerald-500 text-slate-950 text-xs font-black rounded-xl hover:bg-emerald-400 transition"
+          >
+            กลับสู่การซ้อม →
+          </button>
+        </div>
+      )}
+
+      {workoutTab === 'history' ? (
+        <WorkoutHistorySection
+          onStartRoutineWithExercises={(name, exs) => {
+            setWorkoutTab('workout');
+            startWorkout(name, exs);
+          }}
+        />
+      ) : activeWorkout ? (
         <div className="space-y-4">
           {/* Active Workout Top Banner with 21st.dev BorderBeam */}
           <div className="relative bg-slate-900/90 border border-emerald-500/40 rounded-3xl p-5 shadow-2xl backdrop-blur-xl sticky top-16 z-30 overflow-hidden">
@@ -651,22 +710,36 @@ export const WorkoutView: React.FC = () => {
             )}
           </div>
 
-          {/* Past Workout History List */}
+          {/* Recent Workout History Quick Preview */}
           <div className="space-y-3 pt-2">
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <Clock size={18} className="text-emerald-400" />
-              ประวัติการฝึกซ้อมที่ผ่านมา ({workoutHistory.length})
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Clock size={18} className="text-pink-400" />
+                ประวัติการฝึกซ้อมล่าสุด ({workoutHistory.length})
+              </h3>
+              <button
+                onClick={() => setWorkoutTab('history')}
+                className="text-xs text-pink-400 hover:text-pink-300 font-bold flex items-center gap-1 transition"
+              >
+                ดูประวัติทั้งหมด ({allWorkoutHistory.length}) →
+              </button>
+            </div>
 
             {workoutHistory.length === 0 ? (
-              <div className="bg-slate-900/60 p-8 rounded-2xl border border-slate-800 text-center space-y-2">
-                <Dumbbell size={32} className="mx-auto text-slate-600" />
+              <div className="bg-slate-900/60 p-6 rounded-2xl border border-slate-800 text-center space-y-2">
+                <Dumbbell size={28} className="mx-auto text-slate-600" />
                 <p className="text-sm text-slate-400">ยังไม่มีประวัติการฝึกซ้อม</p>
-                <p className="text-xs text-slate-500">กดเริ่มฝึกเพื่อบันทึกประวัติลง Google Sheet</p>
+                <p className="text-xs text-slate-500">กดเริ่มฝึกเพื่อบันทึกประวัติ หรือดูประวัติรวมของคู่ของคุณ</p>
+                <button
+                  onClick={() => setWorkoutTab('history')}
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 text-pink-400 text-xs font-bold hover:bg-slate-700 transition"
+                >
+                  ไปที่หน้าประวัติทั้งหมด
+                </button>
               </div>
             ) : (
-              <div className="space-y-3">
-                {workoutHistory.map((sess) => {
+              <div className="space-y-2.5">
+                {workoutHistory.slice(0, 3).map((sess) => {
                   const completedSets = sess.sets?.filter((s) => s.done) || [];
                   const totalVolumeKg = completedSets.reduce(
                     (sum, s) => sum + s.weight_kg * s.reps,
@@ -675,30 +748,40 @@ export const WorkoutView: React.FC = () => {
                   return (
                     <div
                       key={sess.session_id}
-                      className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex items-center justify-between"
+                      onClick={() => setWorkoutTab('history')}
+                      className="bg-slate-900/90 hover:bg-slate-850 p-4 rounded-2xl border border-slate-800 hover:border-pink-500/30 flex items-center justify-between cursor-pointer transition group"
                     >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-white">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-bold text-white group-hover:text-pink-300 transition">
                             {sess.program_name || 'เซสชันการฝึก'}
                           </span>
-                          <span className="text-[11px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                          <span className="text-[11px] text-slate-400 bg-slate-800 px-2 py-0.5 rounded font-mono">
                             {sess.date}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-400 mt-1">
-                          เวลา: {sess.start_time} - {sess.end_time || 'เสร็จสิ้น'} · {completedSets.length} เซ็ตสำเร็จ
+                        <p className="text-xs text-slate-400">
+                          {sess.start_time ? `เวลา: ${sess.start_time} - ${sess.end_time || 'เสร็จสิ้น'} · ` : ''}
+                          {completedSets.length} เซ็ตสำเร็จ
                         </p>
                       </div>
                       <div className="text-right">
-                        <span className="text-xs text-slate-400 block">Total Volume</span>
-                        <span className="text-base font-extrabold text-emerald-400 font-mono">
+                        <span className="text-[11px] text-slate-500 block uppercase font-bold">Volume</span>
+                        <span className="text-sm sm:text-base font-black text-emerald-400 font-mono">
                           {totalVolumeKg.toLocaleString()} kg
                         </span>
                       </div>
                     </div>
                   );
                 })}
+
+                <button
+                  onClick={() => setWorkoutTab('history')}
+                  className="w-full py-3 rounded-2xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-pink-400 font-bold text-xs flex items-center justify-center gap-2 transition"
+                >
+                  <Clock size={14} />
+                  <span>เปิดดูประวัติแบบละเอียดทั้งหมด ({allWorkoutHistory.length} เซสชัน) →</span>
+                </button>
               </div>
             )}
           </div>
