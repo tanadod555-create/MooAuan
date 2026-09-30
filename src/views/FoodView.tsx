@@ -155,10 +155,18 @@ export const FoodView: React.FC = () => {
   const [selectedMeal, setSelectedMeal] = useState<MealType>('lunch');
   const [showAiResultModal, setShowAiResultModal] = useState(false);
 
+  // Photo Note Flow: Holds the captured photo so user can add notes BEFORE analyzing
+  const [pendingPhoto, setPendingPhoto] = useState<{
+    base64: string;
+    mimeType: string;
+    previewUrl: string;
+  } | null>(null);
+  const [showPhotoNoteModal, setShowPhotoNoteModal] = useState(false);
+
   // Custom User Note for AI Prompt (เช่น กินแค่ครึ่งเดียว, ไม่กินผัก)
   const [aiUserNote, setAiUserNote] = useState<string>('');
 
-  // Manual Add Modal State (With Micronutrients)
+  // Manual Add Modal State (With Micronutrients & Note)
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualName, setManualName] = useState('');
   const [manualMeal, setManualMeal] = useState<MealType>('lunch');
@@ -174,6 +182,7 @@ export const FoodView: React.FC = () => {
   const [manualIron, setManualIron] = useState(0);
   const [manualCalcium, setManualCalcium] = useState(0);
   const [manualPotassium, setManualPotassium] = useState(0);
+  const [manualNote, setManualNote] = useState('');
 
   // Edit Food Modal State
   const [showEditModal, setShowEditModal] = useState(false);
@@ -193,6 +202,7 @@ export const FoodView: React.FC = () => {
     iron_mg: number;
     calcium_mg: number;
     potassium_mg: number;
+    note: string;
   }>({
     name: '',
     meal: 'lunch',
@@ -208,6 +218,7 @@ export const FoodView: React.FC = () => {
     iron_mg: 0,
     calcium_mg: 0,
     potassium_mg: 0,
+    note: '',
   });
 
   // Open Edit Modal
@@ -228,6 +239,7 @@ export const FoodView: React.FC = () => {
       iron_mg: log.micros?.iron_mg || 0,
       calcium_mg: log.micros?.calcium_mg || 0,
       potassium_mg: log.micros?.potassium_mg || 0,
+      note: log.note || '',
     });
     setShowEditModal(true);
   };
@@ -254,27 +266,45 @@ export const FoodView: React.FC = () => {
         calcium_mg: editForm.calcium_mg,
         potassium_mg: editForm.potassium_mg,
       },
+      note: editForm.note.trim() || undefined,
     });
 
     setShowEditModal(false);
     setEditingLogId(null);
   };
 
-  // Handle file select & Gemini analysis
+  // Step 1: User selects or captures a photo -> Open photo preview & note prompt dialog FIRST
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    try {
+      const { base64, mimeType } = await resizeImageToMaxDimension(file, 1024, 0.85);
+      const previewUrl = `data:${mimeType};base64,${base64}`;
+      setPreviewImage(previewUrl);
+      setPendingPhoto({ base64, mimeType, previewUrl });
+      setShowPhotoNoteModal(true); // Open note & photo preview modal immediately!
+    } catch (err: any) {
+      console.error(err);
+      setAnalysisError('เกิดข้อผิดพลาดในการโหลดรูปภาพ');
+    } finally {
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
+    }
+  };
+
+  // Step 2: User confirms note and clicks "Send to AI for analysis"
+  const handleStartAnalysis = async () => {
+    if (!pendingPhoto) return;
+
+    setShowPhotoNoteModal(false);
     setAnalyzing(true);
     setAnalysisError(null);
 
     try {
-      const { base64, mimeType } = await resizeImageToMaxDimension(file, 1024, 0.85);
-      setPreviewImage(`data:${mimeType};base64,${base64}`);
-
       const result = await analyzeFoodImage({
-        base64Image: base64,
-        mimeType: mimeType,
+        base64Image: pendingPhoto.base64,
+        mimeType: pendingPhoto.mimeType,
         apiKey: settings.geminiApiKey || effectiveGeminiKey,
         proxyUrl: settings.geminiProxyUrl,
         useProxy: settings.useProxy,
@@ -297,8 +327,7 @@ export const FoodView: React.FC = () => {
       );
     } finally {
       setAnalyzing(false);
-      if (cameraInputRef.current) cameraInputRef.current.value = '';
-      if (galleryInputRef.current) galleryInputRef.current.value = '';
+      setPendingPhoto(null);
     }
   };
 
@@ -345,6 +374,7 @@ export const FoodView: React.FC = () => {
         source: 'ai',
         confidence: item.confidence,
         user_id: selectedUserKey,
+        note: aiUserNote.trim() || undefined,
       });
     }
 
@@ -395,10 +425,12 @@ export const FoodView: React.FC = () => {
       source: 'manual',
       confidence: 1.0,
       user_id: selectedUserKey,
+      note: manualNote.trim() || undefined,
     });
 
     setShowManualModal(false);
     setManualName('');
+    setManualNote('');
     setManualFiber(0);
     setManualSugar(0);
     setManualSodium(0);
@@ -597,8 +629,13 @@ export const FoodView: React.FC = () => {
                   className="pt-2 pb-1.5 flex items-center justify-between text-xs"
                 >
                   <div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="font-bold text-slate-700">{item.name}</span>
+                      {item.note && (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-50 text-amber-700 border border-amber-200 font-medium">
+                          📝 {item.note}
+                        </span>
+                      )}
                     </div>
                     <p className="text-[11px] text-slate-500 mt-0.5">
                       วันที่: <strong className="text-slate-700">{item.date}</strong> ({item.time}) ·{' '}
@@ -772,73 +809,6 @@ export const FoodView: React.FC = () => {
           </div>
         )}
       </MagicCard>
-
-      {/* AI Custom Prompt / Food Notes Section (เช่น กินครึ่งเดียว, ไม่กินผัก) */}
-      <div className="p-4 rounded-3xl bg-white/90 border border-pink-200/70 shadow-2xs space-y-2.5">
-        <div className="flex items-center justify-between">
-          <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-            <Sparkles size={14} className="text-pink-400" />
-            <span>ระบุหมายเหตุอาหารให้ AI รู้ (ช่วยคำนวณแม่นยำขึ้น):</span>
-          </label>
-          {aiUserNote && (
-            <button
-              type="button"
-              onClick={() => setAiUserNote('')}
-              className="text-[11px] text-pink-500 hover:text-pink-600 font-semibold"
-            >
-              ล้างข้อความ
-            </button>
-          )}
-        </div>
-
-        <input
-          type="text"
-          placeholder="เช่น กินแค่ครึ่งเดียว (50%), ไม่กินผัก, ไม่เอาหนัง, ไม่ซดน้ำซุป, ข้าวครึ่งทัพพี..."
-          value={aiUserNote}
-          onChange={(e) => setAiUserNote(e.target.value)}
-          className="w-full px-3.5 py-2.5 bg-pink-50/40 border border-pink-200/70 rounded-2xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-pink-300 focus:bg-white transition"
-        />
-
-        {/* Quick Chips */}
-        <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
-          {[
-            { label: '🍽️ กินแค่ครึ่งเดียว (50%)', text: 'กินแค่ครึ่งเดียว (50%)' },
-            { label: '🥗 ไม่กินผัก', text: 'ไม่กินผัก' },
-            { label: '🍗 ไม่เอาหนัง/มัน', text: 'ไม่กินหนังและมัน' },
-            { label: '🥣 ไม่ซดน้ำซุป', text: 'ไม่ซดน้ำซุป' },
-            { label: '🍚 ข้าวครึ่งจาน', text: 'ข้าวครึ่งจาน' },
-            { label: '🍳 เพิ่มไข่ดาว 1 ฟอง', text: 'เพิ่มไข่ดาว 1 ฟอง' },
-          ].map((chip) => {
-            const isSelected = aiUserNote.includes(chip.text);
-            return (
-              <button
-                key={chip.text}
-                type="button"
-                onClick={() => {
-                  if (isSelected) {
-                    setAiUserNote((prev) =>
-                      prev
-                        .replace(chip.text, '')
-                        .replace(/,\s*,/g, ',')
-                        .replace(/^,\s*|,\s*$/g, '')
-                        .trim()
-                    );
-                  } else {
-                    setAiUserNote((prev) => (prev ? `${prev}, ${chip.text}` : chip.text));
-                  }
-                }}
-                className={`px-2.5 py-1 rounded-xl transition active:scale-95 font-medium ${
-                  isSelected
-                    ? 'bg-pink-200 text-slate-800 border border-pink-300 shadow-2xs'
-                    : 'bg-pink-50/70 hover:bg-pink-100 text-slate-600 border border-pink-200/60'
-                }`}
-              >
-                {chip.label}
-              </button>
-            );
-          })}
-        </div>
-      </div>
 
       {/* Gemini AI API Connection Status Banner */}
       <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-white/90 border border-pink-200/70 text-xs shadow-2xs">
@@ -1041,6 +1011,11 @@ export const FoodView: React.FC = () => {
                         ✨ AI
                       </span>
                     )}
+                    {log.note && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/70 font-medium">
+                        📝 {log.note}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500 flex-wrap">
                     <span>⏰ {log.time}</span>
@@ -1114,6 +1089,160 @@ export const FoodView: React.FC = () => {
           <ExternalLink size={13} />
         </button>
       </div>
+
+      {/* Photo Preview & Note Modal (Appears immediately AFTER taking or uploading a photo) */}
+      {showPhotoNoteModal && pendingPhoto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-md bg-white border border-pink-200 rounded-3xl overflow-hidden shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-pink-100">
+              <div className="flex items-center gap-2">
+                <Camera size={18} className="text-pink-500" />
+                <div>
+                  <h3 className="font-bold text-slate-800 text-base">ระบุหมายเหตุให้ AI (รูปอาหาร)</h3>
+                  <p className="text-[11px] text-slate-500">บันทึกลงโปรไฟล์ของ {activeTargetProfile.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPhotoNoteModal(false);
+                  setPendingPhoto(null);
+                }}
+                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Photo Preview */}
+            <div className="w-full h-44 rounded-2xl overflow-hidden bg-pink-50 relative border border-pink-100">
+              <img
+                src={pendingPhoto.previewUrl}
+                alt="Captured Food"
+                className="w-full h-full object-cover"
+              />
+              <span className="absolute bottom-2 left-2 px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-semibold backdrop-blur-xs">
+                📸 รูปที่เพิ่งถ่าย/เลือก
+              </span>
+            </div>
+
+            {/* Meal Selector */}
+            <div>
+              <label className="block font-bold text-slate-700 text-xs mb-1.5">เลือกมื้ออาหาร:</label>
+              <div className="grid grid-cols-4 gap-2">
+                {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map((meal) => (
+                  <button
+                    key={meal}
+                    type="button"
+                    onClick={() => setSelectedMeal(meal)}
+                    className={`py-1.5 rounded-xl text-xs font-bold capitalize transition cursor-pointer ${
+                      selectedMeal === meal
+                        ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
+                        : 'bg-pink-50/60 text-slate-600 hover:bg-pink-100 border border-pink-200/70'
+                    }`}
+                  >
+                    {meal === 'breakfast'
+                      ? 'มื้อเช้า'
+                      : meal === 'lunch'
+                      ? 'กลางวัน'
+                      : meal === 'dinner'
+                      ? 'มื้อเย็น'
+                      : 'ของว่าง'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* AI Custom Prompt / Food Notes Section */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-pink-500" />
+                  <span>หมายเหตุอาหารให้ AI รู้ (ช่วยคำนวณแม่นยำขึ้น):</span>
+                </label>
+                {aiUserNote && (
+                  <button
+                    type="button"
+                    onClick={() => setAiUserNote('')}
+                    className="text-[11px] text-pink-500 hover:text-pink-600 font-semibold cursor-pointer"
+                  >
+                    ล้าง
+                  </button>
+                )}
+              </div>
+
+              <input
+                type="text"
+                placeholder="เช่น กินแค่ครึ่งเดียว (50%), ไม่กินผัก, ไม่เอาหนัง, ไม่ซดน้ำซุป, ข้าวครึ่งทัพพี..."
+                value={aiUserNote}
+                onChange={(e) => setAiUserNote(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-pink-50/40 border border-pink-200/70 rounded-2xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-pink-300 focus:bg-white transition"
+              />
+
+              {/* Quick Chips */}
+              <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                {[
+                  { label: '🍽️ กินแค่ครึ่งเดียว (50%)', text: 'กินแค่ครึ่งเดียว (50%)' },
+                  { label: '🥗 ไม่กินผัก', text: 'ไม่กินผัก' },
+                  { label: '🍗 ไม่กินหนังและมัน', text: 'ไม่กินหนังและมัน' },
+                  { label: '🥣 ไม่ซดน้ำซุป', text: 'ไม่ซดน้ำซุป' },
+                  { label: '🍚 ข้าวครึ่งจาน', text: 'ข้าวครึ่งจาน' },
+                  { label: '🍳 เพิ่มไข่ดาว 1 ฟอง', text: 'เพิ่มไข่ดาว 1 ฟอง' },
+                ].map((chip) => {
+                  const isSelected = aiUserNote.includes(chip.text);
+                  return (
+                    <button
+                      key={chip.text}
+                      type="button"
+                      onClick={() => {
+                        if (isSelected) {
+                          setAiUserNote((prev) =>
+                            prev
+                              .replace(chip.text, '')
+                              .replace(/,\s*,/g, ',')
+                              .replace(/^,\s*|,\s*$/g, '')
+                              .trim()
+                          );
+                        } else {
+                          setAiUserNote((prev) => (prev ? `${prev}, ${chip.text}` : chip.text));
+                        }
+                      }}
+                      className={`px-2.5 py-1 rounded-xl transition active:scale-95 font-medium cursor-pointer ${
+                        isSelected
+                          ? 'bg-pink-200 text-slate-800 border border-pink-300 shadow-2xs'
+                          : 'bg-pink-50/70 hover:bg-pink-100 text-slate-600 border border-pink-200/60'
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pt-2 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPhotoNoteModal(false);
+                  setPendingPhoto(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs transition cursor-pointer"
+              >
+                ยกเลิก / ถ่ายใหม่
+              </button>
+              <button
+                type="button"
+                onClick={handleStartAnalysis}
+                className="flex-[2] py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-95 cursor-pointer"
+              >
+                <Sparkles size={15} />
+                <span>ส่งให้ AI วิเคราะห์ภาพนี้</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI Food Analysis Result Modal */}
       {showAiResultModal && (
@@ -1508,6 +1637,40 @@ export const FoodView: React.FC = () => {
                 </div>
               </div>
 
+              {/* Note / Remarks for Manual Food */}
+              <div className="space-y-1.5 pt-2 border-t border-pink-100">
+                <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Sparkles size={13} className="text-pink-400" />
+                  <span>หมายเหตุอาหาร (เช่น กินครึ่งเดียว, ไม่กินผัก):</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="เช่น กินแค่ครึ่งเดียว (50%), ไม่กินผัก, ไม่เอาหนัง, ข้าวครึ่งทัพพี..."
+                  value={manualNote}
+                  onChange={(e) => setManualNote(e.target.value)}
+                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-pink-300 focus:bg-white"
+                />
+                <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
+                  {[
+                    { label: '🍽️ กินแค่ครึ่งเดียว', text: 'กินแค่ครึ่งเดียว (50%)' },
+                    { label: '🥗 ไม่กินผัก', text: 'ไม่กินผัก' },
+                    { label: '🍗 ไม่กินหนัง/มัน', text: 'ไม่กินหนังและมัน' },
+                    { label: '🥣 ไม่ซดน้ำซุป', text: 'ไม่ซดน้ำซุป' },
+                  ].map((chip) => (
+                    <button
+                      key={chip.text}
+                      type="button"
+                      onClick={() => {
+                        setManualNote((prev) => (prev ? `${prev}, ${chip.text}` : chip.text));
+                      }}
+                      className="px-2 py-0.5 rounded-lg bg-pink-50 hover:bg-pink-100 text-slate-600 border border-pink-200/60 cursor-pointer"
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="pt-3 flex items-center justify-end gap-3 border-t border-pink-100">
                 <button
                   type="button"
@@ -1698,6 +1861,21 @@ export const FoodView: React.FC = () => {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Edit Note */}
+              <div className="space-y-1.5 pt-2 border-t border-pink-100">
+                <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                  <Sparkles size={13} className="text-pink-400" />
+                  <span>หมายเหตุอาหาร (Note):</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="เช่น กินแค่ครึ่งเดียว (50%), ไม่กินผัก, ไม่เอาหนัง..."
+                  value={editForm.note}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, note: e.target.value }))}
+                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-pink-300 focus:bg-white"
+                />
               </div>
 
               <div className="pt-3 flex items-center justify-end gap-3 border-t border-pink-100">

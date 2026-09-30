@@ -210,6 +210,7 @@ export interface FoodLog {
   micros?: Micronutrients;
   source: 'ai' | 'manual';
   confidence?: number;
+  note?: string;
 }
 
 export interface AppSettings {
