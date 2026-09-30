@@ -21,8 +21,8 @@ export const SHEET_TABS = [
 ] as const;
 
 export const SHEET_HEADERS: Record<string, string[]> = {
-  profile: ['user_name', 'user_id', 'email', 'sex', 'goal', 'kcal_target', 'protein_target_g', 'carb_target_g', 'fat_target_g', 'height_cm', 'updated_at'],
-  body_metrics: ['user_name', 'date', 'weight_kg', 'body_fat_pct', 'waist_cm', 'note'],
+  profile: ['user_name', 'user_id', 'email', 'sex', 'goal', 'kcal_target', 'protein_target_g', 'carb_target_g', 'fat_target_g', 'height_cm', 'waist_cm', 'chest_cm', 'shoulders_cm', 'thigh_cm', 'hips_cm', 'arm_cm', 'calf_cm', 'neck_cm', 'updated_at'],
+  body_metrics: ['user_name', 'date', 'weight_kg', 'body_fat_pct', 'waist_cm', 'chest_cm', 'shoulders_cm', 'thigh_cm', 'hips_cm', 'arm_cm', 'calf_cm', 'neck_cm', 'note'],
   exercises: ['exercise_id', 'name_en', 'name_th', 'category', 'muscle_primary', 'muscle_secondary', 'pattern', 'equipment'],
   programs: ['user_name', 'program_id', 'name', 'day_of_week', 'note'],
   program_items: ['program_id', 'order', 'exercise_id', 'target_sets', 'target_reps', 'target_weight_kg'],
@@ -277,15 +277,68 @@ export class GoogleSheetsService {
 
     if (!this.accessToken) return;
 
-    // Matches SHEET_HEADERS.body_metrics: ['user_name', 'date', 'weight_kg', 'body_fat_pct', 'waist_cm', 'note']
+    // Matches SHEET_HEADERS.body_metrics: ['user_name', 'date', 'weight_kg', 'body_fat_pct', 'waist_cm', 'chest_cm', 'shoulders_cm', 'thigh_cm', 'hips_cm', 'arm_cm', 'calf_cm', 'neck_cm', 'note']
     const row = [
       finalUserName,
       metric.date,
       metric.weight_kg,
       metric.body_fat_pct || '',
       metric.waist_cm || '',
+      metric.chest_cm || '',
+      metric.shoulders_cm || '',
+      metric.thigh_cm || '',
+      metric.hips_cm || '',
+      metric.arm_cm || '',
+      metric.calf_cm || '',
+      metric.neck_cm || '',
       metric.note || '',
     ];
     return this.appendRow('body_metrics', row);
+  }
+
+  /**
+   * Synchronize Profile to Sheet (Unified with User Name)
+   */
+  async syncProfile(profile: UserProfile, userName: string = 'แม็กนั่ม') {
+    const finalUserName = profile.name || userName;
+    if (this.appsScriptUrl) {
+      try {
+        await fetch(this.appsScriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'update_profile', data: profile, user_name: finalUserName }),
+        });
+        return { success: true };
+      } catch (e) {
+        console.warn('Apps Script syncProfile error:', e);
+      }
+    }
+
+    if (!this.accessToken) return;
+
+    // Matches SHEET_HEADERS.profile: ['user_name', 'user_id', 'email', 'sex', 'goal', 'kcal_target', 'protein_target_g', 'carb_target_g', 'fat_target_g', 'height_cm', 'waist_cm', 'chest_cm', 'shoulders_cm', 'thigh_cm', 'hips_cm', 'arm_cm', 'calf_cm', 'neck_cm', 'updated_at']
+    const row = [
+      finalUserName,
+      profile.user_id || '',
+      profile.email || '',
+      profile.sex || '',
+      profile.goal || '',
+      profile.kcal_target || '',
+      profile.protein_target_g || '',
+      profile.carb_target_g || '',
+      profile.fat_target_g || '',
+      profile.height_cm || '',
+      profile.waist_cm || '',
+      profile.chest_cm || '',
+      profile.shoulders_cm || '',
+      profile.thigh_cm || '',
+      profile.hips_cm || '',
+      profile.arm_cm || '',
+      profile.calf_cm || '',
+      profile.neck_cm || '',
+      new Date().toISOString(),
+    ];
+    return this.appendRow('profile', row);
   }
 }

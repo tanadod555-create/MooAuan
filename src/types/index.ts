@@ -67,6 +67,14 @@ export interface UserProfile {
   carb_target_g?: number;
   fat_target_g?: number;
   created_at: string;
+  waist_cm?: number;
+  chest_cm?: number;
+  shoulders_cm?: number;
+  thigh_cm?: number;
+  hips_cm?: number;
+  arm_cm?: number;
+  calf_cm?: number;
+  neck_cm?: number;
 }
 
 export interface BodyMetric {
@@ -77,6 +85,13 @@ export interface BodyMetric {
   weight_kg: number;
   body_fat_pct?: number;
   waist_cm?: number;
+  chest_cm?: number;
+  shoulders_cm?: number;
+  thigh_cm?: number;
+  hips_cm?: number;
+  arm_cm?: number;
+  calf_cm?: number;
+  neck_cm?: number;
   note?: string;
 }
 
