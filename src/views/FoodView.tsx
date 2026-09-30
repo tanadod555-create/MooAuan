@@ -4,6 +4,7 @@ import { FoodLog, MealType } from '../types';
 import {
   resizeImageToMaxDimension,
   analyzeFoodImage,
+  getDefaultGeminiApiKey,
   GeminiFoodItem,
 } from '../services/gemini';
 import {
@@ -121,10 +122,9 @@ export const FoodView: React.FC = () => {
   // Image Upload & AI Analysis State
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+  const effectiveGeminiKey = settings.geminiApiKey || getDefaultGeminiApiKey();
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState(
-    settings.geminiApiKey || localStorage.getItem('fittrack_gemini_key') || ''
-  );
+  const [apiKeyInput, setApiKeyInput] = useState(effectiveGeminiKey);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -160,7 +160,7 @@ export const FoodView: React.FC = () => {
       const result = await analyzeFoodImage({
         base64Image: base64,
         mimeType: mimeType,
-        apiKey: settings.geminiApiKey,
+        apiKey: settings.geminiApiKey || effectiveGeminiKey,
         proxyUrl: settings.geminiProxyUrl,
         useProxy: settings.useProxy,
       });
@@ -572,27 +572,27 @@ export const FoodView: React.FC = () => {
       </MagicCard>
 
       {/* Gemini AI API Connection Status Banner */}
-      <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs">
+      <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-pink-950/30 border border-pink-500/20 text-xs">
         <div className="flex items-center gap-2">
           <span
             className={`w-2.5 h-2.5 rounded-full ${
-              settings.geminiApiKey ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'
+              effectiveGeminiKey ? 'bg-emerald-400 animate-ping' : 'bg-amber-400'
             }`}
           />
-          <span className={settings.geminiApiKey ? 'text-emerald-400 font-bold' : 'text-amber-400 font-medium'}>
-            {settings.geminiApiKey
-              ? 'Gemini Multimodal AI: พร้อมใช้งาน (เชื่อมต่อ API สำเร็จ)'
+          <span className={effectiveGeminiKey ? 'text-emerald-400 font-bold' : 'text-amber-400 font-medium'}>
+            {effectiveGeminiKey
+              ? '✨ Gemini Multimodal AI: เชื่อมต่อระบบอัตโนมัติแล้ว (พร้อมสแกนทันที)'
               : 'ยังไม่ได้ระบุ Gemini API Key (จำเป็นสำหรับการสแกนรูป)'}
           </span>
         </div>
         <button
           onClick={() => {
-            setApiKeyInput(settings.geminiApiKey || import.meta.env.VITE_GEMINI_API_KEY || '');
+            setApiKeyInput(effectiveGeminiKey);
             setShowApiKeyModal(true);
           }}
-          className="text-xs text-sky-400 hover:text-sky-300 font-semibold underline"
+          className="text-xs text-pink-400 hover:text-pink-300 font-semibold underline"
         >
-          {settings.geminiApiKey ? 'ตั้งค่า Key' : 'เชื่อมต่อ Key ด่วน'}
+          {effectiveGeminiKey ? 'ตั้งค่า Key' : 'เชื่อมต่อ Key ด่วน'}
         </button>
       </div>
 
@@ -620,8 +620,8 @@ export const FoodView: React.FC = () => {
         {/* Take Photo Button */}
         <button
           onClick={() => {
-            if (!settings.geminiApiKey && !import.meta.env.VITE_GEMINI_API_KEY) {
-              setApiKeyInput(import.meta.env.VITE_GEMINI_API_KEY || '');
+            if (!effectiveGeminiKey) {
+              setApiKeyInput(getDefaultGeminiApiKey());
               setShowApiKeyModal(true);
               return;
             }
@@ -642,8 +642,8 @@ export const FoodView: React.FC = () => {
         {/* Choose from Gallery / Files */}
         <button
           onClick={() => {
-            if (!settings.geminiApiKey && !import.meta.env.VITE_GEMINI_API_KEY) {
-              setApiKeyInput(import.meta.env.VITE_GEMINI_API_KEY || '');
+            if (!effectiveGeminiKey) {
+              setApiKeyInput(getDefaultGeminiApiKey());
               setShowApiKeyModal(true);
               return;
             }
@@ -1090,19 +1090,19 @@ export const FoodView: React.FC = () => {
               </div>
 
               <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400 space-y-1">
-                <p className="text-slate-300 font-semibold">💡 วิธีการเชื่อมต่อ:</p>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  นำ Gemini API Key จาก Google AI Studio มาวางในช่องด้านบน แล้วกด "บันทึกและเชื่อมต่อ" กุญแจจะถูกบันทึกในอุปกรณ์ของคุณอย่างปลอดภัย
+                <p className="text-emerald-400 font-semibold flex items-center gap-1.5">
+                  <CheckCircle2 size={13} /> คีย์ระบบเชื่อมต่อให้อัตโนมัติแล้ว
                 </p>
-                {import.meta.env.VITE_GEMINI_API_KEY && (
-                  <button
-                    type="button"
-                    onClick={() => setApiKeyInput(import.meta.env.VITE_GEMINI_API_KEY || '')}
-                    className="text-emerald-400 hover:underline text-left font-mono block mt-1"
-                  >
-                    คลิกเพื่อนำเข้าคีย์จากไฟล์ระบบ (.env)
-                  </button>
-                )}
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  ระบบได้เชื่อมต่อ Gemini API Key ประจำเว็บให้เรียบร้อยแล้ว สามารถถ่ายรูปหรืออัปโหลดสแกนสารอาหารได้ทันทีโดยไม่ต้องใส่คีย์เพิ่ม หรือจะเปลี่ยนเป็นคีย์ส่วนตัวของคุณเองก็ได้
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setApiKeyInput(getDefaultGeminiApiKey())}
+                  className="text-pink-400 hover:text-pink-300 hover:underline text-left font-medium block mt-1"
+                >
+                  🔄 คืนค่าเป็นคีย์อัตโนมัติของระบบ
+                </button>
               </div>
             </div>
 

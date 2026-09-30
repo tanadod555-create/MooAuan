@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { BodyMetric, UserProfile } from '../types';
+import { getDefaultGeminiApiKey } from '../services/gemini';
 import {
   User,
   Users,
@@ -118,7 +119,7 @@ export const ProfileView: React.FC = () => {
   const [spreadsheetId, setSpreadsheetId] = useState(
     activeProfileKey === 'primary' ? settings.primarySpreadsheetId || '' : settings.partnerSpreadsheetId || ''
   );
-  const [geminiKey, setGeminiKey] = useState(settings.geminiApiKey || '');
+  const [geminiKey, setGeminiKey] = useState(settings.geminiApiKey || getDefaultGeminiApiKey());
   const [geminiProxy, setGeminiProxy] = useState(settings.geminiProxyUrl || '');
   const [appsScriptUrl, setAppsScriptUrl] = useState(settings.appsScriptUrl || '');
   const [useProxy, setUseProxy] = useState(settings.useProxy || false);
@@ -1049,19 +1050,33 @@ export const ProfileView: React.FC = () => {
             </h3>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Gemini API Key (ใช้งานส่วนตัวโดยตรง):
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-slate-300">
+                  Gemini API Key (ใช้งานส่วนตัวโดยตรง):
+                </label>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-medium border border-emerald-500/30">
+                  ✓ เชื่อมต่อระบบอัตโนมัติแล้ว
+                </span>
+              </div>
               <input
                 type="password"
                 placeholder="AIzaSy..."
                 value={geminiKey}
                 onChange={(e) => setGeminiKey(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-pink-400 font-mono"
               />
-              <span className="text-[11px] text-slate-400 mt-1 block">
-                คีย์จะถูกบันทึกใน LocalStorage ของเบราว์เซอร์เครื่องคุณเท่านั้น ไม่มีการส่งไปเซิร์ฟเวอร์ภายนอก
-              </span>
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-[11px] text-slate-400 block">
+                  เชื่อมต่อคีย์อัตโนมัติให้แล้ว สแกนอาหารได้ทันที หรือแก้ไขเป็นคีย์ส่วนตัวได้
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setGeminiKey(getDefaultGeminiApiKey())}
+                  className="text-[11px] text-pink-400 hover:text-pink-300 hover:underline"
+                >
+                  คืนค่าเริ่มต้น
+                </button>
+              </div>
             </div>
 
             {/* Proxy URL configuration */}

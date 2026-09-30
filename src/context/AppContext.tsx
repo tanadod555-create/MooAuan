@@ -11,6 +11,7 @@ import {
 } from '../types';
 import { SEED_EXERCISES } from '../data/exercises';
 import { GoogleSheetsService } from '../services/googleSheets';
+import { getDefaultGeminiApiKey } from '../services/gemini';
 
 interface ActiveWorkout {
   session_id: string;
@@ -124,7 +125,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   primarySpreadsheetId: '1cBYIM2WiqqGHIJi8t_JiUF4py30g3CGgQhGWwKWH2_A',
   partnerSpreadsheetId: '1cBYIM2WiqqGHIJi8t_JiUF4py30g3CGgQhGWwKWH2_A',
   appsScriptUrl: import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwueoU7u4P84GwE2PXeAlp_c3iEGE9UFGeWcJmxuOt_BxKXd3tGWQbzJ7DBnT6C1gN7/exec',
-  geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || (typeof window !== 'undefined' ? localStorage.getItem('fittrack_gemini_key') || '' : ''),
+  geminiApiKey: getDefaultGeminiApiKey(),
   geminiProxyUrl: '',
   useProxy: false,
   autoSyncGoogleSheets: false,
@@ -246,17 +247,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Settings
   const [settings, setSettings] = useState<AppSettings>(() => {
     const saved = localStorage.getItem('ft_settings');
-    if (!saved) return DEFAULT_SETTINGS;
+    const defaultKey = getDefaultGeminiApiKey();
+    if (!saved) {
+      if (typeof window !== 'undefined' && defaultKey) {
+        localStorage.setItem('fittrack_gemini_key', defaultKey);
+      }
+      return DEFAULT_SETTINGS;
+    }
     try {
       const parsed = JSON.parse(saved);
-      if (!parsed.geminiApiKey) {
-        parsed.geminiApiKey = DEFAULT_SETTINGS.geminiApiKey;
+      if (!parsed.geminiApiKey || parsed.geminiApiKey.trim() === '') {
+        parsed.geminiApiKey = defaultKey;
       }
       if (!parsed.appsScriptUrl) {
         parsed.appsScriptUrl = DEFAULT_SETTINGS.appsScriptUrl;
       }
       if (!parsed.primarySpreadsheetId) {
         parsed.primarySpreadsheetId = DEFAULT_SETTINGS.primarySpreadsheetId;
+      }
+      if (typeof window !== 'undefined' && parsed.geminiApiKey) {
+        localStorage.setItem('fittrack_gemini_key', parsed.geminiApiKey);
       }
       return { ...DEFAULT_SETTINGS, ...parsed };
     } catch {
@@ -385,6 +395,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     localStorage.setItem('ft_settings', JSON.stringify(settings));
+    if (settings.geminiApiKey) {
+      localStorage.setItem('fittrack_gemini_key', settings.geminiApiKey);
+    }
   }, [settings]);
 
   useEffect(() => {
