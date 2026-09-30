@@ -11,6 +11,7 @@ import {
   Minus,
   Sparkles
 } from 'lucide-react';
+import { PigMascot } from '../ui/PigMascot';
 
 interface RestTimerProps {
   seconds: number | null;
@@ -103,23 +104,24 @@ export const RestTimer: React.FC<RestTimerProps> = ({
   const isFinished = seconds === 0;
 
   return (
-    <div className="bg-slate-900/95 border border-sky-500/40 rounded-2xl p-4 shadow-xl shadow-sky-950/40 backdrop-blur-xl">
+    <div className="bg-white/95 border border-pink-300 rounded-3xl p-4 shadow-xl shadow-pink-200/50 backdrop-blur-xl">
       {/* Top Header */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center">
-            <Timer size={16} className={seconds !== null && !isPaused && !isFinished ? 'animate-spin' : ''} />
-          </div>
+        <div className="flex items-center gap-2.5">
+          <PigMascot
+            size="sm"
+            expression={isFinished ? 'cheer' : isPaused ? 'sleep' : 'workout'}
+          />
           <div>
-            <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
-              นาฬิกาพักระหว่างเซ็ต (Rest Timer)
+            <h4 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+              <span>เวลาพักหมูอ้วน (Rest Timer) 🐷</span>
               {isFinished && (
-                <span className="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-normal animate-pulse">
-                  หมดเวลา! ลุยเซ็ตต่อไป
+                <span className="text-xs bg-rose-100 text-rose-700 px-2.5 py-0.5 rounded-full font-bold border border-rose-200 animate-pulse">
+                  ลุยต่อเลยหมูอ้วน! 🔥
                 </span>
               )}
             </h4>
-            <p className="text-[11px] text-slate-400">กดจับเวลาเพื่อควบคุมเวลาพักให้สม่ำเสมอ</p>
+            <p className="text-[11px] text-slate-500">พักให้กล้ามเนื้อฟื้นตัวแล้วจัดเซ็ตต่อไป</p>
           </div>
         </div>
 

@@ -32,6 +32,7 @@ import { MagicCard } from '../components/ui/MagicCard';
 import { CircularProgress } from '../components/ui/CircularProgress';
 import { NumberTicker } from '../components/ui/NumberTicker';
 import { ShimmerButton } from '../components/ui/ShimmerButton';
+import { PigMascot } from '../components/ui/PigMascot';
 
 export const FoodView: React.FC = () => {
   const {
@@ -254,6 +255,24 @@ export const FoodView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24">
+      {/* Cute Pig Mascot Kitchen Greeting Card */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-pink-100/90 via-pink-50/80 to-amber-50/90 border border-pink-200/90 shadow-sm shadow-pink-200/40 flex items-center gap-3.5">
+        <PigMascot size="lg" expression="eating" className="shrink-0 drop-shadow-sm" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-500 text-white shadow-xs">
+              ครัวหมูอ้วน 🍓
+            </span>
+            <span className="text-xs text-rose-700 font-bold">
+              โภชนาการวันนี้ของ {currentProfile.name}
+            </span>
+          </div>
+          <p className="text-xs sm:text-sm text-pink-950 font-bold mt-1 leading-snug">
+            "กินให้อิ่มอย่างถูกหลักสารอาหาร กินให้ฟิน ไม่ต้องอดนะหมูอ้วน 🥗🐽"
+          </p>
+        </div>
+      </div>
+
       {/* Unified Google Sheet Direct Access Card */}
       <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/50 via-slate-900 to-teal-950/50 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg shadow-emerald-950/20">
         <div className="flex items-center gap-3">

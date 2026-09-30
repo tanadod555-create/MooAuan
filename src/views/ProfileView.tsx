@@ -25,6 +25,7 @@ import {
 import { MagicCard } from '../components/ui/MagicCard';
 import { NumberTicker } from '../components/ui/NumberTicker';
 import { ShimmerButton } from '../components/ui/ShimmerButton';
+import { PigMascot } from '../components/ui/PigMascot';
 
 export const ProfileView: React.FC = () => {
   const {
@@ -262,21 +263,25 @@ export const ProfileView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24">
-      {/* Profile Selector Banner */}
-      <div className="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-xl flex items-center justify-between">
+      {/* Profile Selector Banner with Pig Mascot */}
+      <div className="bg-white/95 p-5 rounded-3xl border border-pink-200/80 shadow-lg shadow-pink-200/30 flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-slate-950 font-black text-2xl shadow-lg shadow-emerald-500/25">
-            {currentProfile.name.charAt(0)}
+          <div className="relative flex items-center justify-center p-1 rounded-2xl bg-gradient-to-tr from-pink-200 via-rose-200 to-pink-100 shadow-md shadow-pink-300/30">
+            <PigMascot
+              size="md"
+              expression={activeProfileKey === 'partner' ? 'cheer' : 'strong'}
+              className="drop-shadow-sm"
+            />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-white">{currentProfile.name}</h2>
-              <span className="text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
-                {activeProfileKey === 'primary' ? 'เจ้าของ (Owner)' : 'แฟน (Partner)'}
+              <h2 className="text-xl font-black text-slate-800">{currentProfile.name}</h2>
+              <span className="text-[11px] bg-pink-100 text-pink-700 border border-pink-200 px-2.5 py-0.5 rounded-full font-bold">
+                {activeProfileKey === 'primary' ? '🏋️‍♂️ หมูอ้วนเทรนเนอร์' : '🌸 หมูอ้วนหวานแหวว'}
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              เป้าหมาย: <strong className="text-slate-200">{currentProfile.goal}</strong>
+            <p className="text-xs text-slate-500 mt-0.5">
+              เป้าหมาย: <strong className="text-pink-600">{currentProfile.goal}</strong>
             </p>
           </div>
         </div>

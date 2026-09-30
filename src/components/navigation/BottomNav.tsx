@@ -21,7 +21,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/80 pb-safe">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-pink-200/80 pb-safe shadow-[0_-4px_20px_rgba(244,114,182,0.12)]">
       <div className="max-w-md mx-auto grid grid-cols-5 h-16">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -31,21 +31,21 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
               key={item.key}
               onClick={() => onTabChange(item.key)}
               className={`relative flex flex-col items-center justify-center gap-1 transition-all ${
-                isActive ? 'text-emerald-400 font-semibold' : 'text-slate-400 hover:text-slate-200'
+                isActive ? 'text-pink-600 font-bold' : 'text-pink-900/40 hover:text-pink-700'
               }`}
             >
               <div className="relative">
                 <Icon
                   size={20}
-                  className={`transition-transform duration-200 ${isActive ? 'scale-110' : ''}`}
+                  className={`transition-transform duration-200 ${isActive ? 'scale-115 text-pink-500' : ''}`}
                 />
                 {item.hasBadge && (
-                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse border-2 border-slate-950" />
+                  <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse border-2 border-white" />
                 )}
               </div>
               <span className="text-[11px] leading-tight tracking-tight">{item.label}</span>
               {isActive && (
-                <div className="absolute top-0 w-8 h-[2px] bg-emerald-400 rounded-full shadow-[0_0_8px_#34d399]" />
+                <div className="absolute top-0 w-8 h-[3px] bg-gradient-to-r from-pink-400 to-rose-400 rounded-full shadow-[0_0_8px_rgba(244,114,182,0.6)]" />
               )}
             </button>
           );

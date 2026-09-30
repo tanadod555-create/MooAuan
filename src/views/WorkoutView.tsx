@@ -29,6 +29,7 @@ import { BentoGrid, BentoCard } from '../components/ui/BentoGrid';
 import { MagicCard } from '../components/ui/MagicCard';
 import { RestTimer } from '../components/workout/RestTimer';
 import { RoutineEditModal } from '../components/workout/RoutineEditModal';
+import { PigMascot } from '../components/ui/PigMascot';
 
 export const WorkoutView: React.FC = () => {
   const {
@@ -482,8 +483,26 @@ export const WorkoutView: React.FC = () => {
       ) : (
         /* If No Active Workout: Show Quick Start & Routine Programs */
         <div className="space-y-6">
+          {/* Cute Pig Mascot Welcome Banner */}
+          <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-pink-100/90 via-pink-50/80 to-rose-100/90 border border-pink-200/90 shadow-sm shadow-pink-200/40 flex items-center gap-3.5">
+            <PigMascot size="lg" expression="workout" className="shrink-0 drop-shadow-sm" />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-pink-500 text-white shadow-xs">
+                  หมูอ้วนฟิตเนส 🐷
+                </span>
+                <span className="text-xs text-pink-700 font-bold">
+                  สวัสดีคุณ {activeProfileKey === 'partner' ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-pink-950 font-bold mt-1 leading-snug">
+                "หมูอ้วนอย่างเราก็ฟิตเฟิร์มได้! วันนี้พร้อมเบิร์นหรือยัง ลุยไปด้วยกันนะ 🐽✨"
+              </p>
+            </div>
+          </div>
+
           {/* Quick Start Card with 21st.dev MagicCard */}
-          <MagicCard spotlightColor="rgba(16, 185, 129, 0.2)" className="p-7 relative overflow-hidden">
+          <MagicCard spotlightColor="rgba(244, 114, 182, 0.2)" className="p-7 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
               <Flame size={140} className="text-emerald-400" />
             </div>
