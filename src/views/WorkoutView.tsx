@@ -7,6 +7,7 @@ import {
   Pause,
   Check,
   Plus,
+  Minus,
   Trash2,
   Clock,
   Timer,
@@ -198,8 +199,8 @@ export const WorkoutView: React.FC = () => {
           onClick={() => setWorkoutTab('workout')}
           className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition ${
             workoutTab === 'workout'
-              ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-sm shadow-rose-200'
-              : 'text-pink-900/70 hover:text-slate-700 hover:bg-pink-50/60'
+              ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-sm shadow-pink-200'
+              : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
           }`}
         >
           <Dumbbell size={16} />
@@ -213,13 +214,13 @@ export const WorkoutView: React.FC = () => {
           onClick={() => setWorkoutTab('history')}
           className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition ${
             workoutTab === 'history'
-              ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-sm shadow-rose-200'
-              : 'text-pink-900/70 hover:text-slate-700 hover:bg-pink-50/60'
+              ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-sm shadow-pink-200'
+              : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
           }`}
         >
           <Clock size={16} />
           <span>ประวัติการฝึกซ้อม</span>
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-pink-100 text-pink-800 font-mono font-bold">
+          <span className="text-[11px] px-2 py-0.5 rounded-full bg-pink-100 text-rose-600 font-mono font-bold">
             {allWorkoutHistory.length}
           </span>
         </button>
@@ -227,17 +228,17 @@ export const WorkoutView: React.FC = () => {
 
       {/* Active Workout Notification Bar while on History Tab */}
       {activeWorkout && workoutTab === 'history' && (
-        <div className="p-3 bg-pink-50 border border-pink-300 rounded-2xl flex items-center justify-between gap-3 animate-pulse shadow-xs">
+        <div className="p-3 bg-pink-50 border border-pink-200 rounded-2xl flex items-center justify-between gap-3 animate-pulse shadow-xs">
           <div className="flex items-center gap-2 text-xs">
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
+            <span className="w-2 h-2 rounded-full bg-rose-400 animate-ping" />
             <span className="text-slate-700 font-bold">กำลังฝึก: {activeWorkout.name}</span>
-            <span className="text-rose-600 font-mono font-bold">
+            <span className="text-rose-500 font-mono font-bold">
               ({formatSeconds(activeWorkout.elapsedSeconds)})
             </span>
           </div>
           <button
             onClick={() => setWorkoutTab('workout')}
-            className="px-3 py-1 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-xs font-bold rounded-xl hover:from-rose-600 hover:to-pink-600 transition"
+            className="px-3 py-1 bg-gradient-to-r from-pink-400 to-rose-300 text-white text-xs font-bold rounded-xl hover:opacity-95 transition"
           >
             กลับสู่การซ้อม →
           </button>
@@ -319,8 +320,8 @@ export const WorkoutView: React.FC = () => {
                     onClick={() => handleSelectStandardRest(p.sec)}
                     className={`px-2.5 py-1 rounded-xl text-xs font-bold transition active:scale-95 ${
                       standardRestSeconds === p.sec
-                        ? 'bg-rose-500 text-white shadow-xs'
-                        : 'bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-200'
+                        ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
+                        : 'bg-pink-50 hover:bg-pink-100 text-slate-600 border border-pink-200'
                     }`}
                   >
                     {p.label}
@@ -354,14 +355,14 @@ export const WorkoutView: React.FC = () => {
             <div className="flex items-center gap-2 mt-4 pt-3 border-t border-pink-100">
               <button
                 onClick={finishWorkout}
-                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm shadow-rose-200 active:scale-[0.98] transition cursor-pointer"
+                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-pink-400 to-rose-400 hover:opacity-95 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm shadow-pink-200 active:scale-[0.98] transition cursor-pointer"
               >
                 <CheckCircle2 size={18} />
                 เสร็จสิ้นการฝึก (บันทึกลง Sheet)
               </button>
               <button
                 onClick={cancelWorkout}
-                className="py-3 px-3.5 rounded-xl bg-pink-50 hover:bg-rose-100 text-pink-800 hover:text-rose-700 font-bold text-xs border border-pink-200 transition cursor-pointer"
+                className="py-3 px-3.5 rounded-xl bg-pink-50 hover:bg-rose-100 text-slate-600 hover:text-rose-600 font-bold text-xs border border-pink-200 transition cursor-pointer"
               >
                 ยกเลิก
               </button>
@@ -404,111 +405,247 @@ export const WorkoutView: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Sets Table (Mobile-friendly generous touch targets) */}
-                <div className="p-3 sm:p-4">
-                  <div className="grid grid-cols-12 text-xs font-bold text-pink-900/80 px-2 py-1 mb-1.5">
-                    <span className="col-span-2 text-center">เซ็ต</span>
-                    <span className="col-span-4 text-center">กก. (kg)</span>
-                    <span className="col-span-3 text-center">ครั้ง (Reps)</span>
-                    <span className="col-span-3 text-center">สำเร็จ</span>
-                  </div>
-
+                {/* Mobile Gym Tracker Set Cards (Touch-friendly steppers, no Excel look) */}
+                <div className="p-3 sm:p-4 space-y-3">
                   {item.sets.map((set, setIdx) => (
                     <div
                       key={set.set_id || setIdx}
-                      className={`grid grid-cols-12 items-center gap-2 px-2 py-2 rounded-2xl mb-2 transition ${
+                      className={`p-3 sm:p-4 rounded-2xl border transition-all ${
                         set.done
-                          ? 'bg-rose-50/80 border border-rose-300'
-                          : 'bg-pink-50/40 border border-pink-200/70'
+                          ? 'bg-rose-50/60 border-rose-200 shadow-2xs'
+                          : 'bg-white border-pink-200/80 shadow-xs'
                       }`}
                     >
-                      {/* Set Number */}
-                      <div className="col-span-2 flex items-center justify-center">
-                        <span
-                          className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold font-mono ${
-                            set.done
-                              ? 'bg-rose-500 text-white shadow-xs'
-                              : 'bg-pink-100 text-pink-900'
-                          }`}
-                        >
-                          {setIdx + 1}
-                        </span>
-                      </div>
+                      {/* Set Card Header */}
+                      <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-pink-100/80">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`px-2.5 py-1 rounded-xl text-xs font-black tracking-wide ${
+                              set.done
+                                ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-xs'
+                                : 'bg-pink-100 text-pink-700'
+                            }`}
+                          >
+                            เซ็ตที่ {setIdx + 1}
+                          </span>
+                          {set.done && (
+                            <span className="text-[11px] font-bold text-rose-500 flex items-center gap-1">
+                              <Check size={13} className="stroke-[3]" /> เล่นเสร็จแล้ว
+                            </span>
+                          )}
+                        </div>
 
-                      {/* Weight (kg) - 44px min height for touch */}
-                      <div className="col-span-4 flex items-center justify-center">
-                        <input
-                          type="number"
-                          step="0.5"
-                          min="0"
-                          value={set.weight_kg}
-                          onChange={(e) =>
-                            updateSet(item.exercise_id, setIdx, {
-                              weight_kg: parseFloat(e.target.value) || 0,
-                            })
-                          }
-                          className="w-full max-w-[90px] h-11 bg-white border border-pink-200 rounded-xl px-2 text-center text-base font-bold font-mono text-slate-700 focus:outline-none focus:border-rose-400"
-                        />
-                      </div>
-
-                      {/* Reps - 44px min height for touch */}
-                      <div className="col-span-3 flex items-center justify-center">
-                        <input
-                          type="number"
-                          step="1"
-                          min="0"
-                          value={set.reps}
-                          onChange={(e) =>
-                            updateSet(item.exercise_id, setIdx, {
-                              reps: parseInt(e.target.value) || 0,
-                            })
-                          }
-                          className="w-full max-w-[75px] h-11 bg-white border border-pink-200 rounded-xl px-2 text-center text-base font-bold font-mono text-slate-700 focus:outline-none focus:border-rose-400"
-                        />
-                      </div>
-
-                      {/* Done Checkmark & Delete - 44px touch target */}
-                      <div className="col-span-3 flex items-center justify-center gap-1">
-                        <button
-                          onClick={() => {
-                            const newDone = !set.done;
-                            updateSet(item.exercise_id, setIdx, { done: newDone });
-                            if (newDone) {
-                              startRestTimer(standardRestSeconds);
-                            }
-                          }}
-                          className={`w-11 h-11 rounded-2xl flex items-center justify-center transition active:scale-90 cursor-pointer ${
-                            set.done
-                              ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-200'
-                              : 'bg-pink-100 text-pink-700 hover:bg-pink-200 border border-pink-200'
-                          }`}
-                          title={set.done ? 'เซ็ตนี้เสร็จแล้ว (แตะเพื่อยกเลิก)' : 'แตะเพื่อติ๊กเสร็จเซ็ตและเริ่มพัก'}
-                        >
-                          <Check size={20} className="stroke-[3]" />
-                        </button>
                         {item.sets.length > 1 && (
                           <button
+                            type="button"
                             onClick={() => removeSetFromExercise(item.exercise_id, setIdx)}
-                            className="p-1.5 text-pink-400 hover:text-rose-600"
+                            className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition active:scale-95 cursor-pointer"
                             title="ลบเซ็ตนี้"
                           >
-                            <Trash2 size={14} />
+                            <Trash2 size={15} />
                           </button>
                         )}
                       </div>
+
+                      {/* Weight & Reps Stepper Controllers */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">
+                        {/* Weight (kg) Stepper */}
+                        <div className="bg-pink-50/40 rounded-2xl p-2.5 border border-pink-100">
+                          <div className="flex items-center justify-between mb-1.5 px-1">
+                            <span className="text-xs font-bold text-slate-500">น้ำหนัก (Weight)</span>
+                            <span className="text-xs font-black text-rose-500 font-mono">
+                              {set.weight_kg} kg
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = Math.max(
+                                  0,
+                                  Math.round(((set.weight_kg || 0) - 2.5) * 10) / 10
+                                );
+                                updateSet(item.exercise_id, setIdx, { weight_kg: next });
+                              }}
+                              className="w-11 h-11 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                              title="ลด 2.5 กก."
+                            >
+                              <Minus size={18} className="stroke-[2.5]" />
+                            </button>
+
+                            <div className="flex-1 min-w-[70px]">
+                              <input
+                                type="number"
+                                step="0.5"
+                                min="0"
+                                value={set.weight_kg === 0 ? '' : set.weight_kg}
+                                placeholder="0"
+                                onChange={(e) =>
+                                  updateSet(item.exercise_id, setIdx, {
+                                    weight_kg: parseFloat(e.target.value) || 0,
+                                  })
+                                }
+                                className="w-full h-11 text-center font-black font-mono text-lg text-slate-800 bg-white border border-pink-200 rounded-xl focus:outline-none focus:border-rose-400 shadow-inner"
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = Math.round(((set.weight_kg || 0) + 2.5) * 10) / 10;
+                                updateSet(item.exercise_id, setIdx, { weight_kg: next });
+                              }}
+                              className="w-11 h-11 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                              title="เพิ่ม 2.5 กก."
+                            >
+                              <Plus size={18} className="stroke-[2.5]" />
+                            </button>
+                          </div>
+
+                          {/* Quick Weight Adjust Chips */}
+                          <div className="flex items-center justify-center gap-1.5 mt-2">
+                            {[-5, -1.25, 1.25, 5].map((delta) => (
+                              <button
+                                key={delta}
+                                type="button"
+                                onClick={() => {
+                                  const next = Math.max(
+                                    0,
+                                    Math.round(((set.weight_kg || 0) + delta) * 100) / 100
+                                  );
+                                  updateSet(item.exercise_id, setIdx, { weight_kg: next });
+                                }}
+                                className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white/90 hover:bg-white text-slate-600 border border-pink-200/70 active:scale-95 transition cursor-pointer"
+                              >
+                                {delta > 0 ? `+${delta}` : delta}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Reps Stepper */}
+                        <div className="bg-pink-50/40 rounded-2xl p-2.5 border border-pink-100">
+                          <div className="flex items-center justify-between mb-1.5 px-1">
+                            <span className="text-xs font-bold text-slate-500">
+                              จำนวนครั้ง (Reps)
+                            </span>
+                            <span className="text-xs font-black text-rose-500 font-mono">
+                              {set.reps} ครั้ง
+                            </span>
+                          </div>
+
+                          <div className="flex items-center justify-between gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = Math.max(0, (set.reps || 0) - 1);
+                                updateSet(item.exercise_id, setIdx, { reps: next });
+                              }}
+                              className="w-11 h-11 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                              title="ลด 1 ครั้ง"
+                            >
+                              <Minus size={18} className="stroke-[2.5]" />
+                            </button>
+
+                            <div className="flex-1 min-w-[70px]">
+                              <input
+                                type="number"
+                                step="1"
+                                min="0"
+                                value={set.reps === 0 ? '' : set.reps}
+                                placeholder="0"
+                                onChange={(e) =>
+                                  updateSet(item.exercise_id, setIdx, {
+                                    reps: parseInt(e.target.value) || 0,
+                                  })
+                                }
+                                className="w-full h-11 text-center font-black font-mono text-lg text-slate-800 bg-white border border-pink-200 rounded-xl focus:outline-none focus:border-rose-400 shadow-inner"
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const next = (set.reps || 0) + 1;
+                                updateSet(item.exercise_id, setIdx, { reps: next });
+                              }}
+                              className="w-11 h-11 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                              title="เพิ่ม 1 ครั้ง"
+                            >
+                              <Plus size={18} className="stroke-[2.5]" />
+                            </button>
+                          </div>
+
+                          {/* Quick Rep Preset Chips */}
+                          <div className="flex items-center justify-center gap-1.5 mt-2">
+                            {[8, 10, 12, 15].map((target) => (
+                              <button
+                                key={target}
+                                type="button"
+                                onClick={() =>
+                                  updateSet(item.exercise_id, setIdx, { reps: target })
+                                }
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition active:scale-95 cursor-pointer ${
+                                  set.reps === target
+                                    ? 'bg-rose-500 text-white border-rose-500'
+                                    : 'bg-white/90 hover:bg-white text-slate-600 border-pink-200/70'
+                                }`}
+                              >
+                                {target} ครั้ง
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Prominent Tactile Finish Set Button (Triggers Rest Timer) */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newDone = !set.done;
+                          updateSet(item.exercise_id, setIdx, { done: newDone });
+                          if (newDone) {
+                            startRestTimer(standardRestSeconds);
+                          }
+                        }}
+                        className={`w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer shadow-xs ${
+                          set.done
+                            ? 'bg-rose-100/70 hover:bg-rose-100 text-rose-700 border border-rose-200'
+                            : 'bg-gradient-to-r from-pink-400 to-rose-400 hover:opacity-95 text-white shadow-md shadow-pink-200'
+                        }`}
+                      >
+                        {set.done ? (
+                          <>
+                            <Check size={17} className="stroke-[3] text-rose-500" />
+                            <span>
+                              เซ็ต {setIdx + 1} เรียบร้อย ({set.weight_kg} kg × {set.reps} ครั้ง)
+                              · แตะเพื่อแก้ไข
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center text-[11px] font-mono">
+                              {setIdx + 1}
+                            </span>
+                            <span>
+                              เสร็จเซ็ตที่ {setIdx + 1} แล้ว (กดเริ่มพัก {standardRestSeconds}s ⏱️)
+                            </span>
+                          </>
+                        )}
+                      </button>
                     </div>
                   ))}
 
-                  {/* Add Set Button (Clean & prominent, quick rest sub-buttons removed as requested) */}
-                  <div className="mt-2.5 flex items-center justify-between pt-1">
-                    <button
-                      onClick={() => addSetToExercise(item.exercise_id)}
-                      className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 transition active:scale-95 cursor-pointer"
-                    >
-                      <Plus size={16} />
-                      เพิ่มเซ็ต
-                    </button>
-                  </div>
+                  {/* Add Next Set Button */}
+                  <button
+                    type="button"
+                    onClick={() => addSetToExercise(item.exercise_id)}
+                    className="w-full py-3 rounded-2xl bg-pink-50/70 hover:bg-pink-100 text-rose-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border border-pink-200/80 transition active:scale-98 cursor-pointer mt-1"
+                  >
+                    <Plus size={16} />
+                    <span>เพิ่มเซ็ตถัดไป (เซ็ตที่ {item.sets.length + 1})</span>
+                  </button>
                 </div>
               </div>
             );
@@ -576,7 +713,7 @@ export const WorkoutView: React.FC = () => {
               {/* Large Skip Rest Button as requested by user */}
               <button
                 onClick={() => setRestTimerSeconds(null)}
-                className="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm shadow-rose-200 active:scale-[0.98] transition cursor-pointer"
+                className="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-400 hover:opacity-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm shadow-pink-200 active:scale-[0.98] transition cursor-pointer"
               >
                 <span>ข้ามการพัก / พร้อมลุยต่อเลย ⚡</span>
               </button>
@@ -591,10 +728,10 @@ export const WorkoutView: React.FC = () => {
             <PigMascot size="lg" expression="workout" className="shrink-0 drop-shadow-sm" />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-500 text-white shadow-xs">
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs">
                   หมูอ้วนฟิตเนส 🐷
                 </span>
-                <span className="text-xs text-rose-700 font-bold">
+                <span className="text-xs text-rose-500 font-bold">
                   สวัสดีคุณ {activeProfileKey === 'partner' ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}
                 </span>
               </div>
@@ -607,22 +744,22 @@ export const WorkoutView: React.FC = () => {
           {/* Quick Start Card with MagicCard */}
           <MagicCard spotlightColor="rgba(244, 63, 94, 0.15)" className="p-7 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-              <Flame size={140} className="text-rose-500" />
+              <Flame size={140} className="text-rose-400" />
             </div>
             <div className="relative z-10 max-w-md">
-              <span className="text-xs font-bold text-rose-700 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
+              <span className="text-xs font-bold text-rose-500 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
                 พร้อมฝึกซ้อมหรือยัง?
               </span>
               <h2 className="text-2xl font-black text-slate-700 mt-2">
                 เริ่มเซสชันแบบเปิด (Empty Workout)
               </h2>
-              <p className="text-xs text-pink-800/80 mt-1.5 leading-relaxed font-medium">
+              <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-medium">
                 เริ่มยกเวททันที แล้วเลือกท่าฝึกที่ต้องการแบบยืดหยุ่น ติ๊กเซ็ตและน้ำหนักเรียลไทม์
               </p>
               <div className="mt-5">
                 <button
                   onClick={() => startWorkout('การฝึกวันนี้')}
-                  className="py-3 px-6 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-black text-sm flex items-center gap-2 shadow-md shadow-rose-200 active:scale-95 transition cursor-pointer"
+                  className="py-3 px-6 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-400 hover:opacity-95 text-white font-bold text-sm flex items-center gap-2 shadow-md shadow-pink-200 active:scale-95 transition cursor-pointer"
                 >
                   <Play size={16} fill="currentColor" />
                   <span>เริ่มเซสชันใหม่เดี๋ยวนี้</span>
@@ -637,7 +774,7 @@ export const WorkoutView: React.FC = () => {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-lg font-bold text-slate-700 flex items-center gap-2">
-                    <Dumbbell size={18} className="text-rose-500" />
+                    <Dumbbell size={18} className="text-rose-400" />
                     โปรแกรมการฝึกประจำสัปดาห์ (Routines)
                   </h3>
                   <span
@@ -650,7 +787,7 @@ export const WorkoutView: React.FC = () => {
                     {activeProfileKey === 'partner' ? '🌸 ของมะนาว' : '🏋️‍♂️ ของแม็กนั่ม'}
                   </span>
                 </div>
-                <p className="text-xs text-pink-800/70 mt-0.5">
+                <p className="text-xs text-slate-500 mt-0.5">
                   ตารางฝึกที่ตั้งค่าเฉพาะของแต่ละคน สามารถค้นหา ปรับเซ็ต/ครั้ง และแก้ไขท่าฝึกได้อิสระ
                 </p>
               </div>
@@ -660,7 +797,7 @@ export const WorkoutView: React.FC = () => {
                   setEditingProgram(null);
                   setShowRoutineModal(true);
                 }}
-                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-rose-200 transition active:scale-95 shrink-0 cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:opacity-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-pink-200 transition active:scale-95 shrink-0 cursor-pointer"
               >
                 <Plus size={15} />
                 + สร้าง Routine ใหม่
@@ -741,7 +878,7 @@ export const WorkoutView: React.FC = () => {
                       <div className="flex items-center gap-2 pt-1">
                         <button
                           onClick={() => handleStartProgram(prog.program_id)}
-                          className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-xs"
+                          className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:opacity-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-xs cursor-pointer"
                         >
                           <Play size={13} fill="currentColor" />
                           เริ่มเล่น
@@ -751,7 +888,7 @@ export const WorkoutView: React.FC = () => {
                             setEditingProgram(prog);
                             setShowRoutineModal(true);
                           }}
-                          className="py-2 px-3 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-900 border border-pink-200 font-bold text-xs flex items-center gap-1 transition active:scale-95"
+                          className="py-2 px-3 rounded-xl bg-pink-50 hover:bg-pink-100 text-slate-600 border border-pink-200 font-bold text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer"
                           title="แก้ไขโปรแกรมนี้"
                         >
                           <Edit2 size={13} />

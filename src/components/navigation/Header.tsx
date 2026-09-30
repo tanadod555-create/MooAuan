@@ -48,18 +48,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenProfileMod
           </button>
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="font-black text-base sm:text-lg text-pink-950 tracking-tight flex items-center gap-1">
+              <h1 className="font-bold text-sm sm:text-base text-slate-700 tracking-tight flex items-center gap-1">
                 หมูอ้วน
-                <span className="text-xs font-normal text-pink-500 font-mono">MooAuan</span>
+                <span className="text-[11px] font-normal text-pink-400 font-mono">MooAuan</span>
               </h1>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 font-black border border-pink-200 flex items-center gap-0.5">
-                <Sparkles size={10} className="text-pink-500" />
+              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-pink-100 text-pink-700 font-bold border border-pink-200/70 flex items-center gap-0.5">
+                <Sparkles size={9} className="text-pink-400" />
                 <span>คิ้วท์</span>
               </span>
             </div>
-            <p className="text-[11px] text-pink-900/70 flex items-center gap-1 font-medium">
+            <p className="text-[10px] sm:text-[11px] text-slate-500 flex items-center gap-1 font-medium">
               <span>กำลังดูแล:</span>
-              <strong className={activeProfileKey === 'primary' ? 'text-pink-700' : 'text-rose-600'}>
+              <strong className={activeProfileKey === 'primary' ? 'text-pink-600' : 'text-rose-500'}>
                 {activeProfileKey === 'primary' ? '🏋️‍♂️ แม็กนั่ม' : '🌸 มะนาว'}
               </strong>
             </p>
@@ -67,16 +67,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenProfileMod
         </div>
 
         {/* Right Actions: Switch Profile Pill + Sync */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {/* Quick Partner Switch Pill */}
           <button
             onClick={() => setActiveProfileKey(activeProfileKey === 'primary' ? 'partner' : 'primary')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold transition active:scale-95 shadow-sm bg-pink-50 hover:bg-pink-100/80 border-pink-200 text-pink-800"
+            className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full border text-[11px] sm:text-xs font-bold transition active:scale-95 shadow-2xs bg-pink-50/70 hover:bg-pink-100 border-pink-200/80 text-slate-600"
             title={`คลิกเพื่อสลับเป็น ${otherProfileName}`}
           >
-            <Users size={14} className="text-pink-500" />
-            <span className="hidden xs:inline">สลับเป็น:</span>
-            <span className="text-rose-600 font-extrabold">{otherProfileName}</span>
+            <Users size={13} className="text-pink-400" />
+            <span className="text-pink-600 font-bold">{otherProfileName}</span>
           </button>
 
           {/* Direct Google Sheets Link Button */}

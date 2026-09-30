@@ -119,7 +119,7 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
     const mins = totalMins % 60;
     if (hours === 0) return `${mins} นาที`;
     if (mins === 0) return `${hours} ชม.`;
-    return `${hours} ชม. ${mins} น.`;
+    return `${hours}ชม. ${mins}น.`;
   };
 
   // Calculate statistics across scoped sessions
@@ -175,14 +175,14 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
           <PigMascot size="md" expression="workout" className="shrink-0" />
           <div>
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-500 text-white shadow-xs">
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs">
                 ประวัติการออกกำลังกาย 📜
               </span>
-              <span className="text-xs text-rose-700 font-bold">
+              <span className="text-xs text-rose-500 font-bold">
                 หมูอ้วน Fit Record
               </span>
             </div>
-            <p className="text-xs text-pink-950 font-bold mt-1">
+            <p className="text-xs text-slate-600 font-medium mt-1">
               บันทึกทุกหยาดเหงื่อ เซ็ต และน้ำหนักที่ยกได้ ย้อนดูความก้าวหน้าของคุณกับแฟน
             </p>
           </div>
@@ -190,52 +190,52 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
 
         <button
           onClick={openUnifiedSpreadsheet}
-          className="px-3.5 py-2 rounded-xl bg-white hover:bg-pink-50 text-rose-700 border border-pink-200 text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95 ml-auto cursor-pointer"
+          className="px-3.5 py-2 rounded-xl bg-white hover:bg-pink-50 text-slate-700 border border-pink-200 text-xs font-bold flex items-center gap-1.5 shadow-xs transition active:scale-95 ml-auto cursor-pointer"
           title="เปิด Spreadsheet ดูข้อมูลทั้งหมด"
         >
-          <FileSpreadsheet size={15} className="text-rose-500" />
+          <FileSpreadsheet size={15} className="text-rose-400" />
           <span>ดูใน Google Sheets รวม</span>
         </button>
       </div>
 
       {/* Stats Summary Cards (Pastel Pink & Cream) */}
-      <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-        <div className="bg-white/95 border border-pink-200/90 p-3.5 rounded-3xl flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between text-pink-800">
-            <span className="text-[11px] font-bold">จำนวนครั้งที่ซ้อม</span>
-            <Dumbbell size={15} className="text-rose-500" />
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <div className="bg-white/95 border border-pink-200/90 p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl flex flex-col justify-between shadow-xs">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-[10px] sm:text-[11px] font-bold">จำนวนครั้ง</span>
+            <Dumbbell size={14} className="text-rose-400 shrink-0" />
           </div>
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-2xl font-black text-pink-950">{totalWorkouts}</span>
-            <span className="text-xs text-pink-700 font-bold">เซสชัน</span>
+          <div className="mt-1.5 flex items-baseline gap-1">
+            <span className="text-lg sm:text-2xl font-black text-slate-800">{totalWorkouts}</span>
+            <span className="text-[10px] sm:text-xs text-slate-500 font-medium">ครั้ง</span>
           </div>
         </div>
 
-        <div className="bg-white/95 border border-pink-200/90 p-3.5 rounded-3xl flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between text-pink-800">
-            <span className="text-[11px] font-bold">เวลาซ้อมสะสม</span>
-            <Clock size={15} className="text-rose-500" />
+        <div className="bg-white/95 border border-pink-200/90 p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl flex flex-col justify-between shadow-xs overflow-hidden">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-[10px] sm:text-[11px] font-bold">เวลารวม</span>
+            <Clock size={14} className="text-rose-400 shrink-0" />
           </div>
-          <div className="mt-2 flex flex-col">
-            <span className="text-xl sm:text-2xl font-black text-rose-600 font-mono">
+          <div className="mt-1.5 flex flex-col">
+            <span className="text-xs sm:text-base md:text-lg font-black text-rose-500 font-mono truncate">
               {formatHoursMinutes(totalMinutes)}
             </span>
-            <span className="text-[10px] text-pink-700/80 mt-0.5 font-medium">
-              เฉลี่ย ~{avgMinutes} นาที/ครั้ง
+            <span className="text-[9px] sm:text-[10px] text-slate-500 mt-0.5 font-medium truncate">
+              เฉลี่ย ~{avgMinutes}น./ครั้ง
             </span>
           </div>
         </div>
 
-        <div className="bg-white/95 border border-pink-200/90 p-3.5 rounded-3xl flex flex-col justify-between shadow-xs">
-          <div className="flex items-center justify-between text-pink-800">
-            <span className="text-[11px] font-bold">เซ็ตที่สำเร็จ</span>
-            <CheckCircle2 size={15} className="text-sky-600" />
+        <div className="bg-white/95 border border-pink-200/90 p-2.5 sm:p-3.5 rounded-2xl sm:rounded-3xl flex flex-col justify-between shadow-xs">
+          <div className="flex items-center justify-between text-slate-500">
+            <span className="text-[10px] sm:text-[11px] font-bold">เซ็ตสำเร็จ</span>
+            <CheckCircle2 size={14} className="text-rose-400 shrink-0" />
           </div>
-          <div className="mt-2 flex items-baseline gap-1">
-            <span className="text-2xl font-black text-sky-700 font-mono">
+          <div className="mt-1.5 flex items-baseline gap-1">
+            <span className="text-lg sm:text-2xl font-black text-slate-800 font-mono">
               {totalCompletedSets}
             </span>
-            <span className="text-xs text-pink-700 font-bold">เซ็ต</span>
+            <span className="text-[10px] sm:text-xs text-slate-500 font-medium">เซ็ต</span>
           </div>
         </div>
       </div>
@@ -245,10 +245,10 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
         <div className="flex items-center gap-1.5 p-1.5 bg-white/95 border border-pink-200/90 rounded-2xl shadow-xs">
           <button
             onClick={() => setScope('mine')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2 px-2 sm:px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 ${
               scope === 'mine'
-                ? 'bg-rose-500 text-white shadow-xs'
-                : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
+                ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
             }`}
           >
             <span>{activeProfileKey === 'partner' ? '🌸 ของมะนาว' : '🏋️‍♂️ ของแม็กนั่ม'}</span>
@@ -265,10 +265,10 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
 
           <button
             onClick={() => setScope('partner')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2 px-2 sm:px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 ${
               scope === 'partner'
-                ? 'bg-rose-500 text-white shadow-xs'
-                : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
+                ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
             }`}
           >
             <span>{activeProfileKey === 'partner' ? '🏋️‍♂️ ของแม็กนั่ม' : '🌸 ของมะนาว'}</span>
@@ -287,10 +287,10 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
 
           <button
             onClick={() => setScope('all')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+            className={`flex-1 py-2 px-2 sm:px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 ${
               scope === 'all'
-                ? 'bg-rose-500 text-white shadow-xs'
-                : 'text-pink-900/70 hover:text-pink-950 hover:bg-pink-50/60'
+                ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
             }`}
           >
             <Users size={13} />
@@ -551,7 +551,7 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleRepeatSession(sess)}
-                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow-xs cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow-xs cursor-pointer"
                       title="เริ่มการฝึกใหม่โดยดึงท่าจากเซสชันนี้"
                     >
                       <Play size={12} fill="currentColor" />
