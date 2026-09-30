@@ -4,6 +4,7 @@ import { Exercise, WorkoutSet } from '../types';
 import { ExerciseDetailModal } from '../components/exercises/ExerciseDetailModal';
 import {
   Play,
+  Pause,
   Check,
   Plus,
   Trash2,
@@ -15,12 +16,14 @@ import {
   Flame,
   Dumbbell,
   CheckCircle2,
-  ListPlus
+  ListPlus,
+  X,
 } from 'lucide-react';
 import { BorderBeam } from '../components/ui/BorderBeam';
 import { ShimmerButton } from '../components/ui/ShimmerButton';
 import { BentoGrid, BentoCard } from '../components/ui/BentoGrid';
 import { MagicCard } from '../components/ui/MagicCard';
+import { RestTimer } from '../components/workout/RestTimer';
 
 export const WorkoutView: React.FC = () => {
   const {
@@ -42,10 +45,13 @@ export const WorkoutView: React.FC = () => {
   const [showAddExerciseDrawer, setShowAddExerciseDrawer] = useState(false);
   const [restTimerSeconds, setRestTimerSeconds] = useState<number | null>(null);
   const [restTimerInitial, setRestTimerInitial] = useState(90);
+  const [restTimerPaused, setRestTimerPaused] = useState(false);
+  const [restTimerSound, setRestTimerSound] = useState(true);
+  const [showRestTimer, setShowRestTimer] = useState(false);
 
   // Rest Timer Interval
   useEffect(() => {
-    if (restTimerSeconds === null || restTimerSeconds <= 0) return;
+    if (restTimerSeconds === null || restTimerPaused || restTimerSeconds <= 0) return;
     const interval = setInterval(() => {
       setRestTimerSeconds((prev) => {
         if (prev === null || prev <= 1) return 0;
@@ -53,11 +59,25 @@ export const WorkoutView: React.FC = () => {
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [restTimerSeconds]);
+  }, [restTimerSeconds, restTimerPaused]);
 
   const startRestTimer = (seconds: number) => {
     setRestTimerInitial(seconds);
     setRestTimerSeconds(seconds);
+    setRestTimerPaused(false);
+    setShowRestTimer(true);
+  };
+
+  const handleAddSeconds = (delta: number) => {
+    setRestTimerSeconds((prev) => {
+      const current = prev ?? restTimerInitial;
+      return Math.max(0, current + delta);
+    });
+  };
+
+  const handleResetTimer = () => {
+    setRestTimerSeconds(restTimerInitial);
+    setRestTimerPaused(false);
   };
 
   const formatSeconds = (sec: number) => {
@@ -101,6 +121,31 @@ export const WorkoutView: React.FC = () => {
                 <h2 className="text-xl font-black text-white mt-1">{activeWorkout.name}</h2>
               </div>
               <div className="flex items-center gap-2">
+                {/* Rest Timer Button in header */}
+                <button
+                  onClick={() => setShowRestTimer((prev) => !prev)}
+                  className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-mono font-bold transition active:scale-95 ${
+                    restTimerSeconds !== null && restTimerSeconds > 0
+                      ? 'bg-sky-500/20 border-sky-400 text-sky-300 ring-2 ring-sky-500/30'
+                      : showRestTimer
+                      ? 'bg-slate-800 border-sky-500/50 text-sky-400'
+                      : 'bg-slate-950 border-slate-800 text-slate-300 hover:text-white'
+                  }`}
+                  title="เปิด/ปิดนาฬิกาจับเวลาพัก"
+                >
+                  <Timer
+                    size={16}
+                    className={
+                      restTimerSeconds !== null && !restTimerPaused && restTimerSeconds > 0
+                        ? 'animate-spin text-sky-400'
+                        : 'text-sky-400'
+                    }
+                  />
+                  <span>
+                    {restTimerSeconds !== null ? formatSeconds(restTimerSeconds) : 'จับเวลาพัก'}
+                  </span>
+                </button>
+
                 <div className="bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 flex items-center gap-1.5 text-sm font-mono font-bold text-emerald-400">
                   <Clock size={16} />
                   {formatSeconds(activeWorkout.elapsedSeconds)}
@@ -108,30 +153,24 @@ export const WorkoutView: React.FC = () => {
               </div>
             </div>
 
-            {/* Rest Timer Floating Pill if active */}
-            {restTimerSeconds !== null && restTimerSeconds > 0 && (
-              <div className="mt-3 p-2 bg-slate-950 rounded-xl border border-sky-500/40 flex items-center justify-between text-xs animate-fadeIn">
-                <div className="flex items-center gap-2 text-sky-400 font-semibold">
-                  <Timer size={16} className="animate-spin text-sky-400" />
-                  <span>เวลาพักระหว่างเซ็ต:</span>
-                  <span className="text-base font-mono font-black text-white">
-                    {formatSeconds(restTimerSeconds)}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => setRestTimerSeconds((s) => (s ? s + 30 : 30))}
-                    className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-300 hover:text-white"
-                  >
-                    +30s
-                  </button>
-                  <button
-                    onClick={() => setRestTimerSeconds(null)}
-                    className="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-rose-400 hover:text-rose-300"
-                  >
-                    ปิด
-                  </button>
-                </div>
+            {/* Rest Timer Panel (Expanded or Active) */}
+            {showRestTimer && (
+              <div className="mt-4 pt-3 border-t border-slate-800 animate-fadeIn">
+                <RestTimer
+                  seconds={restTimerSeconds}
+                  initialSeconds={restTimerInitial}
+                  isPaused={restTimerPaused}
+                  soundEnabled={restTimerSound}
+                  onStart={startRestTimer}
+                  onPauseToggle={() => setRestTimerPaused((p) => !p)}
+                  onAddSeconds={handleAddSeconds}
+                  onReset={handleResetTimer}
+                  onClose={() => {
+                    setRestTimerSeconds(null);
+                    setShowRestTimer(false);
+                  }}
+                  onSoundToggle={() => setRestTimerSound((s) => !s)}
+                />
               </div>
             )}
 
@@ -292,6 +331,12 @@ export const WorkoutView: React.FC = () => {
                     <div className="flex items-center gap-1 text-[10px] text-slate-400">
                       <span>พัก:</span>
                       <button
+                        onClick={() => startRestTimer(30)}
+                        className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                      >
+                        30s
+                      </button>
+                      <button
                         onClick={() => startRestTimer(60)}
                         className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
                       >
@@ -324,6 +369,47 @@ export const WorkoutView: React.FC = () => {
             <Plus size={18} />
             เพิ่มท่าออกกำลังกายในเซสชันนี้
           </button>
+
+          {/* Floating Sticky Rest Timer Widget */}
+          {restTimerSeconds !== null && !showRestTimer && (
+            <div className="fixed bottom-20 right-4 z-40 bg-slate-950/95 border-2 border-sky-500/80 rounded-2xl p-2 px-3 shadow-2xl backdrop-blur-xl flex items-center gap-2 animate-fadeIn ring-4 ring-sky-950/50">
+              <button
+                onClick={() => setShowRestTimer(true)}
+                className="flex items-center gap-1.5 text-sky-400 font-mono font-bold text-sm hover:underline"
+                title="คลิกเพื่อเปิดนาฬิกาเต็มรูปแบบ"
+              >
+                <Timer size={16} className={!restTimerPaused && restTimerSeconds > 0 ? 'animate-spin' : ''} />
+                <span className={restTimerSeconds === 0 ? 'text-emerald-400 font-black animate-pulse' : ''}>
+                  {restTimerSeconds === 0 ? 'หมดเวลา!' : formatSeconds(restTimerSeconds)}
+                </span>
+              </button>
+              <button
+                onClick={() => handleAddSeconds(30)}
+                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 active:scale-90 text-[11px] font-bold text-white rounded-lg"
+                title="เพิ่ม 30 วินาที"
+              >
+                +30s
+              </button>
+              <button
+                onClick={() => setRestTimerPaused((p) => !p)}
+                className="p-1 text-slate-300 hover:text-white active:scale-90"
+                title={restTimerPaused ? 'ทำงานต่อ' : 'พักชั่วคราว'}
+              >
+                {restTimerPaused ? (
+                  <Play size={14} className="fill-current text-sky-400" />
+                ) : (
+                  <Pause size={14} className="fill-current text-slate-300" />
+                )}
+              </button>
+              <button
+                onClick={() => setRestTimerSeconds(null)}
+                className="p-1 text-slate-400 hover:text-rose-400 active:scale-90"
+                title="ปิดนาฬิกา"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         /* If No Active Workout: Show Quick Start & Routine Programs */
