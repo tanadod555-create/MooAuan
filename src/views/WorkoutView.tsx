@@ -110,6 +110,10 @@ export const WorkoutView: React.FC = () => {
     }
   };
 
+  // Stepper increment step size state
+  const [weightStep, setWeightStep] = useState<number>(2.5);
+  const [repsStep, setRepsStep] = useState<number>(1);
+
   // Routine search and editing state
   const [routineSearchQuery, setRoutineSearchQuery] = useState('');
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
@@ -579,12 +583,12 @@ export const WorkoutView: React.FC = () => {
                               onClick={() => {
                                 const next = Math.max(
                                   0,
-                                  Math.round(((set.weight_kg || 0) - 2.5) * 10) / 10
+                                  Math.round(((set.weight_kg || 0) - weightStep) * 100) / 100
                                 );
                                 updateSet(item.exercise_id, setIdx, { weight_kg: next });
                               }}
                               className="w-11 h-11 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
-                              title="ลด 2.5 กก."
+                              title={`ลด ${weightStep} กก.`}
                             >
                               <Minus size={18} className="stroke-[2.5]" />
                             </button>
@@ -608,34 +612,36 @@ export const WorkoutView: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => {
-                                const next = Math.round(((set.weight_kg || 0) + 2.5) * 10) / 10;
+                                const next = Math.round(((set.weight_kg || 0) + weightStep) * 100) / 100;
                                 updateSet(item.exercise_id, setIdx, { weight_kg: next });
                               }}
                               className="w-11 h-11 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
-                              title="เพิ่ม 2.5 กก."
+                              title={`เพิ่ม ${weightStep} กก.`}
                             >
                               <Plus size={18} className="stroke-[2.5]" />
                             </button>
                           </div>
 
-                          {/* Quick Weight Adjust Chips */}
-                          <div className="flex items-center justify-center gap-1.5 mt-2">
-                            {[-5, -1.25, 1.25, 5].map((delta) => (
-                              <button
-                                key={delta}
-                                type="button"
-                                onClick={() => {
-                                  const next = Math.max(
-                                    0,
-                                    Math.round(((set.weight_kg || 0) + delta) * 100) / 100
-                                  );
-                                  updateSet(item.exercise_id, setIdx, { weight_kg: next });
-                                }}
-                                className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white/90 hover:bg-white text-slate-600 border border-pink-200/70 active:scale-95 transition cursor-pointer"
-                              >
-                                {delta > 0 ? `+${delta}` : delta}
-                              </button>
-                            ))}
+                          {/* Weight Step Size Selector */}
+                          <div className="flex items-center justify-between gap-1 mt-2 px-0.5">
+                            <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">ปรับทีละ:</span>
+                            <div className="flex items-center gap-1 overflow-x-auto">
+                              {[1, 1.25, 2.5, 5, 10].map((s) => (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  onClick={() => setWeightStep(s)}
+                                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg border transition cursor-pointer active:scale-95 ${
+                                    weightStep === s
+                                      ? 'bg-rose-500 text-white border-rose-500 shadow-2xs font-extrabold'
+                                      : 'bg-white/90 hover:bg-white text-slate-600 border-pink-200/80'
+                                  }`}
+                                  title={`กด +/- เพื่อปรับทีละ ${s} กก.`}
+                                >
+                                  ±{s}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         </div>
 
@@ -654,11 +660,11 @@ export const WorkoutView: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => {
-                                const next = Math.max(0, (set.reps || 0) - 1);
+                                const next = Math.max(0, (set.reps || 0) - repsStep);
                                 updateSet(item.exercise_id, setIdx, { reps: next });
                               }}
                               className="w-11 h-11 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
-                              title="ลด 1 ครั้ง"
+                              title={`ลด ${repsStep} ครั้ง`}
                             >
                               <Minus size={18} className="stroke-[2.5]" />
                             </button>
@@ -682,34 +688,36 @@ export const WorkoutView: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => {
-                                const next = (set.reps || 0) + 1;
+                                const next = (set.reps || 0) + repsStep;
                                 updateSet(item.exercise_id, setIdx, { reps: next });
                               }}
                               className="w-11 h-11 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
-                              title="เพิ่ม 1 ครั้ง"
+                              title={`เพิ่ม ${repsStep} ครั้ง`}
                             >
                               <Plus size={18} className="stroke-[2.5]" />
                             </button>
                           </div>
 
-                          {/* Quick Rep Preset Chips */}
-                          <div className="flex items-center justify-center gap-1.5 mt-2">
-                            {[8, 10, 12, 15].map((target) => (
-                              <button
-                                key={target}
-                                type="button"
-                                onClick={() =>
-                                  updateSet(item.exercise_id, setIdx, { reps: target })
-                                }
-                                className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition active:scale-95 cursor-pointer ${
-                                  set.reps === target
-                                    ? 'bg-rose-500 text-white border-rose-500'
-                                    : 'bg-white/90 hover:bg-white text-slate-600 border-pink-200/70'
-                                }`}
-                              >
-                                {target} ครั้ง
-                              </button>
-                            ))}
+                          {/* Reps Step Size Selector */}
+                          <div className="flex items-center justify-between gap-1 mt-2 px-0.5">
+                            <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">ปรับทีละ:</span>
+                            <div className="flex items-center gap-1 overflow-x-auto">
+                              {[1, 2, 5].map((s) => (
+                                <button
+                                  key={s}
+                                  type="button"
+                                  onClick={() => setRepsStep(s)}
+                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition cursor-pointer active:scale-95 ${
+                                    repsStep === s
+                                      ? 'bg-rose-500 text-white border-rose-500 shadow-2xs font-extrabold'
+                                      : 'bg-white/90 hover:bg-white text-slate-600 border-pink-200/80'
+                                  }`}
+                                  title={`กด +/- เพื่อปรับทีละ ${s} ครั้ง`}
+                                >
+                                  ±{s}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
