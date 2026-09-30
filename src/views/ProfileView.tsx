@@ -19,6 +19,7 @@ import {
   ChevronRight,
   ExternalLink,
   ShieldAlert,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { MagicCard } from '../components/ui/MagicCard';
 import { NumberTicker } from '../components/ui/NumberTicker';
@@ -39,6 +40,8 @@ export const ProfileView: React.FC = () => {
     foodLogs,
     syncAllToGoogleSheets,
     isSyncing,
+    openUnifiedSpreadsheet,
+    unifiedSpreadsheetUrl,
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'stats' | 'profile' | 'settings'>('stats');
@@ -496,9 +499,25 @@ export const ProfileView: React.FC = () => {
               )}
             </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed">
-              ข้อมูลทั้งหมด (โปรไฟล์, ประวัติออกกำลังกาย, เซ็ต, อาหาร) จะถูกบันทึกลงใน Google Spreadsheet 1 ไฟล์ต่อผู้ใช้
-            </p>
+            <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-white font-bold flex items-center gap-1.5">
+                  <FileSpreadsheet size={16} className="text-emerald-400" />
+                  Google Spreadsheet รวมศูนย์ (แม็กนั่ม & มะนาว)
+                </p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  บันทึกข้อมูลทุกอย่างของทั้งสองคนลงในไฟล์เดียวกัน พร้อมคอลัมน์ระบุชื่อคนกำกับทุกแถวอย่างชัดเจน
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={openUnifiedSpreadsheet}
+                className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shrink-0 active:scale-95 transition"
+              >
+                <span>เปิด Sheet รวม</span>
+                <ExternalLink size={13} />
+              </button>
+            </div>
 
             {/* Google Login Button */}
             <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
@@ -557,14 +576,14 @@ export const ProfileView: React.FC = () => {
               </div>
             </div>
 
-            {/* Spreadsheet ID for active profile */}
+            {/* Spreadsheet ID for unified spreadsheet */}
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Spreadsheet ID ของโปรไฟล์นี้:
+                Google Spreadsheet ID รวม (ทั้งแม็กนั่ม & มะนาว):
               </label>
               <input
                 type="text"
-                placeholder="สร้างใหม่อัตโนมัติ หรือใส่ ID เช่น 1cBYIM2WiqqGHIJi8t_JiUF4py30g3CGgQhGWwKWH2_A"
+                placeholder="เช่น 1cBYIM2WiqqGHIJi8t_JiUF4py30g3CGgQhGWwKWH2_A"
                 value={spreadsheetId}
                 onChange={(e) => setSpreadsheetId(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 font-mono"

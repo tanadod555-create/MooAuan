@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { Users, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Users, RefreshCw, FileSpreadsheet } from 'lucide-react';
 
 interface HeaderProps {
   onOpenSettings: () => void;
@@ -17,6 +17,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenProfileMod
     isSyncing,
     syncAllToGoogleSheets,
     settings,
+    openUnifiedSpreadsheet,
   } = useApp();
 
   const otherProfileName = activeProfileKey === 'primary' ? 'มะนาว (แฟน)' : 'แม็กนั่ม';
@@ -76,6 +77,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenSettings, onOpenProfileMod
             <span className={activeProfileKey === 'primary' ? 'text-pink-400 font-bold' : 'text-emerald-400 font-bold'}>
               {otherProfileName}
             </span>
+          </button>
+
+          {/* Direct Google Sheets Link Button */}
+          <button
+            onClick={openUnifiedSpreadsheet}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/40 text-emerald-300 text-xs font-bold transition active:scale-95 shadow-sm"
+            title="เปิด Google Sheets รวม (แม็กนั่ม & มะนาว) ทันที"
+          >
+            <FileSpreadsheet size={15} className="text-emerald-400" />
+            <span className="hidden sm:inline">ชีทรวม</span>
           </button>
 
           {/* Sync Button */}

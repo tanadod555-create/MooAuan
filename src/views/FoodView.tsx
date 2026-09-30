@@ -21,6 +21,12 @@ import {
   AlertTriangle,
   X,
   ChevronRight,
+  ChevronLeft,
+  Calendar,
+  Search,
+  FileSpreadsheet,
+  ExternalLink,
+  Users,
 } from 'lucide-react';
 import { MagicCard } from '../components/ui/MagicCard';
 import { CircularProgress } from '../components/ui/CircularProgress';
@@ -28,20 +34,85 @@ import { NumberTicker } from '../components/ui/NumberTicker';
 import { ShimmerButton } from '../components/ui/ShimmerButton';
 
 export const FoodView: React.FC = () => {
-  const { currentProfile, foodLogs, addFoodLog, deleteFoodLog, settings, updateSettings } = useApp();
+  const {
+    currentProfile,
+    primaryProfile,
+    partnerProfile,
+    activeProfileKey,
+    foodLogs,
+    allFoodLogs,
+    addFoodLog,
+    deleteFoodLog,
+    settings,
+    updateSettings,
+    openUnifiedSpreadsheet,
+  } = useApp();
 
-  // Filter food logs for today
+  const [viewFilter, setViewFilter] = useState<'all' | 'primary' | 'partner'>('all');
+
+  // Date Navigator state (Default to today)
   const today = new Date().toISOString().split('T')[0];
-  const todayLogs = foodLogs.filter((l) => l.date === today);
+  const [selectedDate, setSelectedDate] = useState<string>(today);
+  const [foodSearchQuery, setFoodSearchQuery] = useState('');
 
-  // Calculate daily totals
+  const isToday = selectedDate === today;
+
+  const handlePrevDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  const handleNextDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  const handleToday = () => {
+    setSelectedDate(today);
+  };
+
+  // Filter food logs for selected date
+  const allSelectedLogs = (allFoodLogs || []).filter((l) => l.date === selectedDate);
+  const magnumSelectedLogs = allSelectedLogs.filter((l) => (l.user_id || 'primary') === 'primary');
+  const manaoSelectedLogs = allSelectedLogs.filter((l) => l.user_id === 'partner');
+
+  const todayLogs = viewFilter === 'all'
+    ? allSelectedLogs
+    : viewFilter === 'primary'
+    ? magnumSelectedLogs
+    : manaoSelectedLogs;
+
+  // Calculate daily totals for current view
   const totalKcal = todayLogs.reduce((sum, l) => sum + (l.kcal || 0), 0);
   const totalProtein = todayLogs.reduce((sum, l) => sum + (l.protein_g || 0), 0);
   const totalCarb = todayLogs.reduce((sum, l) => sum + (l.carb_g || 0), 0);
   const totalFat = todayLogs.reduce((sum, l) => sum + (l.fat_g || 0), 0);
 
-  // Targets from profile
-  const targetKcal = currentProfile.kcal_target || 2000;
+  // Totals for individual breakdown on selected date
+  const magnumKcal = magnumSelectedLogs.reduce((sum, l) => sum + (l.kcal || 0), 0);
+  const manaoKcal = manaoSelectedLogs.reduce((sum, l) => sum + (l.kcal || 0), 0);
+
+  // Search Results across all dates
+  const searchResults = foodSearchQuery.trim()
+    ? (allFoodLogs || []).filter((l) => {
+        const q = foodSearchQuery.toLowerCase();
+        return (
+          l.name.toLowerCase().includes(q) ||
+          (l.user_name && l.user_name.toLowerCase().includes(q)) ||
+          l.meal.toLowerCase().includes(q) ||
+          l.date.includes(q)
+        );
+      })
+    : [];
+
+  // Targets based on viewFilter
+  const targetKcal = viewFilter === 'all'
+    ? (primaryProfile.kcal_target || 2400) + (partnerProfile.kcal_target || 1750)
+    : viewFilter === 'primary'
+    ? (primaryProfile.kcal_target || 2400)
+    : (partnerProfile.kcal_target || 1750);
   const targetProtein = currentProfile.protein_target_g || 140;
   const targetCarb = currentProfile.carb_target_g || 240;
   const targetFat = currentProfile.fat_target_g || 60;
@@ -121,7 +192,7 @@ export const FoodView: React.FC = () => {
 
     for (const item of aiResultItems) {
       await addFoodLog({
-        date: today,
+        date: selectedDate,
         time: nowTime,
         meal: selectedMeal,
         name: item.name,
@@ -164,7 +235,7 @@ export const FoodView: React.FC = () => {
     });
 
     await addFoodLog({
-      date: today,
+      date: selectedDate,
       time: nowTime,
       meal: manualMeal,
       name: manualName.trim(),
@@ -183,6 +254,219 @@ export const FoodView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24">
+      {/* Unified Google Sheet Direct Access Card */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/50 via-slate-900 to-teal-950/50 border border-emerald-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg shadow-emerald-950/20">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center shrink-0">
+            <FileSpreadsheet size={22} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-white">Google Sheets รวมข้อมูล</h3>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
+                แม็กนั่ม & มะนาว
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              ข้อมูลทั้ง 2 คนบันทึกลงใน Spreadsheet เดียวกันอัตโนมัติ เปิดดูตารางรวมได้ทันที
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={openUnifiedSpreadsheet}
+          className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs shrink-0 flex items-center justify-center gap-2 shadow-md shadow-emerald-500/20 active:scale-95 transition"
+        >
+          <span>📊 เปิด Google Sheets</span>
+          <ExternalLink size={14} className="stroke-[2.5]" />
+        </button>
+      </div>
+
+      {/* View Filter Pill Switcher (รวมทั้งสองคน / แม็กนั่ม / มะนาว) */}
+      <div className="flex items-center p-1 bg-slate-900/90 rounded-2xl border border-slate-800 gap-1">
+        <button
+          onClick={() => setViewFilter('all')}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+            viewFilter === 'all'
+              ? 'bg-slate-800 text-white shadow-sm border border-slate-700/60'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Users size={14} className="text-sky-400" />
+          <span>รวมทั้งสองคน ({allSelectedLogs.length})</span>
+        </button>
+        <button
+          onClick={() => setViewFilter('primary')}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+            viewFilter === 'primary'
+              ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <span>🏋️‍♂️ แม็กนั่ม ({magnumSelectedLogs.length})</span>
+        </button>
+        <button
+          onClick={() => setViewFilter('partner')}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+            viewFilter === 'partner'
+              ? 'bg-pink-950/60 text-pink-300 border border-pink-500/40 shadow-sm'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <span>🌸 มะนาว ({manaoSelectedLogs.length})</span>
+        </button>
+      </div>
+
+      {/* Dual Progress Comparison Bar when in 'all' view */}
+      {viewFilter === 'all' && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3.5 rounded-2xl bg-slate-900 border border-emerald-500/30">
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="font-bold text-emerald-400 flex items-center gap-1">
+                🏋️‍♂️ แม็กนั่ม
+              </span>
+              <span className="font-mono text-slate-300 font-bold">
+                {Math.round(magnumKcal)} / {primaryProfile.kcal_target || 2400} kcal
+              </span>
+            </div>
+            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 rounded-full transition-all"
+                style={{ width: `${Math.min(100, (magnumKcal / (primaryProfile.kcal_target || 2400)) * 100)}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="p-3.5 rounded-2xl bg-slate-900 border border-pink-500/30">
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="font-bold text-pink-400 flex items-center gap-1">
+                🌸 มะนาว
+              </span>
+              <span className="font-mono text-slate-300 font-bold">
+                {Math.round(manaoKcal)} / {partnerProfile.kcal_target || 1750} kcal
+              </span>
+            </div>
+            <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-pink-500 rounded-full transition-all"
+                style={{ width: `${Math.min(100, (manaoKcal / (partnerProfile.kcal_target || 1750)) * 100)}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Date Navigation & Search Controls */}
+      <div className="p-3 bg-slate-900/90 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+          <button
+            onClick={handlePrevDay}
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition active:scale-95"
+            title="ดูวันก่อนหน้า (ย้อนหลัง)"
+          >
+            <ChevronLeft size={18} />
+          </button>
+
+          <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-700/80">
+            <Calendar size={16} className="text-emerald-400 shrink-0" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
+              className="bg-transparent text-xs text-white font-bold focus:outline-none cursor-pointer"
+            />
+          </div>
+
+          <button
+            onClick={handleNextDay}
+            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition active:scale-95"
+            title="ดูวันถัดไป"
+          >
+            <ChevronRight size={18} />
+          </button>
+
+          {!isToday && (
+            <button
+              onClick={handleToday}
+              className="px-2.5 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold hover:bg-emerald-500/30 transition active:scale-95"
+            >
+              กลับสู่วันนี้
+            </button>
+          )}
+        </div>
+
+        {/* Search Past Meals Input */}
+        <div className="relative w-full sm:w-64">
+          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="ค้นหาเมนูย้อนหลังทุกวัน..."
+            value={foodSearchQuery}
+            onChange={(e) => setFoodSearchQuery(e.target.value)}
+            className="w-full pl-9 pr-8 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+          />
+          {foodSearchQuery && (
+            <button
+              onClick={() => setFoodSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Historical Search Results Panel (if searchQuery entered) */}
+      {foodSearchQuery.trim() && (
+        <div className="p-4 bg-slate-900 rounded-2xl border border-sky-500/40 space-y-3 animate-fadeIn">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-bold text-sky-400 flex items-center gap-1.5">
+              <Search size={14} /> ผลการค้นหาย้อนหลังสำหรับ "{foodSearchQuery}" ({searchResults.length} รายการ)
+            </h4>
+            <button
+              onClick={() => setFoodSearchQuery('')}
+              className="text-xs text-slate-400 hover:text-white"
+            >
+              ปิดผลค้นหา
+            </button>
+          </div>
+          {searchResults.length === 0 ? (
+            <p className="text-xs text-slate-500 text-center py-3">ไม่พบรายการที่ตรงกับคำค้นหา</p>
+          ) : (
+            <div className="divide-y divide-slate-800 max-h-60 overflow-y-auto pr-1 space-y-1">
+              {searchResults.map((item) => (
+                <div key={item.log_id} className="pt-2 pb-1.5 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-white">{item.name}</span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                        item.user_id === 'partner' ? 'bg-pink-500/20 text-pink-300' : 'bg-emerald-500/20 text-emerald-300'
+                      }`}>
+                        {item.user_id === 'partner' ? '🌸 มะนาว' : '🏋️‍♂️ แม็กนั่ม'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      วันที่: <strong className="text-slate-300">{item.date}</strong> ({item.time}) · {item.grams}g · {item.meal}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-mono font-bold text-emerald-400">{item.kcal} kcal</span>
+                    <button
+                      onClick={() => {
+                        setSelectedDate(item.date);
+                        setFoodSearchQuery('');
+                      }}
+                      className="block text-[10px] text-sky-400 hover:underline mt-0.5"
+                    >
+                      ดูวันนี้นี้ →
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Top Header & Daily Macro Tracker using 21st.dev MagicCard & CircularProgress */}
       <MagicCard spotlightColor="rgba(16, 185, 129, 0.12)" className="p-6">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
@@ -196,11 +480,11 @@ export const FoodView: React.FC = () => {
               color={totalKcal > targetKcal ? '#f43f5e' : '#10b981'}
               bgColor="#1e293b"
               label={`${Math.round(totalKcal)}`}
-              sublabel="kcal วันนี้"
+              sublabel={isToday ? "kcal วันนี้" : `kcal (${selectedDate})`}
             />
             <div>
               <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 uppercase tracking-wider">
-                โภชนาการวันนี้ ({today})
+                โภชนาการประจำวันที่ {selectedDate} {isToday ? '(วันนี้)' : ''}
               </span>
               <h2 className="text-xl font-black text-white mt-1">เป้าหมายพลังงาน</h2>
               <p className="text-xs text-slate-400 mt-1">
@@ -444,8 +728,15 @@ export const FoodView: React.FC = () => {
                       className="p-3.5 flex items-center justify-between hover:bg-slate-800/40 transition"
                     >
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-sm font-bold text-white">{log.name}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 ${
+                            log.user_id === 'partner'
+                              ? 'bg-pink-500/20 text-pink-300 border border-pink-500/30'
+                              : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          }`}>
+                            {log.user_id === 'partner' ? '🌸 มะนาว' : '🏋️‍♂️ แม็กนั่ม'}
+                          </span>
                           {log.source === 'ai' && (
                             <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-500/20 font-medium flex items-center gap-0.5">
                               <Sparkles size={10} /> AI ({Math.round((log.confidence || 0.8) * 100)}%)

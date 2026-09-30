@@ -21,14 +21,14 @@ export const SHEET_TABS = [
 ] as const;
 
 export const SHEET_HEADERS: Record<string, string[]> = {
-  profile: ['user_id', 'email', 'name', 'sex', 'birth_year', 'height_cm', 'goal', 'kcal_target', 'protein_target_g', 'created_at'],
-  body_metrics: ['date', 'weight_kg', 'body_fat_pct', 'waist_cm', 'note'],
-  exercises: ['exercise_id', 'name_en', 'name_th', 'category', 'muscle_primary', 'muscle_secondary', 'pattern', 'equipment', 'is_custom'],
-  programs: ['program_id', 'name', 'day_of_week', 'note'],
+  profile: ['user_name', 'user_id', 'email', 'sex', 'goal', 'kcal_target', 'protein_target_g', 'carb_target_g', 'fat_target_g', 'height_cm', 'updated_at'],
+  body_metrics: ['user_name', 'date', 'weight_kg', 'body_fat_pct', 'waist_cm', 'note'],
+  exercises: ['exercise_id', 'name_en', 'name_th', 'category', 'muscle_primary', 'muscle_secondary', 'pattern', 'equipment'],
+  programs: ['user_name', 'program_id', 'name', 'day_of_week', 'note'],
   program_items: ['program_id', 'order', 'exercise_id', 'target_sets', 'target_reps', 'target_weight_kg'],
-  workout_sessions: ['session_id', 'date', 'program_id', 'start_time', 'end_time', 'note'],
-  workout_sets: ['set_id', 'session_id', 'exercise_id', 'set_no', 'weight_kg', 'reps', 'rpe', 'done'],
-  food_logs: ['log_id', 'date', 'time', 'meal', 'name', 'image_ref', 'grams', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fiber_g', 'sugar_g', 'sodium_mg', 'micros_json', 'source', 'confidence'],
+  workout_sessions: ['user_name', 'date', 'program_name', 'start_time', 'end_time', 'note', 'session_id'],
+  workout_sets: ['user_name', 'date', 'exercise_name', 'set_no', 'weight_kg', 'reps', 'rpe', 'done', 'session_id'],
+  food_logs: ['user_name', 'date', 'time', 'meal', 'name', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'grams', 'source', 'log_id'],
 };
 
 export class GoogleSheetsService {
@@ -168,16 +168,17 @@ export class GoogleSheetsService {
   }
 
   /**
-   * Synchronize Food Log to Sheet
+   * Synchronize Food Log to Sheet (Unified with User Name)
    */
-  async syncFoodLog(log: FoodLog) {
+  async syncFoodLog(log: FoodLog, userName: string = 'แม็กนั่ม') {
+    const finalUserName = log.user_name || userName;
     if (this.appsScriptUrl) {
       try {
         await fetch(this.appsScriptUrl, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'add_food', data: log }),
+          body: JSON.stringify({ action: 'add_food', data: log, user_name: finalUserName }),
         });
         return { success: true };
       } catch (e) {
@@ -187,39 +188,36 @@ export class GoogleSheetsService {
 
     if (!this.accessToken) return;
 
+    // Matches SHEET_HEADERS.food_logs: ['user_name', 'date', 'time', 'meal', 'name', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'grams', 'source', 'log_id']
     const row = [
-      log.log_id,
+      finalUserName,
       log.date,
       log.time,
       log.meal,
       log.name,
-      log.image_ref || '',
-      log.grams,
       log.kcal,
       log.protein_g,
       log.carb_g,
       log.fat_g,
-      log.fiber_g || 0,
-      log.sugar_g || 0,
-      log.sodium_mg || 0,
-      JSON.stringify(log.micros || {}),
+      log.grams,
       log.source,
-      log.confidence || 1.0,
+      log.log_id,
     ];
     return this.appendRow('food_logs', row);
   }
 
   /**
-   * Synchronize Workout Session and Sets to Sheet
+   * Synchronize Workout Session and Sets to Sheet (Unified with User Name)
    */
-  async syncWorkoutSession(session: WorkoutSession, sets: WorkoutSet[]) {
+  async syncWorkoutSession(session: WorkoutSession, sets: WorkoutSet[], userName: string = 'แม็กนั่ม') {
+    const finalUserName = session.user_name || userName;
     if (this.appsScriptUrl) {
       try {
         await fetch(this.appsScriptUrl, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'add_workout', session, sets }),
+          body: JSON.stringify({ action: 'add_workout', session, sets, user_name: finalUserName }),
         });
         return { success: true };
       } catch (e) {
@@ -229,44 +227,47 @@ export class GoogleSheetsService {
 
     if (!this.accessToken) return;
 
-    // 1. Session Row
+    // 1. Session Row: ['user_name', 'date', 'program_name', 'start_time', 'end_time', 'note', 'session_id']
     const sessionRow = [
-      session.session_id,
+      finalUserName,
       session.date,
-      session.program_id || '',
+      session.program_name || session.program_id || 'ทั่วไป',
       session.start_time,
       session.end_time || '',
       session.note || '',
+      session.session_id,
     ];
     await this.appendRow('workout_sessions', sessionRow);
 
-    // 2. Sets Rows
+    // 2. Sets Rows: ['user_name', 'date', 'exercise_name', 'set_no', 'weight_kg', 'reps', 'rpe', 'done', 'session_id']
     if (sets.length > 0) {
       const setRows = sets.map(s => [
-        s.set_id,
-        session.session_id,
-        s.exercise_id,
+        finalUserName,
+        session.date,
+        s.exercise_name || s.exercise_id,
         s.set_no,
         s.weight_kg,
         s.reps,
         s.rpe || '',
-        s.done ? 'TRUE' : 'FALSE'
+        s.done ? 'TRUE' : 'FALSE',
+        session.session_id,
       ]);
       await this.appendRows('workout_sets', setRows);
     }
   }
 
   /**
-   * Synchronize Body Metric
+   * Synchronize Body Metric (Unified with User Name)
    */
-  async syncBodyMetric(metric: BodyMetric) {
+  async syncBodyMetric(metric: BodyMetric, userName: string = 'แม็กนั่ม') {
+    const finalUserName = metric.user_name || userName;
     if (this.appsScriptUrl) {
       try {
         await fetch(this.appsScriptUrl, {
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'add_metric', data: metric }),
+          body: JSON.stringify({ action: 'add_metric', data: metric, user_name: finalUserName }),
         });
         return { success: true };
       } catch (e) {
@@ -276,7 +277,9 @@ export class GoogleSheetsService {
 
     if (!this.accessToken) return;
 
+    // Matches SHEET_HEADERS.body_metrics: ['user_name', 'date', 'weight_kg', 'body_fat_pct', 'waist_cm', 'note']
     const row = [
+      finalUserName,
       metric.date,
       metric.weight_kg,
       metric.body_fat_pct || '',

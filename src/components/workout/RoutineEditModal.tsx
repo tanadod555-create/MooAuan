@@ -1,0 +1,410 @@
+import React, { useState, useEffect } from 'react';
+import { Program, ProgramItem, Exercise } from '../../types';
+import { X, Plus, Trash2, Dumbbell, Save, Search, Check, AlertCircle } from 'lucide-react';
+
+interface RoutineEditModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  program: Program | null;
+  onSave: (savedProgram: Program) => void;
+  onDelete?: (programId: string) => void;
+  availableExercises: Exercise[];
+  ownerName: string;
+}
+
+export const RoutineEditModal: React.FC<RoutineEditModalProps> = ({
+  isOpen,
+  onClose,
+  program,
+  onSave,
+  onDelete,
+  availableExercises,
+  ownerName,
+}) => {
+  const [name, setName] = useState('');
+  const [dayOfWeek, setDayOfWeek] = useState('');
+  const [note, setNote] = useState('');
+  const [items, setItems] = useState<ProgramItem[]>([]);
+  const [showAddExerciseDrawer, setShowAddExerciseDrawer] = useState(false);
+  const [searchEx, setSearchEx] = useState('');
+  const [selectedMuscle, setSelectedMuscle] = useState('all');
+
+  useEffect(() => {
+    if (program) {
+      setName(program.name || '');
+      setDayOfWeek(program.day_of_week || '');
+      setNote(program.note || '');
+      setItems(program.items ? [...program.items] : []);
+    } else {
+      // New program defaults
+      setName('');
+      setDayOfWeek('จันทร์');
+      setNote('');
+      setItems([]);
+    }
+  }, [program, isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleItemChange = (index: number, field: keyof ProgramItem, value: any) => {
+    setItems((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: Number(value) || value };
+      return next;
+    });
+  };
+
+  const handleRemoveItem = (index: number) => {
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddExerciseToRoutine = (ex: Exercise) => {
+    const newItem: ProgramItem = {
+      program_id: program?.program_id || 'prog_' + Date.now(),
+      order: items.length + 1,
+      exercise_id: ex.exercise_id,
+      target_sets: 3,
+      target_reps: 10,
+      target_weight_kg: 20,
+    };
+    setItems((prev) => [...prev, newItem]);
+    setShowAddExerciseDrawer(false);
+    setSearchEx('');
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      alert('กรุณาระบุชื่อโปรแกรมการฝึก');
+      return;
+    }
+
+    const savedProg: Program = {
+      program_id: program?.program_id || 'prog_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      name: name.trim(),
+      day_of_week: dayOfWeek.trim() || 'ตาราง',
+      note: note.trim(),
+      items: items.map((it, idx) => ({ ...it, order: idx + 1 })),
+    };
+
+    onSave(savedProg);
+    onClose();
+  };
+
+  const filteredAvailableExercises = availableExercises.filter((ex) => {
+    const q = searchEx.toLowerCase().trim();
+    const matchQuery = !q || ex.name_en.toLowerCase().includes(q) || ex.name_th.includes(q);
+    const matchMuscle = selectedMuscle === 'all' || ex.muscle_primary === selectedMuscle;
+    return matchQuery && matchMuscle;
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+      <div className="absolute inset-0" onClick={onClose} />
+
+      <div className="relative w-full max-w-xl max-h-[90vh] bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden flex flex-col shadow-2xl z-10">
+        {/* Modal Header */}
+        <div className="p-4 sm:p-5 border-b border-slate-800/80 bg-slate-950/80 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <Dumbbell size={20} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-white text-base">
+                  {program ? 'แก้ไขโปรแกรม Routine' : 'สร้างโปรแกรม Routine ใหม่'}
+                </h3>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
+                  {ownerName}
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                ตั้งค่าและปรับเปลี่ยนท่าฝึก เซ็ต และน้ำหนักเป้าหมายเฉพาะบุคคล
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Modal Form Content */}
+        <form onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-slate-300 mb-1">
+                ชื่อโปรแกรม (Program Name) *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="เช่น Push Day (อก ไหล่ หลังแขน) หรือ Glute & Hamstring"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-300 mb-1">
+                วันฝึก (Day / Tag)
+              </label>
+              <input
+                type="text"
+                placeholder="เช่น จันทร์, Day 1"
+                value={dayOfWeek}
+                onChange={(e) => setDayOfWeek(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-300 mb-1">
+              คำแนะนำ / โฟกัส (Notes / Focus)
+            </label>
+            <input
+              type="text"
+              placeholder="เช่น เน้นก้นบน บีบค้าง 2 วิ และคุมเวลาพัก 60-90 วิ"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-500"
+            />
+          </div>
+
+          {/* List of Exercises in this Routine */}
+          <div className="pt-2 border-t border-slate-800">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-xs font-bold text-slate-300 flex items-center gap-1.5 uppercase tracking-wider">
+                <Dumbbell size={14} className="text-emerald-400" />
+                รายการท่าออกกำลังกายในตาราง ({items.length} ท่า)
+              </h4>
+              <button
+                type="button"
+                onClick={() => setShowAddExerciseDrawer(true)}
+                className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold flex items-center gap-1.5 transition active:scale-95"
+              >
+                <Plus size={14} />
+                เพิ่มท่าฝึก
+              </button>
+            </div>
+
+            {items.length === 0 ? (
+              <div className="p-6 text-center bg-slate-950/60 rounded-2xl border border-slate-800 space-y-2">
+                <Dumbbell size={28} className="mx-auto text-slate-600" />
+                <p className="text-xs text-slate-400 font-medium">ยังไม่มีท่าฝึกในโปรแกรมนี้</p>
+                <button
+                  type="button"
+                  onClick={() => setShowAddExerciseDrawer(true)}
+                  className="px-3 py-1.5 bg-emerald-500 text-slate-950 rounded-xl text-xs font-bold shadow-md hover:bg-emerald-400 transition"
+                >
+                  + เพิ่มท่าฝึกแรก
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {items.map((item, idx) => {
+                  const ex = availableExercises.find((e) => e.exercise_id === item.exercise_id);
+                  return (
+                    <div
+                      key={idx}
+                      className="p-3 bg-slate-950/80 rounded-2xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="w-6 h-6 rounded-lg bg-slate-800 text-emerald-400 text-xs font-bold flex items-center justify-center shrink-0">
+                          {idx + 1}
+                        </span>
+                        <div className="min-w-0">
+                          <h5 className="text-xs sm:text-sm font-bold text-white truncate">
+                            {ex?.name_en || item.exercise_id}
+                          </h5>
+                          <p className="text-[11px] text-slate-400 truncate">
+                            {ex?.name_th} · <span className="capitalize">{ex?.equipment}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Sets / Reps / Weight Inputs */}
+                      <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                        <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
+                          <span className="text-[10px] text-slate-400">เซ็ต:</span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="20"
+                            value={item.target_sets}
+                            onChange={(e) => handleItemChange(idx, 'target_sets', e.target.value)}
+                            className="w-10 bg-transparent text-xs text-center font-bold text-white focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
+                          <span className="text-[10px] text-slate-400">ครั้ง:</span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="100"
+                            value={item.target_reps}
+                            onChange={(e) => handleItemChange(idx, 'target_reps', e.target.value)}
+                            className="w-10 bg-transparent text-xs text-center font-bold text-white focus:outline-none"
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-xl border border-slate-800">
+                          <span className="text-[10px] text-slate-400">กก.:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="500"
+                            step="0.5"
+                            value={item.target_weight_kg}
+                            onChange={(e) => handleItemChange(idx, 'target_weight_kg', e.target.value)}
+                            className="w-12 bg-transparent text-xs text-center font-bold text-emerald-400 focus:outline-none"
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItem(idx)}
+                          className="p-1.5 text-slate-500 hover:text-rose-400 transition"
+                          title="ลบท่านี้ออกจากโปรแกรม"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="pt-4 border-t border-slate-800 flex items-center justify-between gap-3">
+            {program && onDelete ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (confirm(`คุณต้องการลบโปรแกรม "${program.name}" ใช่หรือไม่?`)) {
+                    onDelete(program.program_id);
+                    onClose();
+                  }
+                }}
+                className="py-2.5 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition"
+              >
+                <Trash2 size={14} />
+                ลบโปรแกรม
+              </button>
+            ) : <div />}
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="submit"
+                className="py-2.5 px-5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black flex items-center gap-1.5 shadow-lg shadow-emerald-500/25 transition active:scale-95"
+              >
+                <Save size={15} />
+                บันทึกโปรแกรม
+              </button>
+            </div>
+          </div>
+        </form>
+
+        {/* Nested Add Exercise Picker Drawer */}
+        {showAddExerciseDrawer && (
+          <div className="absolute inset-0 z-20 bg-slate-950/95 backdrop-blur-md flex flex-col p-4 animate-fadeIn">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div>
+                <h4 className="font-bold text-white text-sm">เลือกท่าฝึกเพื่อใส่ในตาราง</h4>
+                <p className="text-xs text-slate-400">คลิกที่ท่าเพื่อเพิ่มเข้าโปรแกรม {name || 'Routine'}</p>
+              </div>
+              <button
+                onClick={() => setShowAddExerciseDrawer(false)}
+                className="p-1.5 text-slate-400 hover:text-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="py-3 space-y-2">
+              <div className="relative">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="ค้นหาชื่อท่า (Hip Thrust, Squat, Bench)..."
+                  value={searchEx}
+                  onChange={(e) => setSearchEx(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+                  autoFocus
+                />
+              </div>
+
+              {/* Muscle Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+                {[
+                  { key: 'all', label: 'ทั้งหมด' },
+                  { key: 'glutes', label: 'ก้น' },
+                  { key: 'quads', label: 'หน้าขา' },
+                  { key: 'hamstrings', label: 'หลังขา' },
+                  { key: 'chest', label: 'อก' },
+                  { key: 'back', label: 'หลัง' },
+                  { key: 'shoulders', label: 'ไหล่' },
+                  { key: 'core', label: 'ท้อง' },
+                ].map((chip) => (
+                  <button
+                    key={chip.key}
+                    type="button"
+                    onClick={() => setSelectedMuscle(chip.key)}
+                    className={`whitespace-nowrap px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${
+                      selectedMuscle === chip.key
+                        ? 'bg-emerald-500 text-slate-950 font-bold'
+                        : 'bg-slate-900 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {chip.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* List */}
+            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1">
+              {filteredAvailableExercises.map((ex) => (
+                <div
+                  key={ex.exercise_id}
+                  onClick={() => handleAddExerciseToRoutine(ex)}
+                  className="p-3 bg-slate-900 hover:bg-slate-850 hover:border-emerald-500/40 border border-slate-800 rounded-xl cursor-pointer flex items-center justify-between group transition"
+                >
+                  <div>
+                    <h5 className="text-xs font-bold text-white group-hover:text-emerald-400 transition">
+                      {ex.name_en}
+                    </h5>
+                    <p className="text-[11px] text-slate-400">
+                      {ex.name_th} · <span className="capitalize">{ex.muscle_primary}</span>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold group-hover:bg-emerald-500 group-hover:text-slate-950 transition"
+                  >
+                    + เลือก
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

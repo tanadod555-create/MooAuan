@@ -45,16 +45,21 @@ interface AppContextType {
   updateSet: (exercise_id: string, setIndex: number, updates: Partial<WorkoutSet>) => void;
 
   workoutHistory: WorkoutSession[];
+  allWorkoutHistory: WorkoutSession[];
   
   foodLogs: FoodLog[];
+  allFoodLogs: FoodLog[];
   addFoodLog: (log: Omit<FoodLog, 'log_id'>) => Promise<void>;
   deleteFoodLog: (log_id: string) => void;
   
   bodyMetrics: BodyMetric[];
+  allBodyMetrics: BodyMetric[];
   addBodyMetric: (metric: Omit<BodyMetric, 'id'>) => Promise<void>;
 
   programs: Program[];
   addProgram: (program: Program) => void;
+  updateProgram: (programId: string, updates: Partial<Program>) => void;
+  deleteProgram: (programId: string) => void;
 
   settings: AppSettings;
   updateSettings: (settings: Partial<AppSettings>) => void;
@@ -62,6 +67,8 @@ interface AppContextType {
   isSyncing: boolean;
   sheetsService: GoogleSheetsService;
   syncAllToGoogleSheets: () => Promise<{ success: boolean; message: string }>;
+  unifiedSpreadsheetUrl: string;
+  openUnifiedSpreadsheet: () => void;
 }
 
 const DEFAULT_PRIMARY_PROFILE: UserProfile = {
@@ -99,7 +106,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   googleClientId: '',
   googleAccessToken: '',
   primarySpreadsheetId: '1cBYIM2WiqqGHIJi8t_JiUF4py30g3CGgQhGWwKWH2_A',
-  partnerSpreadsheetId: '',
+  partnerSpreadsheetId: '1cBYIM2WiqqGHIJi8t_JiUF4py30g3CGgQhGWwKWH2_A',
   appsScriptUrl: import.meta.env.VITE_APPS_SCRIPT_URL || 'https://script.google.com/macros/s/AKfycbwueoU7u4P84GwE2PXeAlp_c3iEGE9UFGeWcJmxuOt_BxKXd3tGWQbzJ7DBnT6C1gN7/exec',
   geminiApiKey: import.meta.env.VITE_GEMINI_API_KEY || (typeof window !== 'undefined' ? localStorage.getItem('fittrack_gemini_key') || '' : ''),
   geminiProxyUrl: '',
@@ -255,29 +262,66 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return activeProfileKey === 'partner' ? DEFAULT_PARTNER_PROGRAMS : DEFAULT_PROGRAMS;
   });
 
-  // Food Logs (keyed per active profile)
-  const [foodLogs, setFoodLogs] = useState<FoodLog[]>(() => {
-    const saved = localStorage.getItem(`ft_food_logs_${activeProfileKey}`);
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  // Body Metrics
-  const [bodyMetrics, setBodyMetrics] = useState<BodyMetric[]>(() => {
-    const saved = localStorage.getItem(`ft_metrics_${activeProfileKey}`);
-    if (saved) return JSON.parse(saved);
-    // Initial sample points
+  // Unified Food Logs (Combined for Magnum & Manao)
+  const [allFoodLogs, setAllFoodLogs] = useState<FoodLog[]>(() => {
+    const savedUnified = localStorage.getItem('ft_food_logs_unified');
+    if (savedUnified) {
+      try { return JSON.parse(savedUnified); } catch {}
+    }
+    const primarySaved = localStorage.getItem('ft_food_logs_primary');
+    const partnerSaved = localStorage.getItem('ft_food_logs_partner');
+    const primaryLogs: FoodLog[] = primarySaved ? JSON.parse(primarySaved) : [];
+    const partnerLogs: FoodLog[] = partnerSaved ? JSON.parse(partnerSaved) : [];
     return [
-      { date: '2026-09-15', weight_kg: 72.5, body_fat_pct: 16.5, waist_cm: 80, note: 'เริ่มต้นโปรแกรม' },
-      { date: '2026-09-22', weight_kg: 72.2, body_fat_pct: 16.2, waist_cm: 79.5 },
-      { date: '2026-09-29', weight_kg: 71.9, body_fat_pct: 15.9, waist_cm: 79.0, note: 'สัปดาห์ที่ 3 ฟิตขึ้น' },
+      ...primaryLogs.map(l => ({ ...l, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' })),
+      ...partnerLogs.map(l => ({ ...l, user_id: 'partner', user_name: 'มะนาว (Manao)' }))
     ];
   });
 
-  // Workout History
-  const [workoutHistory, setWorkoutHistory] = useState<WorkoutSession[]>(() => {
-    const saved = localStorage.getItem(`ft_history_${activeProfileKey}`);
-    return saved ? JSON.parse(saved) : [];
+  const foodLogs = allFoodLogs.filter(l => (l.user_id || 'primary') === activeProfileKey);
+
+  // Unified Body Metrics (Combined for Magnum & Manao)
+  const [allBodyMetrics, setAllBodyMetrics] = useState<BodyMetric[]>(() => {
+    const savedUnified = localStorage.getItem('ft_metrics_unified');
+    if (savedUnified) {
+      try { return JSON.parse(savedUnified); } catch {}
+    }
+    const primarySaved = localStorage.getItem('ft_metrics_primary');
+    const partnerSaved = localStorage.getItem('ft_metrics_partner');
+    const primaryM: BodyMetric[] = primarySaved ? JSON.parse(primarySaved) : [
+      { date: '2026-09-15', weight_kg: 72.5, body_fat_pct: 16.5, waist_cm: 80, note: 'เริ่มต้นโปรแกรม', user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' },
+      { date: '2026-09-22', weight_kg: 72.2, body_fat_pct: 16.2, waist_cm: 79.5, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' },
+      { date: '2026-09-29', weight_kg: 71.9, body_fat_pct: 15.9, waist_cm: 79.0, note: 'สัปดาห์ที่ 3 ฟิตขึ้น', user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' },
+    ];
+    const partnerM: BodyMetric[] = partnerSaved ? JSON.parse(partnerSaved) : [
+      { date: '2026-09-15', weight_kg: 49.5, body_fat_pct: 22.0, waist_cm: 64, note: 'เริ่มโปรแกรมกระชับก้น', user_id: 'partner', user_name: 'มะนาว (Manao)' },
+      { date: '2026-09-29', weight_kg: 49.0, body_fat_pct: 21.2, waist_cm: 62.5, note: 'ก้นเริ่มกระชับขึ้น', user_id: 'partner', user_name: 'มะนาว (Manao)' },
+    ];
+    return [
+      ...primaryM.map(m => ({ ...m, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' })),
+      ...partnerM.map(m => ({ ...m, user_id: 'partner', user_name: 'มะนาว (Manao)' }))
+    ];
   });
+
+  const bodyMetrics = allBodyMetrics.filter(m => (m.user_id || 'primary') === activeProfileKey);
+
+  // Unified Workout History (Combined for Magnum & Manao)
+  const [allWorkoutHistory, setAllWorkoutHistory] = useState<WorkoutSession[]>(() => {
+    const savedUnified = localStorage.getItem('ft_history_unified');
+    if (savedUnified) {
+      try { return JSON.parse(savedUnified); } catch {}
+    }
+    const primarySaved = localStorage.getItem('ft_history_primary');
+    const partnerSaved = localStorage.getItem('ft_history_partner');
+    const primaryH: WorkoutSession[] = primarySaved ? JSON.parse(primarySaved) : [];
+    const partnerH: WorkoutSession[] = partnerSaved ? JSON.parse(partnerSaved) : [];
+    return [
+      ...primaryH.map(s => ({ ...s, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' })),
+      ...partnerH.map(s => ({ ...s, user_id: 'partner', user_name: 'มะนาว (Manao)' }))
+    ];
+  });
+
+  const workoutHistory = allWorkoutHistory.filter(s => (s.user_id || 'primary') === activeProfileKey);
 
   // Active Workout Session
   const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(() => {
@@ -287,25 +331,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Sheets Service Instance
+  // Unified Spreadsheet Link
+  const unifiedSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1cBYIM2WiqqGHIJi8t_JiUF4py30g3CGgQhGWwKWH2_A/edit';
+  const openUnifiedSpreadsheet = () => {
+    window.open(unifiedSpreadsheetUrl, '_blank');
+  };
+
+  // Sheets Service Instance (Pointing to the single unified spreadsheet)
   const sheetsService = new GoogleSheetsService(
     settings.googleAccessToken,
-    activeProfileKey === 'primary' ? settings.primarySpreadsheetId : settings.partnerSpreadsheetId,
+    settings.primarySpreadsheetId || '1cBYIM2WiqqGHIJi8t_JiUF4py30g3CGgQhGWwKWH2_A',
     settings.appsScriptUrl
   );
 
   // Sync state to local storage
   useEffect(() => {
     localStorage.setItem('ft_active_profile', activeProfileKey);
-    // Reload profile-specific data when active profile changes
-    const savedLogs = localStorage.getItem(`ft_food_logs_${activeProfileKey}`);
-    setFoodLogs(savedLogs ? JSON.parse(savedLogs) : []);
-
-    const savedMetrics = localStorage.getItem(`ft_metrics_${activeProfileKey}`);
-    if (savedMetrics) setBodyMetrics(JSON.parse(savedMetrics));
-
-    const savedHistory = localStorage.getItem(`ft_history_${activeProfileKey}`);
-    setWorkoutHistory(savedHistory ? JSON.parse(savedHistory) : []);
 
     const savedActive = localStorage.getItem(`ft_active_workout_${activeProfileKey}`);
     setActiveWorkout(savedActive ? JSON.parse(savedActive) : null);
@@ -331,16 +372,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [settings]);
 
   useEffect(() => {
-    localStorage.setItem(`ft_food_logs_${activeProfileKey}`, JSON.stringify(foodLogs));
-  }, [foodLogs, activeProfileKey]);
+    localStorage.setItem('ft_food_logs_unified', JSON.stringify(allFoodLogs));
+  }, [allFoodLogs]);
 
   useEffect(() => {
-    localStorage.setItem(`ft_metrics_${activeProfileKey}`, JSON.stringify(bodyMetrics));
-  }, [bodyMetrics, activeProfileKey]);
+    localStorage.setItem('ft_metrics_unified', JSON.stringify(allBodyMetrics));
+  }, [allBodyMetrics]);
 
   useEffect(() => {
-    localStorage.setItem(`ft_history_${activeProfileKey}`, JSON.stringify(workoutHistory));
-  }, [workoutHistory, activeProfileKey]);
+    localStorage.setItem('ft_history_unified', JSON.stringify(allWorkoutHistory));
+  }, [allWorkoutHistory]);
+
+  useEffect(() => {
+    localStorage.setItem(`ft_programs_${activeProfileKey}`, JSON.stringify(programs));
+  }, [programs, activeProfileKey]);
 
   useEffect(() => {
     if (activeWorkout) {
@@ -418,13 +463,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const finishWorkout = async () => {
     if (!activeWorkout) return;
     const today = new Date().toISOString().split('T')[0];
+    const currentName = activeProfileKey === 'partner' ? partnerProfile.name : primaryProfile.name;
+
     const allSets: WorkoutSet[] = [];
     activeWorkout.exercises.forEach(ex => {
-      ex.sets.forEach(s => allSets.push(s));
+      const exObj = exercises.find(e => e.exercise_id === ex.exercise_id);
+      const exName = exObj ? `${exObj.name_th} (${exObj.name_en})` : ex.exercise_id;
+      ex.sets.forEach(s => {
+        allSets.push({
+          ...s,
+          exercise_name: exName,
+          user_name: currentName,
+        });
+      });
     });
 
     const finishedSession: WorkoutSession = {
       session_id: activeWorkout.session_id,
+      user_id: activeProfileKey,
+      user_name: currentName,
       date: today,
       program_name: activeWorkout.name,
       start_time: activeWorkout.start_time,
@@ -432,13 +489,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       sets: allSets,
     };
 
-    setWorkoutHistory(prev => [finishedSession, ...prev]);
+    setAllWorkoutHistory(prev => [finishedSession, ...prev]);
     setActiveWorkout(null);
 
     // Auto-sync to Google Sheets via Apps Script or OAuth
     if (settings.appsScriptUrl || (settings.autoSyncGoogleSheets && settings.googleAccessToken)) {
       try {
-        await sheetsService.syncWorkoutSession(finishedSession, allSets);
+        await sheetsService.syncWorkoutSession(finishedSession, allSets, currentName);
       } catch (err) {
         console.error('Auto sync workout failed:', err);
       }
@@ -544,15 +601,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addFoodLog = async (logData: Omit<FoodLog, 'log_id'>) => {
+    const currentName = activeProfileKey === 'partner' ? partnerProfile.name : primaryProfile.name;
     const newLog: FoodLog = {
       ...logData,
-      log_id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)
+      log_id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      user_id: activeProfileKey,
+      user_name: currentName,
     };
-    setFoodLogs(prev => [newLog, ...prev]);
+    setAllFoodLogs(prev => [newLog, ...prev]);
 
     if (settings.appsScriptUrl || (settings.autoSyncGoogleSheets && settings.googleAccessToken)) {
       try {
-        await sheetsService.syncFoodLog(newLog);
+        await sheetsService.syncFoodLog(newLog, currentName);
       } catch (err) {
         console.error('Auto sync food log failed:', err);
       }
@@ -560,19 +620,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteFoodLog = (log_id: string) => {
-    setFoodLogs(prev => prev.filter(l => l.log_id !== log_id));
+    setAllFoodLogs(prev => prev.filter(l => l.log_id !== log_id));
   };
 
   const addBodyMetric = async (metricData: Omit<BodyMetric, 'id'>) => {
+    const currentName = activeProfileKey === 'partner' ? partnerProfile.name : primaryProfile.name;
     const newMetric: BodyMetric = {
       ...metricData,
-      id: 'metric_' + Date.now()
+      id: 'metric_' + Date.now(),
+      user_id: activeProfileKey,
+      user_name: currentName,
     };
-    setBodyMetrics(prev => [newMetric, ...prev]);
+    setAllBodyMetrics(prev => [newMetric, ...prev]);
 
     if (settings.appsScriptUrl || (settings.autoSyncGoogleSheets && settings.googleAccessToken)) {
       try {
-        await sheetsService.syncBodyMetric(newMetric);
+        await sheetsService.syncBodyMetric(newMetric, currentName);
       } catch (err) {
         console.error('Auto sync metric failed:', err);
       }
@@ -581,6 +644,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addProgram = (prog: Program) => {
     setPrograms(prev => [prog, ...prev]);
+  };
+
+  const updateProgram = (programId: string, updates: Partial<Program>) => {
+    setPrograms(prev => prev.map(p => (p.program_id === programId ? { ...p, ...updates } : p)));
+  };
+
+  const deleteProgram = (programId: string) => {
+    setPrograms(prev => prev.filter(p => p.program_id !== programId));
   };
 
   const syncAllToGoogleSheets = async () => {
@@ -644,18 +715,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         removeSetFromExercise,
         updateSet,
         workoutHistory,
+        allWorkoutHistory,
         foodLogs,
+        allFoodLogs,
         addFoodLog,
         deleteFoodLog,
         bodyMetrics,
+        allBodyMetrics,
         addBodyMetric,
         programs,
         addProgram,
+        updateProgram,
+        deleteProgram,
         settings,
         updateSettings,
         isSyncing,
         sheetsService,
         syncAllToGoogleSheets,
+        unifiedSpreadsheetUrl,
+        openUnifiedSpreadsheet,
       }}
     >
       {children}

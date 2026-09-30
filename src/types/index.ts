@@ -71,6 +71,8 @@ export interface UserProfile {
 
 export interface BodyMetric {
   id?: string;
+  user_id?: string;
+  user_name?: string;
   date: string; // YYYY-MM-DD
   weight_kg: number;
   body_fat_pct?: number;
@@ -90,6 +92,7 @@ export interface ProgramItem {
 
 export interface Program {
   program_id: string;
+  user_id?: string;
   name: string;
   day_of_week?: string; // 'Monday', 'Leg Day', etc.
   note?: string;
@@ -100,6 +103,8 @@ export interface WorkoutSet {
   set_id: string;
   session_id: string;
   exercise_id: string;
+  exercise_name?: string;
+  user_name?: string;
   set_no: number;
   weight_kg: number;
   reps: number;
@@ -110,6 +115,8 @@ export interface WorkoutSet {
 
 export interface WorkoutSession {
   session_id: string;
+  user_id?: string;
+  user_name?: string;
   date: string; // YYYY-MM-DD
   program_id?: string;
   program_name?: string;
@@ -129,6 +136,8 @@ export interface Micronutrients {
 
 export interface FoodLog {
   log_id: string;
+  user_id?: string;
+  user_name?: string;
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
   meal: MealType;

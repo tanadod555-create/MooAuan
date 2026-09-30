@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Exercise, WorkoutSet } from '../types';
+import { Exercise, WorkoutSet, Program } from '../types';
 import { ExerciseDetailModal } from '../components/exercises/ExerciseDetailModal';
 import {
   Play,
@@ -19,12 +19,16 @@ import {
   ListPlus,
   X,
   Search,
+  Edit2,
+  FileSpreadsheet,
+  ExternalLink,
 } from 'lucide-react';
 import { BorderBeam } from '../components/ui/BorderBeam';
 import { ShimmerButton } from '../components/ui/ShimmerButton';
 import { BentoGrid, BentoCard } from '../components/ui/BentoGrid';
 import { MagicCard } from '../components/ui/MagicCard';
 import { RestTimer } from '../components/workout/RestTimer';
+import { RoutineEditModal } from '../components/workout/RoutineEditModal';
 
 export const WorkoutView: React.FC = () => {
   const {
@@ -39,7 +43,13 @@ export const WorkoutView: React.FC = () => {
     updateSet,
     exercises,
     programs,
+    addProgram,
+    updateProgram,
+    deleteProgram,
     workoutHistory,
+    activeProfileKey,
+    currentProfile,
+    openUnifiedSpreadsheet,
   } = useApp();
 
   const [activeExerciseModal, setActiveExerciseModal] = useState<Exercise | null>(null);
@@ -51,6 +61,11 @@ export const WorkoutView: React.FC = () => {
   const [restTimerPaused, setRestTimerPaused] = useState(false);
   const [restTimerSound, setRestTimerSound] = useState(true);
   const [showRestTimer, setShowRestTimer] = useState(false);
+
+  // Routine search and editing state
+  const [routineSearchQuery, setRoutineSearchQuery] = useState('');
+  const [editingProgram, setEditingProgram] = useState<Program | null>(null);
+  const [showRoutineModal, setShowRoutineModal] = useState(false);
 
   // Rest Timer Interval
   useEffect(() => {
@@ -104,6 +119,22 @@ export const WorkoutView: React.FC = () => {
 
     startWorkout(prog.name, matchedExercises);
   };
+
+  const filteredPrograms = programs.filter((p) => {
+    if (!routineSearchQuery.trim()) return true;
+    const q = routineSearchQuery.toLowerCase().trim();
+    const matchName = p.name.toLowerCase().includes(q);
+    const matchNote = (p.note || '').toLowerCase().includes(q);
+    const matchDay = (p.day_of_week || '').toLowerCase().includes(q);
+    const matchExercise = p.items?.some((it) => {
+      const ex = exercises.find((e) => e.exercise_id === it.exercise_id);
+      return (
+        Boolean(ex?.name_en.toLowerCase().includes(q)) ||
+        Boolean(ex?.name_th.includes(q))
+      );
+    });
+    return matchName || matchNote || matchDay || matchExercise;
+  });
 
   const MUSCLE_FILTER_CHIPS = [
     { key: 'all', label: 'ทั้งหมด' },
@@ -477,58 +508,128 @@ export const WorkoutView: React.FC = () => {
             </div>
           </MagicCard>
 
-          {/* Routine Programs (Push / Pull / Legs) using 21st.dev BentoGrid */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Dumbbell size={18} className="text-emerald-400" />
-                โปรแกรมการฝึกประจำสัปดาห์ (Routines)
-              </h3>
-              <span className="text-xs text-slate-400">{programs.length} โปรแกรม</span>
+          {/* Routine Programs (Push / Pull / Legs / Glutes) */}
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Dumbbell size={18} className="text-emerald-400" />
+                    โปรแกรมการฝึกประจำสัปดาห์ (Routines)
+                  </h3>
+                  <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${
+                    activeProfileKey === 'partner'
+                      ? 'bg-pink-500/20 text-pink-300 border-pink-500/30'
+                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                  }`}>
+                    {activeProfileKey === 'partner' ? '🌸 ของมะนาว' : '🏋️‍♂️ ของแม็กนั่ม'}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  ตารางฝึกที่ตั้งค่าเฉพาะของแต่ละคน สามารถค้นหา ปรับเซ็ต/ครั้ง และแก้ไขท่าฝึกได้อิสระ
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setEditingProgram(null);
+                  setShowRoutineModal(true);
+                }}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 transition active:scale-95 shrink-0"
+              >
+                <Plus size={15} />
+                + สร้าง Routine ใหม่
+              </button>
             </div>
 
-            <BentoGrid>
-              {programs.map((prog) => (
-                <BentoCard
-                  key={prog.program_id}
-                  title={prog.name}
-                  subtitle={prog.note}
-                  badge={prog.day_of_week || 'ตาราง'}
-                  icon={<Dumbbell size={16} />}
+            {/* Routine Search Input Bar */}
+            <div className="relative">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                value={routineSearchQuery}
+                onChange={(e) => setRoutineSearchQuery(e.target.value)}
+                placeholder="ค้นหาโปรแกรม Routine (เช่น Push, Glute, ก้น, ขา, อก, Hip Thrust)..."
+                className="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+              />
+              {routineSearchQuery && (
+                <button
+                  onClick={() => setRoutineSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                 >
-                  <div className="space-y-3 mt-1">
-                    {/* Preview exercises in routine */}
-                    <div className="space-y-1 bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
-                      {prog.items?.slice(0, 3).map((item, idx) => {
-                        const ex = exercises.find((e) => e.exercise_id === item.exercise_id);
-                        return (
-                          <div key={idx} className="text-xs text-slate-300 flex items-center gap-1.5 truncate">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                            <span className="truncate">{ex?.name_th || item.exercise_id}</span>
-                            <span className="text-slate-500 font-mono">
-                              ({item.target_sets}x{item.target_reps})
-                            </span>
-                          </div>
-                        );
-                      })}
-                      {prog.items && prog.items.length > 3 && (
-                        <span className="text-[11px] text-slate-500 block pl-3">
-                          +{prog.items.length - 3} ท่าเพิ่มเติม
-                        </span>
-                      )}
-                    </div>
+                  <X size={15} />
+                </button>
+              )}
+            </div>
 
-                    <button
-                      onClick={() => handleStartProgram(prog.program_id)}
-                      className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
-                    >
-                      <Play size={14} fill="currentColor" />
-                      เริ่มเล่นตามโปรแกรมนี้
-                    </button>
-                  </div>
-                </BentoCard>
-              ))}
-            </BentoGrid>
+            {filteredPrograms.length === 0 ? (
+              <div className="p-8 text-center bg-slate-900/60 rounded-2xl border border-slate-800 space-y-2">
+                <Dumbbell size={28} className="mx-auto text-slate-600" />
+                <p className="text-sm text-slate-300 font-bold">ไม่พบโปรแกรม Routine ที่ตรงกับ "{routineSearchQuery}"</p>
+                <button
+                  onClick={() => setRoutineSearchQuery('')}
+                  className="px-3 py-1 bg-slate-800 text-xs text-emerald-400 rounded-lg hover:bg-slate-700"
+                >
+                  ล้างการค้นหา
+                </button>
+              </div>
+            ) : (
+              <BentoGrid>
+                {filteredPrograms.map((prog) => (
+                  <BentoCard
+                    key={prog.program_id}
+                    title={prog.name}
+                    subtitle={prog.note}
+                    badge={prog.day_of_week || 'ตาราง'}
+                    icon={<Dumbbell size={16} />}
+                  >
+                    <div className="space-y-3 mt-1">
+                      {/* Preview exercises in routine */}
+                      <div className="space-y-1 bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+                        {prog.items?.slice(0, 3).map((item, idx) => {
+                          const ex = exercises.find((e) => e.exercise_id === item.exercise_id);
+                          return (
+                            <div key={idx} className="text-xs text-slate-300 flex items-center gap-1.5 truncate">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                              <span className="truncate">{ex?.name_th || item.exercise_id}</span>
+                              <span className="text-slate-500 font-mono">
+                                ({item.target_sets}x{item.target_reps})
+                              </span>
+                            </div>
+                          );
+                        })}
+                        {prog.items && prog.items.length > 3 && (
+                          <span className="text-[11px] text-slate-500 block pl-3">
+                            +{prog.items.length - 3} ท่าเพิ่มเติม
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          onClick={() => handleStartProgram(prog.program_id)}
+                          className="flex-1 py-2 px-3 rounded-xl bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 transition active:scale-95"
+                        >
+                          <Play size={13} fill="currentColor" />
+                          เริ่มเล่น
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingProgram(prog);
+                            setShowRoutineModal(true);
+                          }}
+                          className="py-2 px-3 rounded-xl bg-slate-850 hover:bg-slate-750 text-slate-300 hover:text-emerald-400 border border-slate-750 font-semibold text-xs flex items-center gap-1 transition active:scale-95"
+                          title="แก้ไขโปรแกรมนี้"
+                        >
+                          <Edit2 size={13} />
+                          <span>แก้ไข</span>
+                        </button>
+                      </div>
+                    </div>
+                  </BentoCard>
+                ))}
+              </BentoGrid>
+            )}
           </div>
 
           {/* Past Workout History List */}
@@ -736,6 +837,28 @@ export const WorkoutView: React.FC = () => {
           exercise={activeExerciseModal}
           onClose={() => setActiveExerciseModal(null)}
           onAddToWorkout={(ex) => addExerciseToWorkout(ex)}
+        />
+      )}
+
+      {/* Routine Edit Modal */}
+      {showRoutineModal && (
+        <RoutineEditModal
+          isOpen={showRoutineModal}
+          onClose={() => {
+            setShowRoutineModal(false);
+            setEditingProgram(null);
+          }}
+          program={editingProgram}
+          availableExercises={exercises}
+          ownerName={activeProfileKey === 'partner' ? 'มะนาว' : 'แม็กนั่ม'}
+          onSave={(saved) => {
+            if (editingProgram) {
+              updateProgram(saved.program_id, saved);
+            } else {
+              addProgram(saved);
+            }
+          }}
+          onDelete={(id) => deleteProgram(id)}
         />
       )}
     </div>
