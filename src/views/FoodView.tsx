@@ -28,11 +28,13 @@ import {
   FileSpreadsheet,
   ExternalLink,
   Users,
+  Target,
 } from 'lucide-react';
 import { MagicCard } from '../components/ui/MagicCard';
 import { CircularProgress } from '../components/ui/CircularProgress';
 import { NumberTicker } from '../components/ui/NumberTicker';
 import { PigMascot } from '../components/ui/PigMascot';
+import { GoalSetupModal } from '../components/goals/GoalSetupModal';
 
 export const FoodView: React.FC = () => {
   const {
@@ -51,6 +53,7 @@ export const FoodView: React.FC = () => {
   } = useApp();
 
   const [viewFilter, setViewFilter] = useState<'all' | 'primary' | 'partner'>('all');
+  const [showGoalModal, setShowGoalModal] = useState(false);
 
   // Date Navigator state (Default to today)
   const today = new Date().toISOString().split('T')[0];
@@ -639,9 +642,20 @@ export const FoodView: React.FC = () => {
                 โภชนาการประจำวันที่ {selectedDate} {isToday ? '(วันนี้)' : ''}
               </span>
               <h2 className="text-xl font-black text-pink-950 mt-1">เป้าหมายพลังงาน</h2>
-              <p className="text-xs text-pink-800/70 mt-1">
-                เป้าหมายรายวัน: <strong className="text-pink-950">{targetKcal.toLocaleString()} kcal</strong>
-              </p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xs text-pink-800/70">
+                  เป้าหมายรายวัน: <strong className="text-pink-950">{targetKcal.toLocaleString()} kcal</strong>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowGoalModal(true)}
+                  className="px-2 py-0.5 rounded-full bg-pink-100 hover:bg-pink-200 text-rose-700 border border-pink-200 text-[10px] font-bold flex items-center gap-1 transition active:scale-95"
+                  title="คำนวณเป้าหมายและสารอาหารอัตโนมัติ"
+                >
+                  <Sparkles size={11} className="text-rose-500" />
+                  <span>คำนวณ Goal</span>
+                </button>
+              </div>
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-xs text-pink-800/70">คงเหลือ:</span>
                 <span className="text-sm font-black text-rose-600 font-mono">
@@ -652,54 +666,65 @@ export const FoodView: React.FC = () => {
           </div>
 
           {/* Right: Macro Breakdown Pills */}
-          <div className="grid grid-cols-3 sm:grid-cols-1 gap-2.5 w-full sm:w-48">
-            {/* Protein */}
-            <div className="bg-sky-50/70 p-2.5 rounded-2xl border border-sky-200">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="font-bold text-sky-700">โปรตีน</span>
-                <span className="text-sky-950 font-bold font-mono">
-                  <NumberTicker value={Math.round(totalProtein)} /> / {targetProtein}g
-                </span>
+          <div className="flex flex-col gap-2.5 w-full sm:w-48">
+            <div className="grid grid-cols-3 sm:grid-cols-1 gap-2.5">
+              {/* Protein */}
+              <div className="bg-sky-50/70 p-2.5 rounded-2xl border border-sky-200">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-sky-700">โปรตีน</span>
+                  <span className="text-sky-950 font-bold font-mono">
+                    <NumberTicker value={Math.round(totalProtein)} /> / {targetProtein}g
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-sky-200/60 rounded-full mt-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-sky-500 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, (totalProtein / targetProtein) * 100)}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full h-1.5 bg-sky-200/60 rounded-full mt-1.5 overflow-hidden">
-                <div
-                  className="h-full bg-sky-500 rounded-full transition-all"
-                  style={{ width: `${Math.min(100, (totalProtein / targetProtein) * 100)}%` }}
-                />
+
+              {/* Carbs */}
+              <div className="bg-amber-50/70 p-2.5 rounded-2xl border border-amber-200">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-amber-700">คาร์บ</span>
+                  <span className="text-amber-950 font-bold font-mono">
+                    <NumberTicker value={Math.round(totalCarb)} /> / {targetCarb}g
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-amber-200/60 rounded-full mt-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, (totalCarb / targetCarb) * 100)}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Fat */}
+              <div className="bg-rose-50/70 p-2.5 rounded-2xl border border-rose-200">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-rose-700">ไขมัน</span>
+                  <span className="text-rose-950 font-bold font-mono">
+                    <NumberTicker value={Math.round(totalFat)} /> / {targetFat}g
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-rose-200/60 rounded-full mt-1.5 overflow-hidden">
+                  <div
+                    className="h-full bg-rose-500 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, (totalFat / targetFat) * 100)}%` }}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Carbs */}
-            <div className="bg-amber-50/70 p-2.5 rounded-2xl border border-amber-200">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="font-bold text-amber-700">คาร์บ</span>
-                <span className="text-amber-950 font-bold font-mono">
-                  <NumberTicker value={Math.round(totalCarb)} /> / {targetCarb}g
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-amber-200/60 rounded-full mt-1.5 overflow-hidden">
-                <div
-                  className="h-full bg-amber-500 rounded-full transition-all"
-                  style={{ width: `${Math.min(100, (totalCarb / targetCarb) * 100)}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Fat */}
-            <div className="bg-rose-50/70 p-2.5 rounded-2xl border border-rose-200">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="font-bold text-rose-700">ไขมัน</span>
-                <span className="text-rose-950 font-bold font-mono">
-                  <NumberTicker value={Math.round(totalFat)} /> / {targetFat}g
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-rose-200/60 rounded-full mt-1.5 overflow-hidden">
-                <div
-                  className="h-full bg-rose-500 rounded-full transition-all"
-                  style={{ width: `${Math.min(100, (totalFat / targetFat) * 100)}%` }}
-                />
-              </div>
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowGoalModal(true)}
+              className="w-full py-1.5 px-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-xs transition active:scale-95"
+            >
+              <Target size={13} />
+              <span>🎯 ปรับคำนวณ Goal โภชนาการ</span>
+            </button>
           </div>
         </div>
 
@@ -1695,6 +1720,12 @@ export const FoodView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Smart Goal Setup & Nutrition Calculator Modal */}
+      <GoalSetupModal
+        isOpen={showGoalModal}
+        onClose={() => setShowGoalModal(false)}
+      />
     </div>
   );
 };
