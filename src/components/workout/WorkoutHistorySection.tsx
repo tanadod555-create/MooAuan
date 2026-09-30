@@ -252,14 +252,14 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
         <div className="flex items-center gap-1.5 p-1.5 bg-white/95 border border-pink-200/90 rounded-2xl shadow-xs">
           <button
             onClick={() => setScope('mine')}
-            className={`flex-1 py-2 px-2 sm:px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 ${
+            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
               scope === 'mine'
                 ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
             }`}
           >
-            <span>{activeProfileKey === 'partner' ? '🌸 ของมะนาว' : '🏋️‍♂️ ของแม็กนั่ม'}</span>
-            <span className="text-[10px] opacity-80">
+            <span>{activeProfileKey === 'partner' ? '🌸 ของมะนาว (Manow)' : '🏋️‍♂️ ของแม็กนั่ม'}</span>
+            <span className="text-[10px] opacity-80 font-mono">
               (
               {
                 allWorkoutHistory.filter(
@@ -272,14 +272,14 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
 
           <button
             onClick={() => setScope('partner')}
-            className={`flex-1 py-2 px-2 sm:px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 ${
+            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
               scope === 'partner'
                 ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
             }`}
           >
-            <span>{activeProfileKey === 'partner' ? '🏋️‍♂️ ของแม็กนั่ม' : '🌸 ของมะนาว'}</span>
-            <span className="text-[10px] opacity-80">
+            <span>{activeProfileKey === 'partner' ? '🏋️‍♂️ ของแม็กนั่ม' : '🌸 ของมะนาว (Manow)'}</span>
+            <span className="text-[10px] opacity-80 font-mono">
               (
               {
                 allWorkoutHistory.filter(
@@ -290,19 +290,6 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
               }
               )
             </span>
-          </button>
-
-          <button
-            onClick={() => setScope('all')}
-            className={`flex-1 py-2 px-2 sm:px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 ${
-              scope === 'all'
-                ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
-            }`}
-          >
-            <Users size={13} />
-            <span>รวม 2 คน</span>
-            <span className="text-[10px] opacity-80">({allWorkoutHistory.length})</span>
           </button>
         </div>
 

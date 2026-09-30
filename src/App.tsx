@@ -7,6 +7,7 @@ import { AnatomyView } from './views/AnatomyView';
 import { ExercisesView } from './views/ExercisesView';
 import { FoodView } from './views/FoodView';
 import { ProfileView } from './views/ProfileView';
+import { MascotBattleView } from './views/MascotBattleView';
 import { ProfileGateModal } from './components/auth/ProfileGateModal';
 import { AiTrainerModal } from './components/ai/AiTrainerModal';
 import { PigMascot } from './components/ui/PigMascot';
@@ -42,6 +43,7 @@ export const MainContent: React.FC = () => {
       {/* Main Content Area */}
       <main className="flex-1 max-w-4xl w-full mx-auto px-3 sm:px-5 pt-4">
         {activeTab === 'workout' && <WorkoutView />}
+        {activeTab === 'mascot' && <MascotBattleView />}
         {activeTab === 'anatomy' && <AnatomyView />}
         {activeTab === 'exercises' && <ExercisesView />}
         {activeTab === 'food' && <FoodView />}
