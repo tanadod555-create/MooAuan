@@ -1998,10 +1998,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const clearAllBodyMetrics = () => {
+    const currentMetrics = [...allBodyMetrics];
     setAllBodyMetrics([]);
     localStorage.removeItem('ft_metrics_unified');
     localStorage.removeItem('ft_metrics_primary');
     localStorage.removeItem('ft_metrics_partner');
+    localStorage.setItem('ft_metrics_cleared_v2', 'true');
+    const db = firestoreDbRef.current || getFirestoreInstance();
+    if (db) {
+      currentMetrics.forEach(m => {
+        cloudDeleteBodyMetric(db, m.id || m.date).catch(console.error);
+      });
+    }
   };
 
   const addProgram = (prog: Program) => {
