@@ -22,16 +22,26 @@ import {
   FirebaseConfig,
 } from '../types';
 
+export const DEFAULT_FIREBASE_CONFIG: FirebaseConfig = {
+  apiKey: "AIzaSyAl1cBRBkR84nZ0js3rwUkmtDkSYpbMPoM",
+  authDomain: "mooauan-dn.firebaseapp.com",
+  projectId: "mooauan-dn",
+  storageBucket: "mooauan-dn.firebasestorage.app",
+  messagingSenderId: "133376759820",
+  appId: "1:133376759820:web:29d195e936682badfef629",
+};
+
 let firebaseApp: FirebaseApp | null = null;
 let firestoreDb: Firestore | null = null;
 
-export const initFirebase = (config: FirebaseConfig): Firestore | null => {
+export const initFirebase = (config?: FirebaseConfig): Firestore | null => {
   try {
-    if (!config || !config.apiKey || !config.projectId) {
+    const activeConfig = config && config.apiKey && config.projectId ? config : DEFAULT_FIREBASE_CONFIG;
+    if (!activeConfig || !activeConfig.apiKey || !activeConfig.projectId) {
       return null;
     }
     const apps = getApps();
-    firebaseApp = apps.length === 0 ? initializeApp(config) : getApp();
+    firebaseApp = apps.length === 0 ? initializeApp(activeConfig) : getApp();
     firestoreDb = getFirestore(firebaseApp);
     return firestoreDb;
   } catch (error) {
@@ -41,8 +51,12 @@ export const initFirebase = (config: FirebaseConfig): Firestore | null => {
 };
 
 export const getFirestoreInstance = (): Firestore | null => {
+  if (!firestoreDb) {
+    firestoreDb = initFirebase();
+  }
   return firestoreDb;
 };
+
 
 // ==================== REALTIME SUBSCRIPTIONS ====================
 

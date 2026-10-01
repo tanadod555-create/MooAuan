@@ -33,7 +33,9 @@ import {
   cloudSaveCustomExercise,
   cloudSaveProfile,
   migrateAllDataToCloud,
+  DEFAULT_FIREBASE_CONFIG,
 } from '../services/firebase';
+
 import { Firestore, doc, getDoc } from 'firebase/firestore';
 
 
@@ -177,7 +179,10 @@ const DEFAULT_SETTINGS: AppSettings = {
   geminiProxyUrl: '',
   useProxy: false,
   autoSyncGoogleSheets: false,
+  firebaseConfig: DEFAULT_FIREBASE_CONFIG,
+  useFirebase: true,
 };
+
 
 const DEFAULT_PROGRAMS: Program[] = [
   {
@@ -617,10 +622,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!parsed.primarySpreadsheetId) {
         parsed.primarySpreadsheetId = DEFAULT_SETTINGS.primarySpreadsheetId;
       }
+      if (!parsed.firebaseConfig || !parsed.firebaseConfig.apiKey) {
+        parsed.firebaseConfig = DEFAULT_FIREBASE_CONFIG;
+        parsed.useFirebase = true;
+      }
       if (typeof window !== 'undefined' && parsed.geminiApiKey) {
         localStorage.setItem('fittrack_gemini_key', parsed.geminiApiKey);
       }
       return { ...DEFAULT_SETTINGS, ...parsed };
+
     } catch {
       return DEFAULT_SETTINGS;
     }
