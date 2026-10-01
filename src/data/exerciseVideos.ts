@@ -12,297 +12,297 @@ export interface ExerciseVideoInfo {
 export const EXERCISE_YOUTUBE_VIDEOS: Record<string, ExerciseVideoInfo> = {
   // --- CHEST ---
   ex_bench_press: {
-    videoId: 'LBhaLLc153A',
-    shortUrl: 'https://www.youtube.com/shorts/LBhaLLc153A',
-    channelName: 'Squat University',
+    videoId: 'rT7DgCr-3pg',
+    shortUrl: 'https://www.youtube.com/shorts/rT7DgCr-3pg',
+    channelName: 'ScottHermanFitness',
   },
   ex_incline_db_press: {
     videoId: '8iPEnn-ltC8',
     shortUrl: 'https://www.youtube.com/shorts/8iPEnn-ltC8',
-    channelName: 'Jeff Nippard',
+    channelName: 'ScottHermanFitness',
   },
   ex_cable_fly: {
     videoId: 'Iwe6AmxVf7o',
     shortUrl: 'https://www.youtube.com/shorts/Iwe6AmxVf7o',
-    channelName: 'Form Check',
+    channelName: 'ScottHermanFitness',
   },
   ex_push_up: {
     videoId: 'IODxDxX7oi4',
     shortUrl: 'https://www.youtube.com/shorts/IODxDxX7oi4',
-    channelName: 'Calisthenics Form',
+    channelName: 'Calisthenicmovement',
   },
 
   // --- SHOULDERS ---
   ex_overhead_press: {
     videoId: 'QAQ64hK4Xxs',
     shortUrl: 'https://www.youtube.com/shorts/QAQ64hK4Xxs',
-    channelName: 'Barbell Form',
+    channelName: 'Jeremy Ethier',
   },
   ex_lateral_raise: {
     videoId: '3VcKaXpzqRo',
     shortUrl: 'https://www.youtube.com/shorts/3VcKaXpzqRo',
-    channelName: 'Jeff Nippard',
+    channelName: 'ScottHermanFitness',
   },
   ex_face_pull: {
     videoId: 'rep-qVOkqgk',
     shortUrl: 'https://www.youtube.com/shorts/rep-qVOkqgk',
-    channelName: 'AthleanX',
+    channelName: 'ScottHermanFitness',
   },
 
   // --- BICEPS ---
   ex_barbell_curl: {
     videoId: 'kwG2ipFRgfo',
     shortUrl: 'https://www.youtube.com/shorts/kwG2ipFRgfo',
-    channelName: 'Biceps Form',
+    channelName: 'Howcast',
   },
   ex_hammer_curl: {
     videoId: 'zC3nLlEvin4',
     shortUrl: 'https://www.youtube.com/shorts/zC3nLlEvin4',
-    channelName: 'Arms Workout',
+    channelName: 'ScottHermanFitness',
   },
 
   // --- TRICEPS ---
   ex_tricep_pushdown: {
     videoId: '2-LAMcpzODU',
     shortUrl: 'https://www.youtube.com/shorts/2-LAMcpzODU',
-    channelName: 'Triceps Form',
+    channelName: 'ScottHermanFitness',
   },
   ex_skull_crusher: {
-    videoId: 'd_KZxkH_toI',
-    shortUrl: 'https://www.youtube.com/shorts/d_KZxkH_toI',
-    channelName: 'Strength Technique',
+    videoId: 'RavQHfFxbdA',
+    shortUrl: 'https://www.youtube.com/shorts/RavQHfFxbdA',
+    channelName: 'ScottHermanFitness',
   },
   ex_dips: {
     videoId: '2z8JmcrW-As',
     shortUrl: 'https://www.youtube.com/shorts/2z8JmcrW-As',
-    channelName: 'Calisthenics Basics',
+    channelName: 'Calisthenicmovement',
   },
 
   // --- FOREARMS ---
   ex_wrist_curl: {
-    videoId: 'FW_A8mQ9v4Y',
-    shortUrl: 'https://www.youtube.com/shorts/FW_A8mQ9v4Y',
-    channelName: 'Grip & Forearms',
+    videoId: 'qMtmHwaCmYI',
+    shortUrl: 'https://www.youtube.com/shorts/qMtmHwaCmYI',
+    channelName: 'ScottHermanFitness',
   },
   ex_farmers_walk: {
-    videoId: 'p5M8yvV_9uU',
-    shortUrl: 'https://www.youtube.com/shorts/p5M8yvV_9uU',
-    channelName: 'Strongman Basics',
+    videoId: 'Tgi5SNDbBZQ',
+    shortUrl: 'https://www.youtube.com/shorts/Tgi5SNDbBZQ',
+    channelName: 'ScottHermanFitness',
   },
 
   // --- ABS / CORE ---
   ex_cable_crunch: {
-    videoId: '2fOReCg_sX8',
-    shortUrl: 'https://www.youtube.com/shorts/2fOReCg_sX8',
-    channelName: 'Abs Isolation',
+    videoId: 'x10ihjIYy8s',
+    shortUrl: 'https://www.youtube.com/shorts/x10ihjIYy8s',
+    channelName: 'ScottHermanFitness',
   },
   ex_hanging_leg_raise: {
     videoId: 'hdng3Nm1x_E',
     shortUrl: 'https://www.youtube.com/shorts/hdng3Nm1x_E',
-    channelName: 'Core Strength',
+    channelName: 'ScottHermanFitness',
   },
   ex_plank: {
     videoId: 'pSHjTRCQxIw',
     shortUrl: 'https://www.youtube.com/shorts/pSHjTRCQxIw',
-    channelName: 'Core Stability',
+    channelName: 'ScottHermanFitness',
   },
 
   // --- QUADS & LEGS ---
   ex_back_squat: {
     videoId: 'bEv6CCg2BC8',
     shortUrl: 'https://www.youtube.com/shorts/bEv6CCg2BC8',
-    channelName: 'Squat Mastery',
+    channelName: 'Jeff Nippard',
   },
   ex_leg_press: {
     videoId: 'IZxyjW7MPJQ',
     shortUrl: 'https://www.youtube.com/shorts/IZxyjW7MPJQ',
-    channelName: 'Quad Builder',
+    channelName: 'ScottHermanFitness',
   },
   ex_leg_extension: {
-    videoId: 'YyvSfV64_9c',
-    shortUrl: 'https://www.youtube.com/shorts/YyvSfV64_9c',
-    channelName: 'Quad Focus',
+    videoId: 'YyvSfVjQeL0',
+    shortUrl: 'https://www.youtube.com/shorts/YyvSfVjQeL0',
+    channelName: 'ScottHermanFitness',
   },
   ex_bulgarian_split_squat: {
     videoId: 'or1frhkjBDc',
     shortUrl: 'https://www.youtube.com/shorts/or1frhkjBDc',
-    channelName: 'Leg Day Essentials',
+    channelName: 'Andrew Kwong (DeltaBolic)',
   },
 
   // --- CALVES ---
   ex_standing_calf_raise: {
     videoId: '-M4-G8p8fmc',
     shortUrl: 'https://www.youtube.com/shorts/-M4-G8p8fmc',
-    channelName: 'Calves Growth',
+    channelName: 'Howcast',
   },
   ex_seated_calf_raise: {
     videoId: 'JbyjNymZOt0',
     shortUrl: 'https://www.youtube.com/shorts/JbyjNymZOt0',
-    channelName: 'Soleus Training',
+    channelName: 'LIVESTRONG',
   },
 
   // --- TRAPS & UPPER BACK ---
   ex_barbell_shrug: {
     videoId: 'cJRVVxmytaM',
     shortUrl: 'https://www.youtube.com/shorts/cJRVVxmytaM',
-    channelName: 'Traps Isolation',
+    channelName: 'ScottHermanFitness',
   },
   ex_rack_pull: {
-    videoId: 'e6B_wL8k-Yc',
-    shortUrl: 'https://www.youtube.com/shorts/e6B_wL8k-Yc',
-    channelName: 'Back Thickness',
+    videoId: 'P-Ir835AWhQ',
+    shortUrl: 'https://www.youtube.com/shorts/P-Ir835AWhQ',
+    channelName: 'ScottHermanFitness',
   },
 
   // --- LATS & BACK ---
   ex_pull_up: {
     videoId: 'eGo4IYlbE5g',
     shortUrl: 'https://www.youtube.com/shorts/eGo4IYlbE5g',
-    channelName: 'Pull-Up Mastery',
+    channelName: 'Calisthenicmovement',
   },
   ex_lat_pulldown: {
     videoId: 'bNmvKpJSWKM',
     shortUrl: 'https://www.youtube.com/shorts/bNmvKpJSWKM',
-    channelName: 'Deltabolic Lat Guide',
+    channelName: 'Andrew Kwong (DeltaBolic)',
   },
   ex_seated_cable_row: {
     videoId: 'GZbfZ033f74',
     shortUrl: 'https://www.youtube.com/shorts/GZbfZ033f74',
-    channelName: 'Cable Rows Guide',
+    channelName: 'ScottHermanFitness',
   },
   ex_barbell_row: {
-    videoId: 'FWJR5Ve8gkQ',
-    shortUrl: 'https://www.youtube.com/shorts/FWJR5Ve8gkQ',
-    channelName: 'Bent-Over Row Form',
+    videoId: '9efgcAjQe7E',
+    shortUrl: 'https://www.youtube.com/shorts/9efgcAjQe7E',
+    channelName: 'ScottHermanFitness',
   },
 
   // --- LOWER BACK & POSTERIOR CHAIN ---
   ex_back_extension: {
     videoId: 'ph3pddpKzzw',
     shortUrl: 'https://www.youtube.com/shorts/ph3pddpKzzw',
-    channelName: 'Lower Back Health',
+    channelName: 'LIVESTRONG',
   },
   ex_good_morning: {
     videoId: 'dEJ0FTm-CEk',
     shortUrl: 'https://www.youtube.com/shorts/dEJ0FTm-CEk',
-    channelName: 'Hinge Movement',
+    channelName: 'Renaissance Periodization',
   },
 
   // --- GLUTES ---
   ex_hip_thrust: {
     videoId: '-GEVlyzVbcg',
     shortUrl: 'https://www.youtube.com/shorts/-GEVlyzVbcg',
-    channelName: 'Bret Contreras Glutes',
+    channelName: 'Mixed Fitness Arts',
   },
   ex_cable_kickback: {
-    videoId: '1_bA0M3h90U',
-    shortUrl: 'https://www.youtube.com/shorts/1_bA0M3h90U',
-    channelName: 'Glute Kickback Form',
+    videoId: 'sllbiOqpUso',
+    shortUrl: 'https://www.youtube.com/shorts/sllbiOqpUso',
+    channelName: 'Diana Alexandrova',
   },
   ex_hip_abduction: {
-    videoId: 't5e0q1_z8oY',
-    shortUrl: 'https://www.youtube.com/shorts/t5e0q1_z8oY',
-    channelName: 'Glute Medius Guide',
+    videoId: 'GmRSV_n2E_0',
+    shortUrl: 'https://www.youtube.com/shorts/GmRSV_n2E_0',
+    channelName: 'ScottHermanFitness',
   },
   ex_db_sumo_squat: {
-    videoId: '9ZuD9urW8G4',
-    shortUrl: 'https://www.youtube.com/shorts/9ZuD9urW8G4',
-    channelName: 'Sumo Squat Guide',
+    videoId: 'wsaQ8Z7TZJY',
+    shortUrl: 'https://www.youtube.com/shorts/wsaQ8Z7TZJY',
+    channelName: 'DEMIC',
   },
 
   // --- HAMSTRINGS ---
   ex_romanian_deadlift: {
     videoId: 'JCXUYuzwNrM',
     shortUrl: 'https://www.youtube.com/shorts/JCXUYuzwNrM',
-    channelName: 'RDL Proper Form',
+    channelName: 'ScottHermanFitness',
   },
   ex_lying_leg_curl: {
     videoId: '1Tq3QdYUuHs',
     shortUrl: 'https://www.youtube.com/shorts/1Tq3QdYUuHs',
-    channelName: 'Hamstring Isolation',
+    channelName: 'ScottHermanFitness',
   },
   ex_stiff_leg_deadlift: {
     videoId: 'CN_7cz3P-1U',
     shortUrl: 'https://www.youtube.com/shorts/CN_7cz3P-1U',
-    channelName: 'Stiff Leg Technique',
+    channelName: 'Renaissance Periodization',
   },
 
   // --- WARMUP & MOBILITY ---
   ex_arm_circles: {
-    videoId: '140mY5Vms-0',
-    shortUrl: 'https://www.youtube.com/shorts/140mY5Vms-0',
-    channelName: 'Warmup Mobility',
+    videoId: 'lzR7tzI1JUI',
+    shortUrl: 'https://www.youtube.com/shorts/lzR7tzI1JUI',
+    channelName: 'Derek Ward',
   },
   ex_jumping_jacks: {
     videoId: 'iSSAk4XCsRA',
     shortUrl: 'https://www.youtube.com/shorts/iSSAk4XCsRA',
-    channelName: 'Cardio Warmup',
+    channelName: 'XHIT Daily',
   },
   ex_leg_swings: {
-    videoId: 'g5_K5T4M8l0',
-    shortUrl: 'https://www.youtube.com/shorts/g5_K5T4M8l0',
-    channelName: 'Dynamic Stretch',
+    videoId: '3l31E2cMGMk',
+    shortUrl: 'https://www.youtube.com/shorts/3l31E2cMGMk',
+    channelName: 'Sports Rehab Expert',
   },
   ex_cat_cow: {
     videoId: 'kqnua4rHVVA',
     shortUrl: 'https://www.youtube.com/shorts/kqnua4rHVVA',
-    channelName: 'Spine Mobility',
+    channelName: 'Howcast',
   },
   ex_childs_pose: {
     videoId: '2MJGg-dUKh0',
     shortUrl: 'https://www.youtube.com/shorts/2MJGg-dUKh0',
-    channelName: 'Recovery & Stretch',
+    channelName: 'Yoga & You',
   },
   ex_hamstring_stretch: {
-    videoId: 'FDw_fMv3w9I',
-    shortUrl: 'https://www.youtube.com/shorts/FDw_fMv3w9I',
-    channelName: 'Flexibility Guide',
+    videoId: 'qQ26F282VRo',
+    shortUrl: 'https://www.youtube.com/shorts/qQ26F282VRo',
+    channelName: 'Fit Family Physical Therapy',
   },
   ex_chest_doorway_stretch: {
-    videoId: '_zT3XbY5HdU',
-    shortUrl: 'https://www.youtube.com/shorts/_zT3XbY5HdU',
-    channelName: 'Chest Opening',
+    videoId: 'PWGuI3rTRx0',
+    shortUrl: 'https://www.youtube.com/shorts/PWGuI3rTRx0',
+    channelName: 'Daily Workout Builder',
   },
   ex_quad_stretch: {
-    videoId: 'XzR0H8N0oVw',
-    shortUrl: 'https://www.youtube.com/shorts/XzR0H8N0oVw',
-    channelName: 'Quad Flexibility',
+    videoId: 'aNXGOpP37CY',
+    shortUrl: 'https://www.youtube.com/shorts/aNXGOpP37CY',
+    channelName: 'VIGEO',
   },
 
   // --- EXTRA COMMON VARIATIONS ---
   ex_machine_incline_press: {
-    videoId: 'aK9zL5q1YxI',
-    shortUrl: 'https://www.youtube.com/shorts/aK9zL5q1YxI',
-    channelName: 'Machine Chest Form',
+    videoId: 'ig0NyNlSce4',
+    shortUrl: 'https://www.youtube.com/shorts/ig0NyNlSce4',
+    channelName: 'ScottHermanFitness',
   },
   ex_machine_chest_press: {
-    videoId: 'xZ6tL7r3m_U',
-    shortUrl: 'https://www.youtube.com/shorts/xZ6tL7r3m_U',
-    channelName: 'Chest Press Form',
+    videoId: 'Qu7-ceCvq7w',
+    shortUrl: 'https://www.youtube.com/shorts/Qu7-ceCvq7w',
+    channelName: 'Andrew Kwong (DeltaBolic)',
   },
   ex_machine_shoulder_press: {
-    videoId: '7H6q_4mG9x0',
-    shortUrl: 'https://www.youtube.com/shorts/7H6q_4mG9x0',
-    channelName: 'Shoulder Machine Form',
+    videoId: 'Wqq43dKW1TU',
+    shortUrl: 'https://www.youtube.com/shorts/Wqq43dKW1TU',
+    channelName: 'ScottHermanFitness',
   },
   ex_db_overhead_triceps_ext: {
-    videoId: 'b_1g_qL5x7Y',
-    shortUrl: 'https://www.youtube.com/shorts/b_1g_qL5x7Y',
-    channelName: 'Triceps Overhead Form',
+    videoId: '-Vyt2QdsR7E',
+    shortUrl: 'https://www.youtube.com/shorts/-Vyt2QdsR7E',
+    channelName: 'ScottHermanFitness',
   },
   ex_db_romanian_deadlift: {
-    videoId: 'e8pY5q7_v3M',
-    shortUrl: 'https://www.youtube.com/shorts/e8pY5q7_v3M',
-    channelName: 'Dumbbell RDL Guide',
+    videoId: 'FQKfr1YDhEk',
+    shortUrl: 'https://www.youtube.com/shorts/FQKfr1YDhEk',
+    channelName: 'ScottHermanFitness',
   },
   ex_db_biceps_curl: {
     videoId: 'ykJmrZ5v0Oo',
     shortUrl: 'https://www.youtube.com/shorts/ykJmrZ5v0Oo',
-    channelName: 'Dumbbell Curl Mastery',
+    channelName: 'Howcast',
   },
   ex_db_rear_delt_fly: {
-    videoId: '0G2_XV7slIg',
-    shortUrl: 'https://www.youtube.com/shorts/0G2_XV7slIg',
-    channelName: 'Rear Delt Fly Form',
+    videoId: 'ttvfGg9d76c',
+    shortUrl: 'https://www.youtube.com/shorts/ttvfGg9d76c',
+    channelName: 'ScottHermanFitness',
   },
 };
 
@@ -385,8 +385,8 @@ export function getExerciseVideo(exerciseId: string, customInput?: string): Exer
 
   // Fallback to bench press tutorial
   return {
-    videoId: 'LBhaLLc153A',
-    shortUrl: 'https://www.youtube.com/shorts/LBhaLLc153A',
+    videoId: 'rT7DgCr-3pg',
+    shortUrl: 'https://www.youtube.com/shorts/rT7DgCr-3pg',
     channelName: 'เทคนิคการออกกำลังกาย',
   };
 }
