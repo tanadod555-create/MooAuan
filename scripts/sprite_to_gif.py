@@ -22,10 +22,9 @@ USE_REMBG = True            # set False for fast testing without bg removal
 # Source image mapping: (filename_pattern, output_prefix, grid_cols, grid_rows)
 # We'll auto-detect grid based on aspect ratio, but provide overrides for known images
 IMAGE_MAP = {
-    # Manow (female)
-    'Manow Lv 1.jpg':  ('manow', 1, 3, 2),   # 1248x832 → 3×2
-    'Manow Lv 2.jpg':  ('manow', 2, 3, 2),
-    'Manow Lv 3.jpg':  ('manow', 3, 3, 2),
+    'Manow Lv 1.jpg':  ('manow', 1, 3, 2),   # 1248x832 → 3×2 (boba tea)
+    'Manow Lv 2.jpg':  ('manow', 2, 4, 1),   # 1248x832 → 4×1 (cake)
+    'Manow Lv 3.jpg':  ('manow', 3, 4, 1),   # 1248x832 → 4×1 (stretch)
     'Manow Lv 4.jpg':  ('manow', 4, 4, 1),   # 2912x1440 → 4×1 (high-res)
     'Manow Lv 5.jpg':  ('manow', 5, 4, 1),   # 2752x1536 → 4×1 (high-res)
     'Manow Lv 6.jpg':  ('manow', 6, 4, 1),   # 1456x720 → 4×1
