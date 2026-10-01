@@ -21,6 +21,8 @@ import {
   Zap,
   Swords,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   AlertTriangle,
   Crown,
   Heart,
@@ -87,6 +89,7 @@ export const MascotBattleView: React.FC = () => {
 
   // Piggy Run Minigame Modal States
   const [isGameModalOpen, setIsGameModalOpen] = useState(false);
+  const [showLevelRoadmap, setShowLevelRoadmap] = useState(false);
   const [gameInitialTab, setGameInitialTab] = useState<'game' | 'shop'>('game');
   const [gameSaveData, setGameSaveData] = useState<PiggyRunSaveData>(() => loadPiggySaveData());
 
@@ -492,58 +495,77 @@ export const MascotBattleView: React.FC = () => {
         </div>
       </div>
 
-      {/* 5. 10 Levels Roadmap Progression Guide */}
-      <div className="p-6 bg-white/95 rounded-3xl border border-pink-200/90 shadow-sm space-y-4">
-        <div className="flex items-center gap-2">
-          <Trophy size={18} className="text-yellow-500" />
-          <h3 className="font-extrabold text-base text-slate-800">
-            เส้นทางวิวัฒนาการหมูอ้วน 10 ระดับ (10 Levels Roadmap) 🗺️
-          </h3>
-        </div>
-        <p className="text-xs text-slate-500 leading-relaxed">
-          เลเวลคำนวณจาก **ความต่อเนื่อง (Streak)** และ **จำนวนเซสชันในรอบ 7-30 วัน**
-          หากขาดซ้อมเกิน 7 วัน เลเวลจะค่อยๆ ลดลงตามธรรมชาติเพื่อสะท้อนความฟิตจริงของร่างกายครับ!
-        </p>
+      {/* 5. 10 Levels Roadmap Progression Guide (Collapsible) */}
+      <div className="bg-white/95 rounded-3xl border border-pink-200/90 shadow-sm overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowLevelRoadmap(!showLevelRoadmap)}
+          className="w-full p-4 sm:p-5 flex items-center justify-between hover:bg-pink-50/50 transition cursor-pointer text-left"
+        >
+          <div className="flex items-center gap-2.5">
+            <Trophy size={18} className="text-yellow-500" />
+            <div>
+              <h3 className="font-extrabold text-sm sm:text-base text-slate-800">
+                แผนที่วิวัฒนาการ 10 เลเวล 🗺️
+              </h3>
+              <p className="text-[11px] text-slate-400">
+                แตะเพื่อ{showLevelRoadmap ? 'ซ่อน' : 'ดู'}เกณฑ์ปลดล็อกเลเวลทั้งหมด
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+            <span>{showLevelRoadmap ? 'ซ่อน' : 'ดูทั้งหมด'}</span>
+            {showLevelRoadmap ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </div>
+        </button>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-2">
-          {([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as PigEvolutionLevel[]).map((lv) => {
-            const cfg = PIG_10_LEVELS[lv];
-            const isMaxnumReached = maxnumLevel >= lv;
-            const isManowReached = manowLevel >= lv;
-            return (
-              <div
-                key={lv}
-                className={`p-3 rounded-2xl border text-center transition ${
-                  isMaxnumReached || isManowReached
-                    ? 'bg-gradient-to-b from-pink-50/60 to-white border-pink-300 shadow-2xs'
-                    : 'bg-slate-50/50 border-slate-200/80 opacity-60'
-                }`}
-              >
-                <div className="text-xs font-black text-rose-600 mb-1">
-                  Lv.{lv} {cfg.emoji}
-                </div>
-                <div className="text-[11px] font-bold text-slate-800 truncate mb-1">
-                  {cfg.titleTh}
-                </div>
-                <div className="text-[10px] text-slate-500 font-mono">
-                  {cfg.bodyFatLabel}
-                </div>
-                <div className="flex items-center justify-center gap-1 mt-2">
-                  {isMaxnumReached && (
-                    <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-sky-100 text-sky-700 font-bold" title="แม็กนั่มปลดล็อกแล้ว">
-                      M 🏋️‍♂️
-                    </span>
-                  )}
-                  {isManowReached && (
-                    <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-pink-100 text-pink-700 font-bold" title="มะนาวปลดล็อกแล้ว">
-                      N 🌸
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {showLevelRoadmap && (
+          <div className="p-5 pt-0 border-t border-pink-100/80 space-y-3">
+            <p className="text-xs text-slate-500 leading-relaxed mt-3">
+              เลเวลคำนวณจาก **ความต่อเนื่อง (Streak)** และ **จำนวนเซสชันในรอบ 7-30 วัน**
+            </p>
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-1">
+              {([1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as PigEvolutionLevel[]).map((lv) => {
+                const cfg = PIG_10_LEVELS[lv];
+                const isMaxnumReached = maxnumLevel >= lv;
+                const isManowReached = manowLevel >= lv;
+                return (
+                  <div
+                    key={lv}
+                    className={`p-3 rounded-2xl border text-center transition ${
+                      isMaxnumReached || isManowReached
+                        ? 'bg-gradient-to-b from-pink-50/60 to-white border-pink-300 shadow-2xs'
+                        : 'bg-slate-50/50 border-slate-200/80 opacity-60'
+                    }`}
+                  >
+                    <div className="text-xs font-black text-rose-600 mb-0.5">
+                      Lv.{lv} {cfg.emoji}
+                    </div>
+                    <div className="text-[11px] font-bold text-slate-800 truncate mb-0.5">
+                      {cfg.titleTh}
+                    </div>
+                    <div className="text-[10px] text-slate-500 font-mono">
+                      {cfg.bodyFatLabel}
+                    </div>
+                    <div className="flex items-center justify-center gap-1 mt-1.5">
+                      {isMaxnumReached && (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-sky-100 text-sky-700 font-bold" title="แม็กนั่มปลดล็อกแล้ว">
+                          M 🏋️‍♂️
+                        </span>
+                      )}
+                      {isManowReached && (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded-md bg-pink-100 text-pink-700 font-bold" title="มะนาวปลดล็อกแล้ว">
+                          N 🌸
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Piggy Run Modal */}

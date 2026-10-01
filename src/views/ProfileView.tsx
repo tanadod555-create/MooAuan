@@ -18,6 +18,8 @@ import {
   Upload,
   Sparkles,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   ExternalLink,
   ShieldAlert,
   Ruler,
@@ -178,6 +180,7 @@ export const ProfileView: React.FC = () => {
   const [fbTestResult, setFbTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isMigratingFb, setIsMigratingFb] = useState(false);
   const [migrationStatusMsg, setMigrationStatusMsg] = useState('');
+  const [showMetricHistory, setShowMetricHistory] = useState(false);
 
   // Sorted metrics
   const sortedMetrics = [...bodyMetrics].sort((a, b) => a.date.localeCompare(b.date));
@@ -926,39 +929,51 @@ export const ProfileView: React.FC = () => {
             })()}
 
             {/* Metrics History Table with All Circumferences */}
+            {/* Metrics History Table with All Circumferences (Collapsible) */}
             <div className="mt-4 pt-3 border-t border-pink-100">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-pink-900 block">
-                  ประวัติการบันทึกสัดส่วน & น้ำหนัก ({sortedMetrics.length} บันทึก):
+              <button
+                type="button"
+                onClick={() => setShowMetricHistory(!showMetricHistory)}
+                className="w-full flex items-center justify-between py-1 text-left cursor-pointer group"
+              >
+                <span className="text-xs font-bold text-pink-900 flex items-center gap-1.5">
+                  <Calendar size={13} className="text-rose-500" />
+                  <span>ประวัติบันทึกสัดส่วน & น้ำหนัก ({sortedMetrics.length})</span>
                 </span>
-                {allBodyMetrics.length > 0 && (
-                  <button
-                    onClick={() => {
-                      if (
-                        confirm(
-                          'คุณต้องการล้างประวัติการบันทึกสัดส่วนและน้ำหนักของทุกคนใช่หรือไม่?\n\n(หมายเหตุ: โปรแกรมการฝึก Routines และท่าออกกำลังกายจะถูกเก็บรักษาไว้ทั้งหมดเหมือนเดิม)'
-                        )
-                      ) {
-                        clearAllBodyMetrics();
-                        alert('ล้างประวัติสัดส่วนของทุกคนเรียบร้อยแล้ว!');
-                      }
-                    }}
-                    className="text-[11px] text-rose-500 hover:text-rose-700 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
-                  >
-                    <Trash2 size={12} />
-                    <span>ล้างประวัติสัดส่วนทั้งหมด</span>
-                  </button>
-                )}
-              </div>
-
-              {sortedMetrics.length === 0 ? (
-                <div className="py-8 text-center text-xs text-slate-400 bg-pink-50/30 rounded-2xl border border-pink-100 space-y-1.5">
-                  <p className="font-semibold text-slate-600">ยังไม่มีประวัติการบันทึกสัดส่วน & น้ำหนักตัว</p>
-                  <p className="text-[11px] text-slate-400">
-                    แตะปุ่ม "+ บันทึกสัดส่วน/น้ำหนัก" ด้านบน เพื่อเริ่มบันทึกครั้งแรก
-                  </p>
+                <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 group-hover:text-slate-800">
+                  <span>{showMetricHistory ? 'ซ่อน' : 'ดูประวัติ'}</span>
+                  {showMetricHistory ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 </div>
-              ) : (
+              </button>
+
+              {showMetricHistory && (
+                <div className="pt-2 space-y-2">
+                  <div className="flex items-center justify-end mb-1">
+                    {allBodyMetrics.length > 0 && (
+                      <button
+                        onClick={() => {
+                          if (
+                            confirm(
+                              'คุณต้องการล้างประวัติการบันทึกสัดส่วนและน้ำหนักของทุกคนใช่หรือไม่?\n\n(หมายเหตุ: โปรแกรมการฝึก Routines และท่าออกกำลังกายจะถูกเก็บรักษาไว้ทั้งหมดเหมือนเดิม)'
+                            )
+                          ) {
+                            clearAllBodyMetrics();
+                            alert('ล้างประวัติสัดส่วนของทุกคนเรียบร้อยแล้ว!');
+                          }
+                        }}
+                        className="text-[10px] text-rose-500 hover:text-rose-700 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                      >
+                        <Trash2 size={11} />
+                        <span>ล้างประวัติทั้งหมด</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {sortedMetrics.length === 0 ? (
+                    <div className="py-6 text-center text-xs text-slate-400 bg-pink-50/30 rounded-2xl border border-pink-100 space-y-1">
+                      <p className="font-semibold text-slate-600">ยังไม่มีประวัติการบันทึกสัดส่วน & น้ำหนักตัว</p>
+                    </div>
+                  ) : (
                 <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
                   {sortedMetrics.slice().reverse().map((m, idx) => (
                     <div
@@ -1058,6 +1073,8 @@ export const ProfileView: React.FC = () => {
                       )}
                     </div>
                   ))}
+                </div>
+              )}
                 </div>
               )}
             </div>

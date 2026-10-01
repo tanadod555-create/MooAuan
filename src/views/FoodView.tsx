@@ -23,6 +23,8 @@ import {
   X,
   ChevronRight,
   ChevronLeft,
+  ChevronDown,
+  ChevronUp,
   Calendar,
   Search,
   ExternalLink,
@@ -64,6 +66,7 @@ export const FoodView: React.FC = () => {
   // Quick Food Reference & AI Trainer Modal state
   const [showFoodDbModal, setShowFoodDbModal] = useState(false);
   const [showAiTrainerModal, setShowAiTrainerModal] = useState(false);
+  const [showMicronutrients, setShowMicronutrients] = useState(false);
 
   // User Selection: Track food per person separately (default to active profile)
   const [selectedUserKey, setSelectedUserKey] = useState<'primary' | 'partner'>(activeProfileKey);
@@ -831,24 +834,31 @@ export const FoodView: React.FC = () => {
           </div>
         </div>
 
-        {/* Thai DRI Micronutrients Dashboard */}
-        <div className="mt-5 pt-4 border-t border-pink-100/90 space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
+        {/* Thai DRI Micronutrients Dashboard (Collapsible) */}
+        <div className="mt-5 pt-3 border-t border-pink-100/90">
+          <button
+            type="button"
+            onClick={() => setShowMicronutrients(!showMicronutrients)}
+            className="w-full flex items-center justify-between py-1 text-left cursor-pointer group"
+          >
             <div className="flex items-center gap-2">
               <span className="text-xs font-black text-slate-700 flex items-center gap-1.5">
                 <Leaf size={14} className="text-emerald-500" />
-                <span>สารอาหารรอง & วิตามิน แร่ธาตุ</span>
+                <span>วิตามิน & แร่ธาตุ (Thai DRI)</span>
               </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100/80 text-emerald-800 border border-emerald-200/60">
-                🇹🇭 เกณฑ์ Thai DRI 2020
+              <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-emerald-100/80 text-emerald-800 border border-emerald-200/60">
+                โซเดียม, ใยอาหาร ฯลฯ
               </span>
             </div>
-            <span className="text-[11px] text-slate-400 font-medium">
-              (คำนวณตาม Dietary Reference Intake สำหรับคนไทย)
-            </span>
-          </div>
+            <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 group-hover:text-slate-800">
+              <span>{showMicronutrients ? 'ซ่อน' : 'ดูรายละเอียด'}</span>
+              {showMicronutrients ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </div>
+          </button>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+          {showMicronutrients && (
+            <div className="pt-3 space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
             {/* Sodium (Limit 2000mg) */}
             <div className={`p-2.5 rounded-2xl border transition-all ${
               totalSodium > THAI_DRI.sodium_mg
@@ -1042,7 +1052,9 @@ export const FoodView: React.FC = () => {
                 </span>
               </div>
             </div>
-          </div>
+            </div>
+            </div>
+          )}
         </div>
       </MagicCard>
 
