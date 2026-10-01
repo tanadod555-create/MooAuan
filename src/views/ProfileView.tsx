@@ -400,7 +400,27 @@ export const ProfileView: React.FC = () => {
       });
       alert(`🎉 ย้ายข้อมูลสำเร็จทั้งหมด ${res.count} รายการ! ตอนนี้ทั้ง 2 เครื่องจะเห็นข้อมูลตรงกันแบบ Real-time แล้ว`);
     } catch (err: any) {
-      alert(`ย้ายข้อมูลไม่สำเร็จ: ${err.message}`);
+      if (err?.message?.toLowerCase().includes('permission') || err?.code === 'permission-denied') {
+        alert(
+          '⚠️ ติดสิทธิ์การเข้าถึง (Missing Permission) ใน Firebase:\n\n' +
+          'วิธีแก้ไขง่ายๆ 30 วินาที:\n' +
+          '1. เปิดเว็บ console.firebase.google.com\n' +
+          '2. เลือกโปรเจกต์ "mooauan-dn"\n' +
+          '3. เมนูด้านซ้ายไปที่ "Firestore Database" -> แท็บ "Rules" (กฎ)\n' +
+          '4. แก้ไขโค้ดเป็น:\n\n' +
+          'rules_version = \'2\';\n' +
+          'service cloud.firestore {\n' +
+          '  match /databases/{database}/documents {\n' +
+          '    match /{document=**} {\n' +
+          '      allow read, write: if true;\n' +
+          '    }\n' +
+          '  }\n' +
+          '}\n\n' +
+          '5. กดปุ่ม "Publish" (เผยแพร่) แล้วกลับมากดซิงค์ใหม่ได้ทันทีครับ!'
+        );
+      } else {
+        alert(`ย้ายข้อมูลไม่สำเร็จ: ${err.message}`);
+      }
     } finally {
       setIsMigratingFb(false);
       setMigrationStatusMsg('');
