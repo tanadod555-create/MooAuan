@@ -654,8 +654,8 @@ const DEFAULT_TODAY_FOOD_LOGS: FoodLog[] = [
   },
   {
     log_id: 'log_1790840905402_1q37',
-    user_id: 'primary',
-    user_name: 'แม็กนั่ม (Magnum)',
+    user_id: 'partner',
+    user_name: 'มะนาว (Manow)',
     date: '2026-10-01',
     time: '14:48',
     meal: 'lunch',
@@ -791,6 +791,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!existingIds.has(defLog.log_id)) {
         list.push(defLog);
         existingIds.add(defLog.log_id);
+      } else if (defLog.log_id === 'log_1790840905402_1q37') {
+        // Guarantee lemon tea is assigned to partner (Manow)
+        list = list.map(l => l.log_id === 'log_1790840905402_1q37' ? { ...l, user_id: 'partner', user_name: 'มะนาว (Manow)' } : l);
       }
     });
 
@@ -879,7 +882,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         db,
         (logs) => {
           if (logs && logs.length > 0) {
-            setAllFoodLogs(logs);
+            let hasFix = false;
+            const sanitizedLogs = logs.map((l) => {
+              if (l.log_id === 'log_1790840905402_1q37' && l.user_id === 'primary') {
+                hasFix = true;
+                const fixed = { ...l, user_id: 'partner', user_name: 'มะนาว (Manow)' };
+                cloudSaveFoodLog(db, fixed).catch(console.error);
+                return fixed;
+              }
+              return l;
+            });
+            setAllFoodLogs(sanitizedLogs);
           }
         },
         (err) => setFirebaseError(`Food Logs: ${err.message}`)
