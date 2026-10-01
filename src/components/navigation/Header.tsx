@@ -2,6 +2,7 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { Users, Sparkles, Wifi, WifiOff } from 'lucide-react';
 import { PigMascot } from '../ui/PigMascot';
+import { getUserAvatar } from '../../utils/mascotLevels';
 
 interface HeaderProps {
   onOpenSettings: () => void;
@@ -37,15 +38,11 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
             title="แตะเพื่อเลือกโปรไฟล์หรือเปลี่ยนตัวละคร"
           >
-            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-2xs flex items-center justify-center bg-white">
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-2xs flex items-center justify-center bg-white/90">
               <img
-                src={isMagnum ? './mascots/magnum_icon.png' : './mascots/manow_icon.png'}
+                src={getUserAvatar(activeProfileKey)}
                 alt={currentProfile.name}
                 className="w-full h-full object-cover animate-bounce-subtle"
-                onError={(e) => {
-                  // Fallback
-                  e.currentTarget.style.display = 'none';
-                }}
               />
             </div>
             <span className="absolute -top-1 -right-1 text-xs animate-sparkle">✨</span>
