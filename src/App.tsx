@@ -31,16 +31,14 @@ export const MainContent: React.FC = () => {
   // Sync theme class to document body
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      document.body.className = isMagnum ? 'theme-magnum' : 'theme-manow theme-pastel-pink';
+      document.body.className = isMagnum ? 'theme-magnum' : 'theme-manow';
     }
   }, [isMagnum]);
 
   return (
     <div
       className={`min-h-screen ${
-        isMagnum
-          ? 'theme-magnum bg-[#f0f7ff] text-slate-800 selection:bg-sky-200 selection:text-sky-950'
-          : 'theme-manow theme-pastel-pink bg-[#fff5f8] text-slate-700 selection:bg-pink-200 selection:text-slate-800'
+        isMagnum ? 'theme-magnum' : 'theme-manow'
       } flex flex-col font-sans relative transition-colors duration-300`}
     >
       {/* Top Header */}
@@ -57,7 +55,7 @@ export const MainContent: React.FC = () => {
       <AiTrainerModal isOpen={showAiTrainer} onClose={() => setShowAiTrainer(false)} />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-3 sm:px-5 pt-4">
+      <main className="flex-1 max-w-4xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-28">
         {activeTab === 'workout' && <WorkoutView />}
         {activeTab === 'mascot' && <MascotBattleView />}
         {activeTab === 'anatomy' && <AnatomyView />}
@@ -66,30 +64,22 @@ export const MainContent: React.FC = () => {
         {activeTab === 'stats' && <ProfileView />}
       </main>
 
-      {/* Floating Interactive AI Trainer Mascot Bubble (Quick Access) */}
-      <div className="fixed bottom-20 right-3.5 sm:right-6 z-30">
+      {/* Floating Interactive AI Trainer Mascot Bubble (Apple-style frosted chip) */}
+      <div className="fixed bottom-24 right-4 sm:right-7 z-30">
         <button
           onClick={() => setShowAiTrainer(true)}
-          className={`group relative flex items-center gap-2 pl-2 pr-3.5 py-2 rounded-full text-white shadow-lg active:scale-95 transition cursor-pointer border-2 border-white/90 ${
-            isMagnum
-              ? 'bg-gradient-to-r from-sky-400 via-blue-400 to-sky-300 hover:from-sky-500 hover:to-blue-400 shadow-sky-200/50'
-              : 'bg-gradient-to-r from-pink-400 via-rose-400 to-pink-400 hover:from-pink-500 hover:to-rose-500 shadow-pink-300/50'
-          }`}
-          title="แตะเพื่อคุยกับโค้ชหมูอ้วน AI ได้ทุกเมื่อ"
+          className="group relative flex items-center gap-2 pl-2 pr-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-xl border border-black/[0.08] shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_36px_rgba(0,0,0,0.12)] active:scale-95 transition-all duration-200 cursor-pointer"
+          title="แตะเพื่อคุยกับโค้ชหมูอ้วน AI"
         >
           <div className="relative">
-            <PigMascot size="sm" expression={isMagnum ? 'workout' : 'cheer'} className="drop-shadow-xs" />
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full animate-ping" />
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full" />
+            <PigMascot size="sm" expression={isMagnum ? 'workout' : 'cheer'} className="drop-shadow-2xs" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 ring-2 ring-white rounded-full animate-ping" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 ring-2 ring-white rounded-full" />
           </div>
           <div className="text-left">
-            <span className="block text-[11px] font-black leading-tight">โค้ช AI 💬</span>
-            <span
-              className={`block text-[9px] font-medium leading-tight ${
-                isMagnum ? 'text-sky-100' : 'text-pink-100'
-              }`}
-            >
-              {isMagnum ? 'หมูอ้วนสายเวท' : 'หมูอ้วนเทรนเนอร์'}
+            <span className="block text-[11px] font-bold text-zinc-900 leading-tight">โค้ช AI</span>
+            <span className={`block text-[9px] font-medium leading-tight ${isMagnum ? 'text-blue-600' : 'text-rose-600'}`}>
+              {isMagnum ? 'สายเวท' : 'เทรนเนอร์'}
             </span>
           </div>
         </button>

@@ -427,9 +427,10 @@ export const ProfileView: React.FC = () => {
   return (
     <div className="space-y-6 pb-24 animate-fadeIn">
       {/* Profile Selector Banner with Pig Mascot */}
-      <div className="bg-white/95 p-5 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 flex items-center justify-between">
+      {/* Profile Selector Banner with Pig Mascot */}
+      <div className="card-apple p-5 flex items-center justify-between">
         <div className="flex items-center gap-3.5">
-          <div className="relative flex items-center justify-center p-1 rounded-2xl bg-gradient-to-tr from-pink-200 via-rose-200 to-pink-100 shadow-sm shadow-pink-300/30">
+          <div className="relative flex items-center justify-center p-1.5 rounded-2xl bg-zinc-100 border border-black/[0.05]">
             <PigMascot
               size="md"
               expression={activeProfileKey === 'partner' ? 'cheer' : 'strong'}
@@ -438,13 +439,13 @@ export const ProfileView: React.FC = () => {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-slate-700">{currentProfile.name}</h2>
-              <span className="text-[11px] bg-pink-100 text-rose-700 border border-pink-200 px-2.5 py-0.5 rounded-full font-bold">
+              <h2 className="text-xl font-black text-zinc-900 tracking-tight">{currentProfile.name}</h2>
+              <span className="text-[11px] bg-zinc-100 text-zinc-700 border border-black/[0.06] px-2.5 py-0.5 rounded-full font-semibold">
                 {activeProfileKey === 'primary' ? '🏋️‍♂️ หมูอ้วนเทรนเนอร์' : '🌸 หมูอ้วนหวานแหวว'}
               </span>
             </div>
-            <p className="text-xs text-pink-800/70 mt-0.5">
-              เป้าหมาย: <strong className="text-rose-600">{currentProfile.goal}</strong>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              เป้าหมาย: <strong className="text-zinc-800 font-semibold">{currentProfile.goal}</strong>
             </p>
           </div>
         </div>
@@ -452,47 +453,47 @@ export const ProfileView: React.FC = () => {
         {/* Toggle Account Pill */}
         <button
           onClick={() => setActiveProfileKey(activeProfileKey === 'primary' ? 'partner' : 'primary')}
-          className="px-3.5 py-2 rounded-2xl bg-pink-50 hover:bg-pink-100/80 border border-pink-200 text-xs font-bold text-pink-900 flex items-center gap-1.5 transition active:scale-95 shadow-xs"
+          className="px-3.5 py-2 rounded-full bg-zinc-100 hover:bg-zinc-200/80 border border-black/[0.06] text-xs font-semibold text-zinc-700 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
         >
-          <Users size={14} className="text-rose-500" />
+          <Users size={14} className="text-zinc-500" />
           <span>สลับโปรไฟล์</span>
         </button>
       </div>
 
-      {/* Sub-tab navigation: สถิติร่างกาย / ข้อมูลส่วนตัว / ตั้งค่า Google Sheet */}
-      <div className="flex items-center p-1.5 bg-white/95 rounded-2xl border border-pink-200/90 gap-1.5 shadow-xs">
+      {/* Sub-tab navigation: Apple Segmented Pill */}
+      <div className="flex items-center p-1 bg-zinc-200/60 backdrop-blur-md rounded-full shadow-inner border border-black/[0.04] max-w-xl mx-auto">
         <button
           onClick={() => setActiveTab('stats')}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'stats'
-              ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
-              : 'text-pink-900/70 hover:text-slate-700 hover:bg-pink-50/60'
+              ? 'bg-white text-zinc-900 shadow-sm'
+              : 'text-zinc-600 hover:text-zinc-900'
           }`}
         >
-          <TrendingUp size={16} />
-          สถิติ & ความก้าวหน้า
+          <TrendingUp size={15} />
+          <span>สถิติ & กราฟ</span>
         </button>
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'profile'
-              ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
-              : 'text-pink-900/70 hover:text-slate-700 hover:bg-pink-50/60'
+              ? 'bg-white text-zinc-900 shadow-sm'
+              : 'text-zinc-600 hover:text-zinc-900'
           }`}
         >
-          <User size={16} />
-          ข้อมูลส่วนตัว
+          <User size={15} />
+          <span>ข้อมูลส่วนตัว</span>
         </button>
         <button
           onClick={() => setActiveTab('settings')}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
             activeTab === 'settings'
-              ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
-              : 'text-pink-900/70 hover:text-slate-700 hover:bg-pink-50/60'
+              ? 'bg-white text-zinc-900 shadow-sm'
+              : 'text-zinc-600 hover:text-zinc-900'
           }`}
         >
-          <SettingsIcon size={16} />
-          ตั้งค่า Cloud & AI
+          <SettingsIcon size={15} />
+          <span>ตั้งค่า Cloud & AI</span>
         </button>
       </div>
 
@@ -500,88 +501,89 @@ export const ProfileView: React.FC = () => {
       {activeTab === 'stats' && (
         <div className="space-y-4">
           {/* Smart Goal & Sports Nutrition Calculator Banner */}
-          <div className="bg-gradient-to-r from-pink-400 via-rose-300 to-pink-300 p-4 sm:p-5 rounded-3xl shadow-lg shadow-pink-500/20 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* Smart Goal & Sports Nutrition Calculator Banner (Apple Pro Card) */}
+          <div className="p-5 sm:p-6 rounded-[24px] bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-white shadow-lg shadow-black/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-white/10">
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shadow-inner shrink-0">
+              <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-xl shadow-inner shrink-0 border border-white/10">
                 🎯
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-black tracking-tight">คำนวณเป้าหมาย & สารอาหารอัจฉริยะ</h3>
-                  <span className="text-[10px] bg-white/25 px-2 py-0.5 rounded-full font-bold">Smart Goal</span>
+                  <h3 className="text-base font-bold tracking-tight text-white">คำนวณเป้าหมาย & สารอาหาร</h3>
+                  <span className="text-[10px] bg-white/15 px-2 py-0.5 rounded-full font-semibold text-zinc-200">Smart Goal</span>
                 </div>
-                <p className="text-xs text-pink-100 mt-0.5">
-                  เลือกเป้าหมาย (Hard Bulk, Lean Bulk, Cut, Recomp) คำนวณแคลอรี่ โปรตีน คาร์บ ไขมัน พร้อมหลักฐานทางวิทยาศาสตร์
+                <p className="text-xs text-zinc-300 mt-0.5 leading-relaxed">
+                  Bulk, Cut, Recomp คำนวณแคลอรี่ โปรตีน คาร์บ ไขมัน อัตโนมัติ
                 </p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setShowGoalModal(true)}
-              className="px-4 py-2.5 rounded-2xl bg-white text-rose-600 hover:bg-pink-50 font-black text-xs shadow-md flex items-center justify-center gap-1.5 active:scale-95 transition whitespace-nowrap shrink-0"
+              className="px-4 py-2.5 rounded-full bg-white text-zinc-900 hover:bg-zinc-100 font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer whitespace-nowrap shrink-0"
             >
-              <Sparkles size={14} className="text-rose-500" />
-              <span>คำนวณเป้าหมายตอนนี้</span>
+              <Sparkles size={14} className="text-blue-500" />
+              <span>คำนวณเป้าหมาย</span>
             </button>
           </div>
 
-          {/* Quick Metrics Cards */}
+          {/* Quick Metrics Cards (Apple Health / Samsung Health Style) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <MagicCard spotlightColor="rgba(244, 63, 94, 0.12)" className="p-4 bg-white/95 border-pink-200/90 shadow-sm">
-              <span className="text-xs text-pink-800/70 flex items-center gap-1 font-bold">
-                <Scale size={14} className="text-rose-500" /> น้ำหนักล่าสุด
+            <div className="card-apple p-4">
+              <span className="text-xs text-zinc-500 flex items-center gap-1 font-medium">
+                <Scale size={14} className="text-zinc-400" /> น้ำหนักล่าสุด
               </span>
-              <p className="text-xl font-black text-slate-700 mt-1">
-                {currentWeightKg} <span className="text-xs text-pink-600 font-normal">kg</span>
+              <p className="text-2xl font-extrabold text-zinc-900 mt-1 tracking-tight">
+                {currentWeightKg} <span className="text-xs text-zinc-400 font-normal">kg</span>
               </p>
-            </MagicCard>
+            </div>
 
-            <MagicCard spotlightColor="rgba(56, 189, 248, 0.12)" className="p-4 bg-white/95 border-pink-200/90 shadow-sm">
-              <span className="text-xs text-pink-800/70 flex items-center gap-1 font-bold">
-                <Sparkles size={14} className="text-sky-500" /> Body Fat %
+            <div className="card-apple p-4">
+              <span className="text-xs text-zinc-500 flex items-center gap-1 font-medium">
+                <Sparkles size={14} className="text-zinc-400" /> Body Fat %
               </span>
-              <p className="text-xl font-black text-slate-700 mt-1">
+              <p className="text-2xl font-extrabold text-zinc-900 mt-1 tracking-tight">
                 {latestMetric?.body_fat_pct ? `${latestMetric.body_fat_pct}%` : '–'}
               </p>
-            </MagicCard>
+            </div>
 
-            <MagicCard spotlightColor="rgba(168, 85, 247, 0.12)" className="p-4 bg-white/95 border-pink-200/90 shadow-sm">
-              <span className="text-xs text-pink-800/70 font-bold">ค่า BMI</span>
-              <p className="text-xl font-black text-slate-700 mt-1">
-                {bmi} <span className="text-xs text-emerald-600 font-bold">ปกติ</span>
+            <div className="card-apple p-4">
+              <span className="text-xs text-zinc-500 font-medium">ค่า BMI</span>
+              <p className="text-2xl font-extrabold text-zinc-900 mt-1 tracking-tight">
+                {bmi} <span className="text-xs text-emerald-600 font-semibold ml-1">ปกติ</span>
               </p>
-            </MagicCard>
+            </div>
 
-            <MagicCard spotlightColor="rgba(244, 63, 94, 0.12)" className="p-4 bg-white/95 border-pink-200/90 shadow-sm">
-              <span className="text-xs text-pink-800/70 font-bold">Total Volume ยกสะสม</span>
-              <p className="text-xl font-black text-rose-600 mt-1 font-mono">
+            <div className="card-apple p-4">
+              <span className="text-xs text-zinc-500 font-medium">Volume รวม</span>
+              <p className="text-2xl font-extrabold text-zinc-900 mt-1 font-mono tracking-tight">
                 <NumberTicker value={totalVolumeAllTime} />{' '}
-                <span className="text-xs text-pink-700 font-normal">kg</span>
+                <span className="text-xs text-zinc-400 font-normal">kg</span>
               </p>
-            </MagicCard>
+            </div>
           </div>
 
-          {/* Body Circumferences Highlights (สัดส่วนร่างกายล่าสุด) */}
-          <div className="bg-white/95 p-5 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-4">
+          {/* Body Circumferences Highlights */}
+          <div className="card-apple p-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
-                  <Ruler size={18} className="text-rose-500" />
-                  สัดส่วนร่างกายล่าสุด (Body Circumferences)
+                <h3 className="text-base font-bold text-zinc-900 flex items-center gap-2">
+                  <Ruler size={18} className="text-zinc-500" />
+                  สัดส่วนร่างกายล่าสุด
                 </h3>
-                <p className="text-xs text-pink-800/70">รอบอก ไหล่ เอว สะโพก ต้นขา แขน น่อง คอ</p>
+                <p className="text-xs text-zinc-500">รอบอก ไหล่ เอว สะโพก ต้นขา แขน น่อง คอ</p>
               </div>
 
               <div className="flex items-center gap-2">
                 {/* Unit Switcher: cm vs inch */}
-                <div className="flex items-center p-1 bg-pink-100/70 rounded-xl border border-pink-200 text-xs font-bold">
+                <div className="flex items-center p-0.5 bg-zinc-100 rounded-full border border-black/[0.06] text-xs font-semibold">
                   <button
                     type="button"
                     onClick={() => toggleCircumferenceUnit('cm')}
-                    className={`px-2.5 py-1 rounded-lg transition ${
+                    className={`px-3 py-1 rounded-full transition-all duration-200 cursor-pointer ${
                       circumferenceUnit === 'cm'
-                        ? 'bg-rose-500 text-white shadow-xs'
-                        : 'text-slate-600 hover:text-rose-600'
+                        ? 'bg-white text-zinc-900 shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-900'
                     }`}
                   >
                     ซม. (cm)

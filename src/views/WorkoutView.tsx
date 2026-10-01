@@ -226,34 +226,34 @@ export const WorkoutView: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-24 animate-fadeIn">
-      {/* Top Tab Switcher: Workout vs History (Pastel Pink) */}
-      <div className="flex items-center gap-1.5 p-1.5 bg-white/95 border border-pink-200/90 rounded-2xl shadow-xs">
+      {/* Top Tab Switcher: Apple Segmented Control */}
+      <div className="flex items-center p-1 bg-zinc-200/60 backdrop-blur-md rounded-full max-w-md mx-auto shadow-inner border border-black/[0.04]">
         <button
           onClick={() => setWorkoutTab('workout')}
-          className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition ${
+          className={`flex-1 py-2 px-4 rounded-full text-xs font-bold flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
             workoutTab === 'workout'
-              ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-sm shadow-pink-200'
-              : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
+              ? 'bg-white text-zinc-900 shadow-sm'
+              : 'text-zinc-600 hover:text-zinc-900'
           }`}
         >
-          <Dumbbell size={16} />
-          <span>ออกกำลังกาย / ซ้อม</span>
+          <Dumbbell size={15} />
+          <span>ออกกำลังกาย</span>
           {activeWorkout && (
-            <span className="w-2 h-2 rounded-full bg-rose-400 animate-ping ml-1" />
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping ml-0.5" />
           )}
         </button>
 
         <button
           onClick={() => setWorkoutTab('history')}
-          className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition ${
+          className={`flex-1 py-2 px-4 rounded-full text-xs font-bold flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
             workoutTab === 'history'
-              ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-sm shadow-pink-200'
-              : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
+              ? 'bg-white text-zinc-900 shadow-sm'
+              : 'text-zinc-600 hover:text-zinc-900'
           }`}
         >
-          <Clock size={16} />
-          <span>ประวัติการฝึกซ้อม</span>
-          <span className="text-[11px] px-2 py-0.5 rounded-full bg-pink-100 text-rose-600 font-mono font-bold">
+          <Clock size={15} />
+          <span>ประวัติการฝึก</span>
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 font-mono font-bold">
             {allWorkoutHistory.length}
           </span>
         </button>

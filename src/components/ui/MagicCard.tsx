@@ -8,7 +8,7 @@ interface MagicCardProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export const MagicCard: React.FC<MagicCardProps> = ({
   children,
-  spotlightColor = 'rgba(16, 185, 129, 0.15)',
+  spotlightColor = 'rgba(0, 113, 227, 0.08)',
   className = '',
   ...props
 }) => {
@@ -32,7 +32,7 @@ export const MagicCard: React.FC<MagicCardProps> = ({
       onMouseEnter={() => setOpacity(1)}
       onMouseLeave={() => setOpacity(0)}
       {...props}
-      className={`relative rounded-3xl border border-pink-200/90 bg-white/95 text-pink-950 overflow-hidden shadow-sm shadow-pink-100/50 backdrop-blur-md transition-all duration-300 hover:border-pink-300 hover:shadow-md ${className}`}
+      className={`relative rounded-[24px] border border-black/[0.06] bg-white/90 text-zinc-900 overflow-hidden shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300 hover:border-black/[0.12] hover:shadow-[0_8px_30px_-8px_rgba(0,0,0,0.06)] ${className}`}
     >
       {/* Interactive Cursor Spotlight Glow */}
       <div

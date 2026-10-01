@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { Users, RefreshCw, FileSpreadsheet, Sparkles } from 'lucide-react';
+import { Users, Sparkles, Wifi, WifiOff } from 'lucide-react';
 import { PigMascot } from '../ui/PigMascot';
 
 interface HeaderProps {
@@ -10,7 +10,6 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
-  onOpenSettings,
   onOpenProfileModal,
   onOpenAiTrainer,
 }) => {
@@ -18,131 +17,80 @@ export const Header: React.FC<HeaderProps> = ({
     activeProfileKey,
     setActiveProfileKey,
     currentProfile,
-    partnerProfile,
-    primaryProfile,
-    isSyncing,
-    syncAllToGoogleSheets,
-    settings,
-    openUnifiedSpreadsheet,
+    isFirebaseConnected,
   } = useApp();
 
-  const otherProfileName = activeProfileKey === 'primary' ? 'มะนาว (Manow) 🌸' : 'แม็กนั่ม 🏋️‍♂️';
-
-  const handleQuickSync = async () => {
-    const res = await syncAllToGoogleSheets();
-    if (!res.success) {
-      alert(res.message);
-    }
-  };
-
   const isMagnum = activeProfileKey === 'primary';
+  const otherName = isMagnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️';
 
   return (
-    <header
-      className={`sticky top-0 z-40 bg-white/95 backdrop-blur-lg border-b px-4 py-2.5 transition-colors duration-300 ${
-        isMagnum ? 'border-sky-200/90 shadow-sm shadow-sky-100/50' : 'border-pink-200/80 shadow-sm shadow-pink-100/40'
-      }`}
-    >
+    <header className="sticky top-0 z-40 glass-apple-header px-4 py-2.5 transition-all duration-300">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
-        {/* App Title with Pig Mascot & Profile Selector */}
-        <div className="flex items-center gap-2.5">
+        {/* Brand & Mascot */}
+        <div className="flex items-center gap-3">
           <button
             onClick={onOpenProfileModal}
-            className={`relative flex items-center justify-center p-0.5 rounded-2xl shadow-md hover:scale-105 active:scale-95 transition ${
-              isMagnum
-                ? 'bg-gradient-to-tr from-sky-400 via-blue-400 to-sky-200 shadow-sky-300/40'
-                : 'bg-gradient-to-tr from-pink-300 via-rose-300 to-pink-200 shadow-pink-300/30'
-            }`}
-            title="กดเพื่อเลือกโปรไฟล์หรือเปลี่ยนคนใช้งาน"
+            className="relative flex items-center justify-center p-1 rounded-2xl bg-zinc-100 border border-black/[0.06] hover:scale-105 active:scale-95 transition shadow-2xs cursor-pointer"
+            title="กดเพื่อเลือกโปรไฟล์"
           >
             <PigMascot
               size="sm"
               expression={isMagnum ? 'workout' : 'happy'}
-              className="drop-shadow-sm"
+              className="drop-shadow-xs"
             />
           </button>
           <div>
-            <div className="flex items-center gap-1.5">
-              <h1 className="font-bold text-sm sm:text-base text-slate-800 tracking-tight flex items-center gap-1">
+            <div className="flex items-center gap-2">
+              <h1 className="font-extrabold text-sm sm:text-base text-zinc-900 tracking-tight flex items-center gap-1.5">
                 หมูอ้วน
-                <span className={`text-[11px] font-normal font-mono ${isMagnum ? 'text-sky-500' : 'text-pink-400'}`}>
-                  MooAuan
-                </span>
+                <span className="text-[11px] font-medium text-zinc-400 font-mono">MooAuan</span>
               </h1>
+              {/* Cloud Sync Status Indicator */}
               <span
-                className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold border flex items-center gap-0.5 ${
-                  isMagnum
-                    ? 'bg-sky-100 text-sky-700 border-sky-200/80'
-                    : 'bg-pink-100 text-pink-700 border-pink-200/70'
+                className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-colors ${
+                  isFirebaseConnected
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
+                    : 'bg-zinc-100 text-zinc-500 border-zinc-200'
                 }`}
+                title={isFirebaseConnected ? 'ซิงค์ข้อมูล Real-time สำเร็จ' : 'โหมด Offline'}
               >
-                <Sparkles size={9} className={isMagnum ? 'text-sky-500' : 'text-pink-400'} />
-                <span>{isMagnum ? 'ธีมฟ้า 🏋️‍♂️' : 'ธีมชมพู 🌸'}</span>
+                {isFirebaseConnected ? <Wifi size={10} className="text-emerald-500" /> : <WifiOff size={10} />}
+                <span className="hidden sm:inline">{isFirebaseConnected ? 'Cloud Live' : 'Offline'}</span>
               </span>
             </div>
-            <p className="text-[10px] sm:text-[11px] text-slate-500 flex items-center gap-1 font-medium">
-              <span>กำลังดูแล:</span>
-              <strong className={isMagnum ? 'text-sky-600' : 'text-rose-500'}>
-                {isMagnum ? '🏋️‍♂️ แม็กนั่ม (Magnum)' : '🌸 มะนาว (Manow)'}
-              </strong>
+            <p className="text-[11px] text-zinc-500 font-medium">
+              กำลังดูแล: <strong className={isMagnum ? 'text-blue-600 font-bold' : 'text-rose-600 font-bold'}>{currentProfile.name}</strong>
             </p>
           </div>
         </div>
 
-        {/* Right Actions: AI Coach + Switch Profile Pill + Sync */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        {/* Right Action Controls */}
+        <div className="flex items-center gap-2 shrink-0">
           {/* AI Trainer Button */}
           {onOpenAiTrainer && (
             <button
               onClick={onOpenAiTrainer}
-              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full border text-[11px] sm:text-xs font-bold transition active:scale-95 shadow-2xs cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-2xs ${
                 isMagnum
-                  ? 'bg-sky-500/10 hover:bg-sky-500/20 border-sky-300 text-sky-600'
-                  : 'bg-gradient-to-r from-rose-500/10 via-pink-400/10 to-rose-500/10 hover:from-rose-500/20 hover:to-pink-500/20 border-rose-300/80 text-rose-600'
+                  ? 'bg-blue-50 hover:bg-blue-100/80 border-blue-200 text-blue-700'
+                  : 'bg-rose-50 hover:bg-rose-100/80 border-rose-200 text-rose-700'
               }`}
-              title="เปิดแชทกับโค้ชหมูอ้วน AI (คุยสด)"
+              title="เปิดคุยกับโค้ชหมูอ้วน AI"
             >
-              <Sparkles size={12} className={isMagnum ? 'text-sky-500' : 'text-rose-500'} />
-              <span>โค้ช AI 🐷</span>
+              <Sparkles size={13} className={isMagnum ? 'text-blue-500' : 'text-rose-500'} />
+              <span>โค้ช AI</span>
             </button>
           )}
 
-          {/* Quick Partner Switch Pill */}
+          {/* Apple-style Profile Switcher Segmented Pill */}
           <button
             onClick={() => setActiveProfileKey(isMagnum ? 'partner' : 'primary')}
-            className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full border text-[11px] sm:text-xs font-bold transition active:scale-95 shadow-2xs cursor-pointer ${
-              isMagnum
-                ? 'bg-pink-50 hover:bg-pink-100 border-pink-200 text-pink-700'
-                : 'bg-sky-50 hover:bg-sky-100 border-sky-200 text-sky-700'
-            }`}
-            title={`คลิกเพื่อสลับโปรไฟล์เป็น ${otherProfileName}`}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition-all active:scale-95 shadow-sm cursor-pointer"
+            title={`คลิกเพื่อสลับโปรไฟล์เป็น ${otherName}`}
           >
-            <Users size={13} className={isMagnum ? 'text-pink-500' : 'text-sky-500'} />
-            <span className="font-bold">{otherProfileName}</span>
-          </button>
-
-          {/* Direct Google Sheets Link Button */}
-          <button
-            onClick={openUnifiedSpreadsheet}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-gradient-to-r from-emerald-500/15 to-teal-500/15 hover:from-emerald-500/25 hover:to-teal-500/25 border border-emerald-400/40 text-emerald-800 text-xs font-bold transition active:scale-95 shadow-sm cursor-pointer"
-            title="เปิด Google Sheets รวม (แม็กนั่ม & มะนาว) ทันที"
-          >
-            <FileSpreadsheet size={15} className="text-emerald-600" />
-            <span className="hidden sm:inline">ชีทรวม 🐷</span>
-          </button>
-
-          {/* Sync Button */}
-          <button
-            onClick={handleQuickSync}
-            disabled={isSyncing}
-            className={`p-2 rounded-2xl border transition active:scale-95 cursor-pointer ${
-              isMagnum
-                ? 'bg-sky-100/70 hover:bg-sky-200/80 border-sky-200 text-sky-700 hover:text-sky-900'
-                : 'bg-pink-100/70 hover:bg-pink-200/80 border-pink-200 text-pink-700 hover:text-pink-900'
-            } ${isSyncing ? (isMagnum ? 'animate-spin text-sky-500' : 'animate-spin text-pink-500') : ''}`}
-            title="ซิงค์ข้อมูลกับ Google Sheet"
-          >
-            <RefreshCw size={15} />
+            <Users size={13} className="text-zinc-400" />
+            <span className="hidden sm:inline">สลับเป็น</span>
+            <span>{otherName}</span>
           </button>
         </div>
       </div>

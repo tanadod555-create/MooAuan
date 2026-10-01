@@ -4,86 +4,80 @@
 
 :root {
   color-scheme: light;
+  --apple-bg: #f5f5f7;
+  --apple-card: rgba(255, 255, 255, 0.85);
+  --apple-border: rgba(0, 0, 0, 0.06);
+  --apple-text-primary: #1d1d1f;
+  --apple-text-secondary: #86868b;
+  --apple-text-tertiary: #a1a1a6;
+  --apple-blue: #0071e3;
+  --apple-blue-hover: #0077ed;
+  --apple-rose: #e11d48;
 }
 
 /* ========================================================
-   หมูอ้วน (MooAuan) - CUTE PASTEL PINK THEME
+   APPLE / SAMSUNG MINIMALIST DESIGN SYSTEM
    ======================================================== */
 
 body {
   margin: 0;
   padding: 0;
-  background-color: #fff4f8;
-  color: #4a1d36;
-  font-family: 'Prompt', 'Nunito', 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--apple-bg);
+  color: var(--apple-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Prompt", "Inter", "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   user-select: none;
+  letter-spacing: -0.012em;
 }
 
-/* Subtle bounce animation for mascot */
-@keyframes bounce-subtle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
-}
-
-.animate-bounce-subtle {
-  animation: bounce-subtle 2.6s ease-in-out infinite;
-}
-
-/* Floating animation */
-@keyframes float-slow {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-6px) rotate(2deg);
-  }
-}
-
-.animate-float {
-  animation: float-slow 3.5s ease-in-out infinite;
-}
-
-/* Custom Cute Scrollbar */
+/* Apple-style Minimal Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #fff0f5;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #fbcfe8;
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #f472b6;
+  background: rgba(0, 0, 0, 0.28);
 }
 
-/* Glow effects */
-.glow-pink {
-  filter: drop-shadow(0 0 10px rgba(244, 114, 182, 0.5));
+/* Smooth Subtle Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.99) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
-.glow-emerald {
-  filter: drop-shadow(0 0 8px rgba(244, 114, 182, 0.4));
+.animate-fadeIn {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.glow-blue {
-  filter: drop-shadow(0 0 8px rgba(147, 197, 253, 0.5));
+@keyframes float-subtle {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
 }
 
-.glow-purple {
-  filter: drop-shadow(0 0 8px rgba(216, 180, 254, 0.5));
+.animate-float {
+  animation: float-subtle 4s ease-in-out infinite;
 }
 
 /* Safe areas for mobile */
@@ -95,433 +89,114 @@ body {
   padding-top: env(safe-area-inset-top, 1rem);
 }
 
-/* 21st.dev Border Beam Animation */
-@keyframes border-beam {
-  100% {
-    offset-distance: 100%;
-  }
+/* Apple Frosted Glass Utilities */
+.glass-apple {
+  background-color: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-/* ========================================================
-   LIGHT PASTEL PINK THEME (Default)
-   ======================================================== */
-.theme-pastel-pink {
-  background-color: #fff4f8 !important;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(254, 205, 224, 0.45) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(254, 215, 226, 0.45) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(255, 228, 238, 0.5) 0px, transparent 50%) !important;
-  color: #4a1d36 !important;
+.glass-apple-header {
+  background-color: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
 
-.theme-pastel-pink #root,
-.theme-pastel-pink main,
-.theme-pastel-pink .min-h-screen {
-  background-color: transparent !important;
-  color: #4a1d36 !important;
+.glass-apple-nav {
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(28px) saturate(190%);
+  -webkit-backdrop-filter: blur(28px) saturate(190%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
 }
 
-/* Cards & Surfaces */
-.theme-pastel-pink .bg-slate-900,
-.theme-pastel-pink .bg-slate-900\/90,
-.theme-pastel-pink .bg-slate-900\/80,
-.theme-pastel-pink .bg-slate-900\/60 {
-  background-color: #ffffff !important;
-  border-color: #fbcfe8 !important;
-  box-shadow: 0 4px 20px -2px rgba(244, 114, 182, 0.12), 0 2px 6px -1px rgba(244, 114, 182, 0.08) !important;
+.card-apple {
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 24px;
+  box-shadow: 0 2px 12px -4px rgba(0, 0, 0, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.theme-pastel-pink .bg-slate-950,
-.theme-pastel-pink .bg-slate-950\/95,
-.theme-pastel-pink .bg-slate-950\/90,
-.theme-pastel-pink .bg-slate-950\/80,
-.theme-pastel-pink .bg-slate-950\/70,
-.theme-pastel-pink .bg-slate-950\/60,
-.theme-pastel-pink .bg-slate-950\/50 {
-  background-color: #fff0f6 !important;
-  border-color: #fce7f3 !important;
+.card-apple:hover {
+  border-color: rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.06);
 }
 
-.theme-pastel-pink .bg-slate-850 {
-  background-color: #fdf2f8 !important;
-  border-color: #fbcfe8 !important;
-}
-
-.theme-pastel-pink .bg-slate-800,
-.theme-pastel-pink .bg-slate-800\/80 {
-  background-color: #fce7f3 !important;
-  color: #9d174d !important;
-  border-color: #fbcfe8 !important;
-}
-
-.theme-pastel-pink .bg-slate-800:hover {
-  background-color: #fbcfe8 !important;
-  color: #831843 !important;
-}
-
-.theme-pastel-pink .bg-slate-750 {
-  background-color: #fce7f3 !important;
-}
-
-/* Borders */
-.theme-pastel-pink .border-slate-800,
-.theme-pastel-pink .border-slate-800\/80,
-.theme-pastel-pink .border-slate-750,
-.theme-pastel-pink .border-slate-700,
-.theme-pastel-pink .border-slate-700\/80 {
-  border-color: #fce7f3 !important;
-}
-
-/* Headings & Text Colors */
-.theme-pastel-pink .text-white {
-  color: #4a1738 !important;
-}
-
-.theme-pastel-pink .text-slate-100 {
-  color: #4a1738 !important;
-}
-
-.theme-pastel-pink .text-slate-200 {
-  color: #5c2046 !important;
-}
-
-.theme-pastel-pink .text-slate-300 {
-  color: #742e5a !important;
-}
-
-.theme-pastel-pink .text-slate-400 {
-  color: #93567a !important;
-}
-
-.theme-pastel-pink .text-slate-500 {
-  color: #b37d9c !important;
-}
-
-.theme-pastel-pink .text-slate-600 {
-  color: #c49eb5 !important;
-}
-
-/* Inputs & Form Elements */
-.theme-pastel-pink input,
-.theme-pastel-pink select,
-.theme-pastel-pink textarea {
-  background-color: #ffffff !important;
-  color: #4a1738 !important;
-  border-color: #fbcfe8 !important;
-}
-
-.theme-pastel-pink input:focus,
-.theme-pastel-pink select:focus,
-.theme-pastel-pink textarea:focus {
-  border-color: #f472b6 !important;
-  box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.25) !important;
-}
-
-.theme-pastel-pink input::placeholder {
-  color: #c49eb5 !important;
-}
-
-/* Primary Accents (Emerald remapped to Pastel Pink/Rose) */
-.theme-pastel-pink .text-emerald-400,
-.theme-pastel-pink .text-emerald-500 {
-  color: #ec4899 !important;
-}
-
-.theme-pastel-pink .bg-emerald-500 {
-  background-color: #f472b6 !important;
-  color: #ffffff !important;
-  box-shadow: 0 4px 14px 0 rgba(244, 114, 182, 0.35) !important;
-}
-
-.theme-pastel-pink .bg-emerald-500:hover {
-  background-color: #ec4899 !important;
-  color: #ffffff !important;
-}
-
-.theme-pastel-pink .bg-emerald-400 {
-  background-color: #f472b6 !important;
-}
-
-.theme-pastel-pink .bg-emerald-500\/10,
-.theme-pastel-pink .bg-emerald-500\/15,
-.theme-pastel-pink .bg-emerald-500\/20,
-.theme-pastel-pink .bg-emerald-950\/40 {
-  background-color: #fdf2f8 !important;
-  color: #db2777 !important;
-  border-color: #fbcfe8 !important;
-}
-
-.theme-pastel-pink .border-emerald-500,
-.theme-pastel-pink .border-emerald-500\/30,
-.theme-pastel-pink .border-emerald-500\/40,
-.theme-pastel-pink .border-emerald-500\/50,
-.theme-pastel-pink .border-emerald-500\/60 {
-  border-color: #f472b6 !important;
-}
-
-/* Modals & Backdrops */
-.theme-pastel-pink .bg-black\/85,
-.theme-pastel-pink .bg-black\/80 {
-  background-color: rgba(74, 23, 56, 0.65) !important;
-  backdrop-filter: blur(8px) !important;
-}
-
-/* Header & Nav */
-.theme-pastel-pink header {
-  background-color: rgba(255, 255, 255, 0.88) !important;
-  border-color: #fce7f3 !important;
-  box-shadow: 0 4px 15px rgba(244, 114, 182, 0.08) !important;
-}
-
-.theme-pastel-pink nav.fixed {
-  background-color: rgba(255, 255, 255, 0.94) !important;
-  border-color: #fce7f3 !important;
-  box-shadow: 0 -4px 16px rgba(244, 114, 182, 0.1) !important;
-}
-
-/* SVG Muscle Paths */
+/* Muscle Anatomy Paths */
 .muscle-path {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   cursor: pointer;
 }
 
 .muscle-path:hover {
-  fill: #f472b6 !important;
-  filter: drop-shadow(0 0 8px #f472b6);
+  fill: #38bdf8 !important;
+  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.5));
 }
 
 .muscle-path.active {
-  fill: #ec4899 !important;
-  filter: drop-shadow(0 0 12px #ec4899);
+  fill: #0071e3 !important;
+  filter: drop-shadow(0 0 10px rgba(0, 113, 227, 0.6));
 }
 
 /* ========================================================
-   MAGNUM PASTEL BLUE & SKY THEME SYSTEM (SOFT PASTEL)
+   THEME SPECIFICS: MAGNUM (Minimal Oceanic / Apple Space Blue)
    ======================================================== */
 .theme-magnum,
 body.theme-magnum {
-  background-color: #f4f9fd !important;
+  background-color: #f5f6f9;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(186, 230, 253, 0.35) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(219, 234, 254, 0.35) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(224, 242, 254, 0.4) 0px, transparent 50%) !important;
-  color: #1e293b !important;
+    radial-gradient(at 0% 0%, rgba(224, 242, 254, 0.35) 0px, transparent 45%),
+    radial-gradient(at 100% 0%, rgba(238, 242, 255, 0.35) 0px, transparent 45%),
+    radial-gradient(at 50% 100%, rgba(240, 249, 255, 0.35) 0px, transparent 45%);
+  color: #1d1d1f;
 }
 
-.theme-magnum #root,
-.theme-magnum main,
-.theme-magnum .min-h-screen {
-  background-color: transparent !important;
-  color: #1e293b !important;
-}
-
-/* Custom Cute Scrollbar for Magnum */
-body.theme-magnum ::-webkit-scrollbar-track {
-  background: #f4f9fd;
-}
-
-body.theme-magnum ::-webkit-scrollbar-thumb {
-  background: #bae6fd;
-}
-
-body.theme-magnum ::-webkit-scrollbar-thumb:hover {
-  background: #7dd3fc;
-}
-
-/* Selection for Magnum */
-body.theme-magnum ::selection,
 .theme-magnum ::selection {
-  background-color: #bae6fd !important;
-  color: #0369a1 !important;
-}
-
-/* Background overrides in Magnum theme (Wildcard + Specific) */
-.theme-magnum [class*="bg-pink-50"],
-.theme-magnum [class*="bg-rose-50"],
-.theme-magnum .bg-pink-50,
-.theme-magnum .bg-rose-50 {
-  background-color: #f0f7ff !important;
-}
-
-.theme-magnum [class*="bg-pink-100"],
-.theme-magnum [class*="bg-rose-100"],
-.theme-magnum .bg-pink-100,
-.theme-magnum .bg-rose-100 {
-  background-color: #e0f2fe !important;
-  color: #0369a1 !important;
-}
-
-.theme-magnum [class*="bg-pink-200"],
-.theme-magnum [class*="bg-rose-200"],
-.theme-magnum .bg-pink-200,
-.theme-magnum .bg-rose-200 {
-  background-color: #bae6fd !important;
-}
-
-/* Soft Pastel Primary Buttons */
-.theme-magnum [class*="bg-pink-400"],
-.theme-magnum [class*="bg-pink-500"],
-.theme-magnum [class*="bg-rose-400"],
-.theme-magnum [class*="bg-rose-500"],
-.theme-magnum [class*="bg-rose-600"] {
-  background: linear-gradient(135deg, #38bdf8 0%, #60a5fa 100%) !important;
-  color: #ffffff !important;
-  border-color: rgba(186, 230, 253, 0.8) !important;
-}
-
-.theme-magnum .bg-\[\#fff5f8\],
-.theme-magnum .bg-\[\#fff4f8\],
-.theme-magnum .bg-\[\#fff0f5\],
-.theme-magnum .bg-\[\#fff0f6\] {
-  background-color: #f4f9fd !important;
-}
-
-/* Borders in Magnum theme (Wildcard + Specific) */
-.theme-magnum [class*="border-pink-100"],
-.theme-magnum [class*="border-rose-100"],
-.theme-magnum .border-pink-100,
-.theme-magnum .border-rose-100 {
-  border-color: #e0f2fe !important;
-}
-
-.theme-magnum [class*="border-pink-200"],
-.theme-magnum [class*="border-rose-200"],
-.theme-magnum .border-pink-200,
-.theme-magnum .border-rose-200 {
-  border-color: #bae6fd !important;
-}
-
-.theme-magnum [class*="border-pink-300"],
-.theme-magnum [class*="border-rose-300"],
-.theme-magnum [class*="border-rose-400"],
-.theme-magnum .border-pink-300,
-.theme-magnum .border-rose-300 {
-  border-color: #93c5fd !important;
-}
-
-.theme-magnum [class*="border-rose-500"],
-.theme-magnum [class*="border-pink-500"],
-.theme-magnum .border-rose-500,
-.theme-magnum .border-pink-500 {
-  border-color: #60a5fa !important;
-}
-
-/* Text in Magnum theme (Wildcard + Specific) */
-.theme-magnum [class*="text-pink-300"],
-.theme-magnum [class*="text-rose-300"],
-.theme-magnum .text-pink-300,
-.theme-magnum .text-rose-300 {
-  color: #7dd3fc !important;
-}
-
-.theme-magnum [class*="text-pink-400"],
-.theme-magnum [class*="text-rose-400"],
-.theme-magnum .text-pink-400,
-.theme-magnum .text-rose-400 {
-  color: #38bdf8 !important;
-}
-
-.theme-magnum [class*="text-pink-500"],
-.theme-magnum [class*="text-rose-500"],
-.theme-magnum .text-pink-500,
-.theme-magnum .text-rose-500 {
-  color: #0284c7 !important;
-}
-
-.theme-magnum [class*="text-pink-600"],
-.theme-magnum [class*="text-rose-600"],
-.theme-magnum .text-pink-600,
-.theme-magnum .text-rose-600 {
-  color: #0284c7 !important;
-}
-
-.theme-magnum [class*="text-pink-700"],
-.theme-magnum [class*="text-rose-700"],
-.theme-magnum .text-pink-700,
-.theme-magnum .text-rose-700 {
-  color: #0369a1 !important;
-}
-
-.theme-magnum [class*="text-pink-800"],
-.theme-magnum [class*="text-rose-800"],
-.theme-magnum [class*="text-pink-900"],
-.theme-magnum [class*="text-rose-900"],
-.theme-magnum [class*="text-pink-950"],
-.theme-magnum [class*="text-rose-950"],
-.theme-magnum .text-pink-800,
-.theme-magnum .text-pink-900,
-.theme-magnum .text-pink-950 {
-  color: #0f4c81 !important;
-}
-
-/* Soft, Dreamy Pastel Gradients */
-.theme-magnum [class*="from-pink-"],
-.theme-magnum [class*="from-rose-"] {
-  --tw-gradient-from: #38bdf8 var(--tw-gradient-from-position) !important;
-  --tw-gradient-to: rgb(56 189 248 / 0) var(--tw-gradient-to-position) !important;
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
-}
-
-.theme-magnum [class*="to-pink-"],
-.theme-magnum [class*="to-rose-"] {
-  --tw-gradient-to: #60a5fa var(--tw-gradient-to-position) !important;
-}
-
-.theme-magnum [class*="via-pink-"],
-.theme-magnum [class*="via-rose-"] {
-  --tw-gradient-stops: var(--tw-gradient-from), #67e8f9 var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
-}
-
-/* Hover, Focus, & Shadow */
-.theme-magnum [class*="hover:bg-pink-"]:hover,
-.theme-magnum [class*="hover:bg-rose-"]:hover {
-  background-color: #e0f2fe !important;
-}
-
-.theme-magnum [class*="focus:border-rose-"]:focus,
-.theme-magnum [class*="focus:border-pink-"]:focus {
-  border-color: #38bdf8 !important;
-}
-
-.theme-magnum [class*="shadow-pink-"],
-.theme-magnum [class*="shadow-rose-"] {
-  --tw-shadow-color: rgba(186, 230, 253, 0.3) !important;
-}
-
-.theme-magnum header {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  border-color: #bae6fd !important;
-  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.06) !important;
-}
-
-.theme-magnum nav.fixed {
-  background-color: rgba(255, 255, 255, 0.96) !important;
-  border-color: #bae6fd !important;
-  box-shadow: 0 -4px 16px rgba(56, 189, 248, 0.08) !important;
-}
-
-/* Inputs in Magnum theme */
-.theme-magnum input,
-.theme-magnum select,
-.theme-magnum textarea {
-  border-color: #bae6fd !important;
+  background-color: rgba(0, 113, 227, 0.15);
+  color: #0071e3;
 }
 
 .theme-magnum input:focus,
 .theme-magnum select:focus,
 .theme-magnum textarea:focus {
-  border-color: #38bdf8 !important;
-  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
+  border-color: #0071e3 !important;
+  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15) !important;
 }
 
-/* Muscle Highlight for Magnum in Anatomy */
-.theme-magnum .muscle-path:hover {
-  fill: #38bdf8 !important;
-  filter: drop-shadow(0 0 8px #38bdf8);
+/* ========================================================
+   THEME SPECIFICS: MANOW (Minimal Quartz / Apple Rose)
+   ======================================================== */
+.theme-manow,
+body.theme-manow {
+  background-color: #f7f5f6;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(254, 242, 242, 0.4) 0px, transparent 45%),
+    radial-gradient(at 100% 0%, rgba(253, 242, 248, 0.4) 0px, transparent 45%),
+    radial-gradient(at 50% 100%, rgba(255, 241, 242, 0.35) 0px, transparent 45%);
+  color: #1d1d1f;
 }
 
-.theme-magnum .muscle-path.active {
-  fill: #0284c7 !important;
-  filter: drop-shadow(0 0 12px #0284c7);
+.theme-manow ::selection {
+  background-color: rgba(225, 29, 72, 0.15);
+  color: #e11d48;
 }
 
+.theme-manow input:focus,
+.theme-manow select:focus,
+.theme-manow textarea:focus {
+  border-color: #e11d48 !important;
+  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15) !important;
+}
+
+.theme-manow .muscle-path:hover {
+  fill: #fb7185 !important;
+  filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.5));
+}
+
+.theme-manow .muscle-path.active {
+  fill: #e11d48 !important;
+  filter: drop-shadow(0 0 10px rgba(225, 29, 72, 0.6));
+}
