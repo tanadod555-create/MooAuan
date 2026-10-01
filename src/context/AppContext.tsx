@@ -49,6 +49,10 @@ export interface ActiveWorkout {
   session_id: string;
   name: string;
   start_time: string;
+  started_at_ms?: number;
+  timer_started_at_ms?: number;
+  base_elapsed_seconds?: number;
+  is_timer_running?: boolean;
   elapsedSeconds: number;
   note?: string;
   cardio?: CardioActivity[];
@@ -67,8 +71,11 @@ interface AppContextType {
   addCustomExercise: (exercise: Exercise) => void;
 
   activeWorkout: ActiveWorkout | null;
-  startWorkout: (name?: string, initialExercises?: Exercise[]) => void;
-  startCardioSession: (name?: string, defaultType?: CardioType) => void;
+  startWorkout: (name?: string, initialExercises?: Exercise[], autoStartTimer?: boolean) => void;
+  startCardioSession: (name?: string, defaultType?: CardioType, initialCardio?: Partial<CardioActivity>, autoStartTimer?: boolean) => void;
+  startWorkoutTimer: () => void;
+  pauseWorkoutTimer: () => void;
+  toggleWorkoutTimer: () => void;
   cancelWorkout: () => void;
   finishWorkout: () => Promise<void>;
   setSessionNote: (note: string) => void;
@@ -852,10 +859,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const workoutHistory = allWorkoutHistory.filter(s => (s.user_id || 'primary') === activeProfileKey);
 
-  // Active Workout Session
+  // Active Workout Session (with background timestamp calculation)
   const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(() => {
     const saved = localStorage.getItem(`ft_active_workout_${activeProfileKey}`);
-    return saved ? JSON.parse(saved) : null;
+    if (!saved) return null;
+    try {
+      const parsed: ActiveWorkout = JSON.parse(saved);
+      if (parsed.is_timer_running && parsed.timer_started_at_ms) {
+        const now = Date.now();
+        const realElapsed = (parsed.base_elapsed_seconds || 0) + Math.max(0, Math.floor((now - parsed.timer_started_at_ms) / 1000));
+        return { ...parsed, elapsedSeconds: realElapsed };
+      }
+      return parsed;
+    } catch {
+      return null;
+    }
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
@@ -1022,7 +1040,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('ft_active_profile', activeProfileKey);
 
     const savedActive = localStorage.getItem(`ft_active_workout_${activeProfileKey}`);
-    setActiveWorkout(savedActive ? JSON.parse(savedActive) : null);
+    if (savedActive) {
+      try {
+        const parsed: ActiveWorkout = JSON.parse(savedActive);
+        if (parsed.is_timer_running && parsed.timer_started_at_ms) {
+          const now = Date.now();
+          const realElapsed = (parsed.base_elapsed_seconds || 0) + Math.max(0, Math.floor((now - parsed.timer_started_at_ms) / 1000));
+          setActiveWorkout({ ...parsed, elapsedSeconds: realElapsed });
+        } else {
+          setActiveWorkout(parsed);
+        }
+      } catch {
+        setActiveWorkout(null);
+      }
+    } else {
+      setActiveWorkout(null);
+    }
 
     const savedPrograms = localStorage.getItem(`ft_programs_${activeProfileKey}`);
     if (savedPrograms) {
@@ -1071,17 +1104,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [activeWorkout, activeProfileKey]);
 
-  // Workout Timer Interval
+  // Workout Timer Interval with real timestamp diff (works in background & across tab sleep/refresh)
   useEffect(() => {
     if (!activeWorkout) return;
-    const timer = setInterval(() => {
+
+    const updateTimer = () => {
       setActiveWorkout(prev => {
         if (!prev) return null;
-        return { ...prev, elapsedSeconds: prev.elapsedSeconds + 1 };
+        if (!prev.is_timer_running || !prev.timer_started_at_ms) {
+          return prev;
+        }
+        const now = Date.now();
+        const realElapsed = (prev.base_elapsed_seconds || 0) + Math.max(0, Math.floor((now - prev.timer_started_at_ms) / 1000));
+        if (realElapsed === prev.elapsedSeconds) return prev;
+        return { ...prev, elapsedSeconds: realElapsed };
       });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [activeWorkout?.session_id]);
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 1000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        updateTimer();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleVisibility);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleVisibility);
+    };
+  }, [activeWorkout?.session_id, activeWorkout?.is_timer_running, activeWorkout?.timer_started_at_ms]);
 
   const updateProfile = (updates: Partial<UserProfile>, isPartner?: boolean) => {
     const isTargetPartner = isPartner || activeProfileKey === 'partner';
@@ -1130,12 +1186,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
 
   // Workout management
-  const startWorkout = (name = 'บันทึกการฝึก', initialExercises?: Exercise[]) => {
+  const startWorkout = (name = 'บันทึกการฝึก', initialExercises?: Exercise[], autoStartTimer: boolean = false) => {
     const sessionId = 'sess_' + Date.now();
+    const nowMs = Date.now();
     const newSession: ActiveWorkout = {
       session_id: sessionId,
       name,
       start_time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+      started_at_ms: nowMs,
+      timer_started_at_ms: autoStartTimer ? nowMs : undefined,
+      base_elapsed_seconds: 0,
+      is_timer_running: autoStartTimer,
       elapsedSeconds: 0,
       note: '',
       cardio: [],
@@ -1158,8 +1219,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveWorkout(newSession);
   };
 
-  const startCardioSession = (name?: string, defaultType: CardioType = 'incline_treadmill') => {
+  const startCardioSession = (
+    name?: string,
+    defaultType: CardioType = 'incline_treadmill',
+    initialCardio?: Partial<CardioActivity>,
+    autoStartTimer: boolean = false
+  ) => {
     const sessionId = 'sess_' + Date.now();
+    const nowMs = Date.now();
     const typeNames: Record<CardioType, string> = {
       incline_treadmill: 'เดินชันลู่วิ่ง (Incline Treadmill)',
       treadmill_run: 'วิ่งบนลู่วิ่ง (Treadmill Running)',
@@ -1175,6 +1242,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       session_id: sessionId,
       name: name || defaultName,
       start_time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+      started_at_ms: nowMs,
+      timer_started_at_ms: autoStartTimer ? nowMs : undefined,
+      base_elapsed_seconds: 0,
+      is_timer_running: autoStartTimer,
       elapsedSeconds: 0,
       note: '',
       exercises: [],
@@ -1182,17 +1253,74 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         {
           id: 'cardio_' + Date.now(),
           type: defaultType,
-          machine_name: defaultName,
-          duration_minutes: 30,
-          incline_pct: defaultType === 'incline_treadmill' ? 10 : 0,
-          speed_kmh: defaultType === 'incline_treadmill' ? 4.5 : 8.0,
-          distance_km: defaultType === 'incline_treadmill' ? 2.25 : 4.0,
-          calories_kcal: defaultType === 'incline_treadmill' ? 190 : 250,
-          note: ''
+          machine_name: initialCardio?.machine_name || defaultName,
+          duration_minutes: initialCardio?.duration_minutes ?? 30,
+          incline_pct: initialCardio?.incline_pct ?? (defaultType === 'incline_treadmill' ? 10 : 0),
+          speed_kmh: initialCardio?.speed_kmh ?? (defaultType === 'incline_treadmill' ? 4.5 : 8.0),
+          distance_km: initialCardio?.distance_km ?? (defaultType === 'incline_treadmill' ? 2.25 : 4.0),
+          calories_kcal: initialCardio?.calories_kcal ?? (defaultType === 'incline_treadmill' ? 190 : 250),
+          note: initialCardio?.note || ''
         }
       ]
     };
     setActiveWorkout(newSession);
+  };
+
+  const startWorkoutTimer = () => {
+    setActiveWorkout(prev => {
+      if (!prev) return null;
+      if (prev.is_timer_running) return prev;
+      const now = Date.now();
+      const nowTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+      return {
+        ...prev,
+        is_timer_running: true,
+        timer_started_at_ms: now,
+        start_time: (prev.elapsedSeconds === 0) ? nowTimeStr : prev.start_time,
+      };
+    });
+  };
+
+  const pauseWorkoutTimer = () => {
+    setActiveWorkout(prev => {
+      if (!prev || !prev.is_timer_running) return prev;
+      const now = Date.now();
+      const additional = prev.timer_started_at_ms ? Math.max(0, Math.floor((now - prev.timer_started_at_ms) / 1000)) : 0;
+      const newBase = (prev.base_elapsed_seconds || 0) + additional;
+      return {
+        ...prev,
+        is_timer_running: false,
+        timer_started_at_ms: undefined,
+        base_elapsed_seconds: newBase,
+        elapsedSeconds: newBase,
+      };
+    });
+  };
+
+  const toggleWorkoutTimer = () => {
+    setActiveWorkout(prev => {
+      if (!prev) return null;
+      const now = Date.now();
+      if (prev.is_timer_running) {
+        const additional = prev.timer_started_at_ms ? Math.max(0, Math.floor((now - prev.timer_started_at_ms) / 1000)) : 0;
+        const newBase = (prev.base_elapsed_seconds || 0) + additional;
+        return {
+          ...prev,
+          is_timer_running: false,
+          timer_started_at_ms: undefined,
+          base_elapsed_seconds: newBase,
+          elapsedSeconds: newBase,
+        };
+      } else {
+        const nowTimeStr = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+        return {
+          ...prev,
+          is_timer_running: true,
+          timer_started_at_ms: now,
+          start_time: (prev.elapsedSeconds === 0) ? nowTimeStr : prev.start_time,
+        };
+      }
+    });
   };
 
   const cancelWorkout = () => {
@@ -1607,6 +1735,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeWorkout,
         startWorkout,
         startCardioSession,
+        startWorkoutTimer,
+        pauseWorkoutTimer,
+        toggleWorkoutTimer,
         cancelWorkout,
         finishWorkout,
         setSessionNote,

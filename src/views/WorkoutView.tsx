@@ -59,6 +59,9 @@ export const WorkoutView: React.FC = () => {
     activeWorkout,
     startWorkout,
     startCardioSession,
+    startWorkoutTimer,
+    pauseWorkoutTimer,
+    toggleWorkoutTimer,
     cancelWorkout,
     finishWorkout,
     setSessionNote,
@@ -93,6 +96,63 @@ export const WorkoutView: React.FC = () => {
   const [restTimerPaused, setRestTimerPaused] = useState(false);
   const [restTimerSound, setRestTimerSound] = useState(true);
   const [showRestTimer, setShowRestTimer] = useState(false);
+
+  // Cardio Setup Modal State (Choose activity & target before starting)
+  const [showCardioModal, setShowCardioModal] = useState(false);
+  const [cardioModalMode, setCardioModalMode] = useState<'new_session' | 'add_to_active'>('new_session');
+  const [selectedCardioType, setSelectedCardioType] = useState<CardioType>('incline_treadmill');
+  const [cardioDuration, setCardioDuration] = useState<number | ''>(30);
+  const [cardioIncline, setCardioIncline] = useState<number | ''>(10);
+  const [cardioSpeed, setCardioSpeed] = useState<number | ''>(4.5);
+  const [cardioDistance, setCardioDistance] = useState<number | ''>(2.25);
+  const [cardioCalories, setCardioCalories] = useState<number | ''>(190);
+  const [cardioNote, setCardioNote] = useState('');
+
+  const handleSelectPresetType = (type: CardioType) => {
+    setSelectedCardioType(type);
+    const preset = CARDIO_TYPE_PRESETS.find((p) => p.type === type);
+    if (preset) {
+      setCardioIncline(preset.defaultIncline);
+      setCardioSpeed(preset.defaultSpeed);
+      setCardioDuration(preset.defaultDuration);
+      const estDistance = Math.round(((preset.defaultSpeed * preset.defaultDuration) / 60) * 100) / 100;
+      setCardioDistance(estDistance);
+      const estCals = Math.round(preset.defaultDuration * (type === 'incline_treadmill' ? 6.5 : type === 'treadmill_run' ? 10 : 7));
+      setCardioCalories(estCals);
+    }
+  };
+
+  const handleConfirmCardio = () => {
+    const preset = CARDIO_TYPE_PRESETS.find((p) => p.type === selectedCardioType);
+    const machineName = preset ? preset.label : 'คาร์ดิโอ (Cardio)';
+    const cardioData: Partial<CardioActivity> = {
+      type: selectedCardioType,
+      machine_name: machineName,
+      duration_minutes: Number(cardioDuration) || 30,
+      incline_pct: cardioIncline === '' ? 0 : Number(cardioIncline),
+      speed_kmh: cardioSpeed === '' ? 0 : Number(cardioSpeed),
+      distance_km: cardioDistance === '' ? undefined : Number(cardioDistance),
+      calories_kcal: cardioCalories === '' ? undefined : Number(cardioCalories),
+      note: cardioNote.trim() || undefined,
+    };
+
+    if (cardioModalMode === 'new_session') {
+      startCardioSession(`คาร์ดิโอ / ${machineName}`, selectedCardioType, cardioData, false);
+    } else {
+      addCardioToWorkout({
+        type: selectedCardioType,
+        machine_name: machineName,
+        duration_minutes: Number(cardioDuration) || 30,
+        incline_pct: cardioIncline === '' ? 0 : Number(cardioIncline),
+        speed_kmh: cardioSpeed === '' ? 0 : Number(cardioSpeed),
+        distance_km: cardioDistance === '' ? undefined : Number(cardioDistance),
+        calories_kcal: cardioCalories === '' ? undefined : Number(cardioCalories),
+        note: cardioNote.trim() || undefined,
+      });
+    }
+    setShowCardioModal(false);
+    setCardioNote('');
+  };
 
   // Standard Rest Time Selector State (e.g. 45s, 60s, 90s, 120s, 180s)
   const [standardRestSeconds, setStandardRestSeconds] = useState<number>(() => {
@@ -288,17 +348,34 @@ export const WorkoutView: React.FC = () => {
         />
       ) : activeWorkout ? (
         <div className="space-y-4">
-          {/* Active Workout Top Banner (Compact, Ergonomic, Non-cluttered) */}
+          {/* Active Workout Top Banner (Compact, Ergonomic, Background-Safe Timer) */}
           <div className="bg-white/95 border border-pink-300/80 rounded-2xl p-3 sm:p-4 shadow-sm backdrop-blur-xl sticky top-16 z-30 overflow-hidden space-y-2">
             {/* Top Compact Bar */}
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <div className="flex items-center gap-2 min-w-0">
-                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+                <span
+                  className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                    activeWorkout.is_timer_running
+                      ? 'bg-emerald-500 animate-ping'
+                      : 'bg-amber-400'
+                  }`}
+                />
                 <div className="min-w-0">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500 block leading-tight">
-                    กำลังฝึกซ้อม
-                  </span>
-                  <h2 className="text-sm sm:text-base font-black text-slate-800 truncate leading-tight">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-wider block leading-tight px-1.5 py-0.2 rounded-md ${
+                        activeWorkout.is_timer_running
+                          ? 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                          : 'bg-amber-100 text-amber-700 border border-amber-200'
+                      }`}
+                    >
+                      {activeWorkout.is_timer_running ? '🟢 กำลังจับเวลาสด' : '⏸️ พักจับเวลา / พร้อมเริ่ม'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      เริ่ม {activeWorkout.start_time}
+                    </span>
+                  </div>
+                  <h2 className="text-sm sm:text-base font-black text-slate-800 truncate leading-tight mt-0.5">
                     {activeWorkout.name}
                   </h2>
                 </div>
@@ -306,9 +383,39 @@ export const WorkoutView: React.FC = () => {
 
               {/* Action Buttons & Timers Row */}
               <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                {/* Timer Toggle Button (Start / Pause) */}
+                <button
+                  type="button"
+                  onClick={toggleWorkoutTimer}
+                  className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-xs ${
+                    activeWorkout.is_timer_running
+                      ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300'
+                      : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-emerald-200'
+                  }`}
+                  title={activeWorkout.is_timer_running ? 'กดเพื่อพักการจับเวลาชั่วคราว' : 'กดเพื่อเริ่มจับเวลาการฝึก'}
+                >
+                  {activeWorkout.is_timer_running ? (
+                    <>
+                      <Pause size={13} className="fill-current" />
+                      <span>พักเวลา</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play size={13} className="fill-current" />
+                      <span>{activeWorkout.elapsedSeconds > 0 ? 'จับต่อ' : 'เริ่มจับเวลา'}</span>
+                    </>
+                  )}
+                </button>
+
                 {/* Elapsed Time Pill */}
-                <div className="bg-pink-50 px-2.5 py-1.5 rounded-xl border border-pink-200 flex items-center gap-1 text-xs font-mono font-bold text-slate-700">
-                  <Clock size={13} className="text-rose-500" />
+                <div
+                  className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1 text-xs font-mono font-bold ${
+                    activeWorkout.is_timer_running
+                      ? 'bg-pink-50 border-pink-200 text-slate-800'
+                      : 'bg-slate-100 border-slate-200 text-slate-500'
+                  }`}
+                >
+                  <Clock size={13} className={activeWorkout.is_timer_running ? 'text-rose-500 animate-spin-slow' : 'text-slate-400'} />
                   <span>{formatSeconds(activeWorkout.elapsedSeconds)}</span>
                 </div>
 
@@ -1108,16 +1215,10 @@ export const WorkoutView: React.FC = () => {
             {/* Add Cardio Button */}
             <button
               type="button"
-              onClick={() =>
-                addCardioToWorkout({
-                  type: 'incline_treadmill',
-                  machine_name: 'เดินชันลู่วิ่ง (Incline Treadmill)',
-                  duration_minutes: 30,
-                  incline_pct: 10,
-                  speed_kmh: 4.5,
-                  calories_kcal: 190,
-                })
-              }
+              onClick={() => {
+                setCardioModalMode('add_to_active');
+                setShowCardioModal(true);
+              }}
               className="w-full py-3.5 px-4 rounded-3xl bg-pink-50/70 hover:bg-pink-100/80 border-2 border-dashed border-pink-300 text-slate-700 hover:text-rose-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition cursor-pointer shadow-xs active:scale-[0.99]"
             >
               <Footprints size={17} className="text-rose-400" />
@@ -1289,7 +1390,10 @@ export const WorkoutView: React.FC = () => {
                   <span>เริ่มยกเวท (Empty Workout)</span>
                 </button>
                 <button
-                  onClick={() => startCardioSession('เดินชัน / คาร์ดิโอ')}
+                  onClick={() => {
+                    setCardioModalMode('new_session');
+                    setShowCardioModal(true);
+                  }}
                   className="btn-candy-white py-3 px-5 text-sm flex items-center gap-2 cursor-pointer shadow-xs"
                 >
                   <Footprints size={16} className={activeProfileKey === 'partner' ? 'text-pink-500' : 'text-sky-500'} />
@@ -1740,6 +1844,197 @@ export const WorkoutView: React.FC = () => {
           }}
           onDelete={(id) => deleteProgram(id)}
         />
+      )}
+
+      {/* Cardio Activity Setup Modal */}
+      {showCardioModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 border-2 border-pink-200 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-pink-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-10 h-10 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-400 text-white flex items-center justify-center text-xl shadow-xs">
+                  🏃‍♀️
+                </span>
+                <div>
+                  <h3 className="text-base sm:text-lg font-black text-slate-800">
+                    {cardioModalMode === 'new_session'
+                      ? 'เลือกประเภทคาร์ดิโอที่ต้องการฝึก'
+                      : '+ เพิ่มกิจกรรมคาร์ดิโอในเซสชันนี้'}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    เลือกเครื่องเล่นและปรับความชัน / ความเร็ว / เวลาเป้าหมาย
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCardioModal(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Cardio Machine / Type Selector Grid */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700">
+                1. เลือกเครื่องเล่น / กิจกรรม (Cardio Type):
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {CARDIO_TYPE_PRESETS.map((preset) => {
+                  const isSelected = selectedCardioType === preset.type;
+                  return (
+                    <button
+                      key={preset.type}
+                      type="button"
+                      onClick={() => handleSelectPresetType(preset.type)}
+                      className={`p-2.5 rounded-2xl border text-left flex flex-col items-center text-center gap-1 transition active:scale-95 cursor-pointer ${
+                        isSelected
+                          ? 'bg-gradient-to-b from-pink-50 to-rose-50 border-rose-400 ring-2 ring-rose-300 shadow-xs'
+                          : 'bg-white hover:bg-pink-50/50 border-pink-200/80 text-slate-700'
+                      }`}
+                    >
+                      <span className="text-2xl">{preset.emoji}</span>
+                      <span className="text-xs font-black text-slate-800 leading-tight">
+                        {preset.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Target Parameters Section */}
+            <div className="p-4 bg-pink-50/50 rounded-2xl border border-pink-100 space-y-3">
+              <label className="block text-xs font-bold text-slate-700">
+                2. ปรับตั้งค่าเริ่มต้น (ปรับเปลี่ยนระหว่างซ้อมได้ตลอดเวลา):
+              </label>
+
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                {/* Duration */}
+                <div>
+                  <label className="block font-bold text-slate-600 mb-1 flex items-center gap-1">
+                    <Clock size={12} className="text-rose-500" />
+                    <span>เวลา (นาที)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="180"
+                    value={cardioDuration}
+                    placeholder="30"
+                    onChange={(e) =>
+                      setCardioDuration(e.target.value === '' ? '' : (parseInt(e.target.value) || 0))
+                    }
+                    className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-2 text-center font-black font-mono text-slate-800 focus:outline-none focus:border-rose-400"
+                  />
+                </div>
+
+                {/* Incline */}
+                <div>
+                  <label className="block font-bold text-slate-600 mb-1 flex items-center gap-1">
+                    <TrendingUp size={12} className="text-rose-500" />
+                    <span>ความชัน (%)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="30"
+                    step="0.5"
+                    value={cardioIncline}
+                    placeholder="10"
+                    onChange={(e) =>
+                      setCardioIncline(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
+                    }
+                    className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-2 text-center font-black font-mono text-slate-800 focus:outline-none focus:border-rose-400"
+                  />
+                </div>
+
+                {/* Speed */}
+                <div>
+                  <label className="block font-bold text-slate-600 mb-1 flex items-center gap-1">
+                    <Zap size={12} className="text-amber-500" />
+                    <span>ความเร็ว (km/h)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="30"
+                    step="0.1"
+                    value={cardioSpeed}
+                    placeholder="4.5"
+                    onChange={(e) =>
+                      setCardioSpeed(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
+                    }
+                    className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-2 text-center font-black font-mono text-slate-800 focus:outline-none focus:border-rose-400"
+                  />
+                </div>
+              </div>
+
+              {/* Quick Preset Buttons */}
+              <div className="flex items-center gap-1.5 flex-wrap pt-1 text-[11px]">
+                <span className="font-bold text-slate-500">เป้าหมายเร็ว:</span>
+                {[
+                  { label: '🔥 เดินชันเบิร์น 20น.', inc: 12, spd: 4.5, dur: 20 },
+                  { label: '🔥 เดินชันเบิร์น 30น.', inc: 10, spd: 4.8, dur: 30 },
+                  { label: '🚴 ปั่นจักรยาน 30น.', inc: 0, spd: 18, dur: 30 },
+                  { label: '🪜 StairMaster 15น.', inc: 0, spd: 6, dur: 15 },
+                ].map((item, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => {
+                      setCardioIncline(item.inc);
+                      setCardioSpeed(item.spd);
+                      setCardioDuration(item.dur);
+                    }}
+                    className="px-2 py-1 rounded-lg bg-white border border-pink-200 text-slate-700 hover:bg-pink-100 font-bold transition active:scale-95 cursor-pointer"
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Note input */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                หมายเหตุเพิ่มเติม (ถ้ามี):
+              </label>
+              <input
+                type="text"
+                value={cardioNote}
+                onChange={(e) => setCardioNote(e.target.value)}
+                placeholder="เช่น เดินชันท้ายเซสชัน, เหนื่อยกำลังดี, HR 135 bpm..."
+                className="w-full bg-pink-50/30 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-rose-400 focus:bg-white"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-pink-100">
+              <button
+                type="button"
+                onClick={() => setShowCardioModal(false)}
+                className="px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer transition"
+              >
+                ยกเลิก
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCardio}
+                className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-xs sm:text-sm flex items-center gap-1.5 shadow-md shadow-pink-200 cursor-pointer active:scale-95 transition"
+              >
+                <Play size={15} className="fill-current" />
+                <span>
+                  {cardioModalMode === 'new_session'
+                    ? 'เริ่มเซสชันคาร์ดิโอ 🏃'
+                    : '+ เพิ่มกิจกรรมลงในเซสชัน'}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
