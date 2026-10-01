@@ -590,8 +590,8 @@ export const WorkoutView: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <span className="text-xs sm:text-sm font-bold text-pink-700/90 mt-0.5 block truncate">
-                        {exerciseData?.name_th} · <span className="capitalize">{exerciseData?.equipment}</span>
+                      <span className="text-xs sm:text-sm font-semibold text-slate-500 mt-0.5 block truncate">
+                        <span className="capitalize">{exerciseData?.muscle_primary}</span> · <span className="capitalize">{exerciseData?.equipment}</span>
                         {isCollapsed && maxWeight > 0 && ` · สูงสุด ${maxWeight} kg`}
                       </span>
                     </div>
@@ -1496,7 +1496,7 @@ export const WorkoutView: React.FC = () => {
                               className="text-xs text-slate-700 flex items-center gap-1.5 truncate font-semibold"
                             >
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                              <span className="truncate">{ex?.name_th || item.exercise_id}</span>
+                              <span className="truncate">{ex?.name_en || item.exercise_id}</span>
                               <span className="text-slate-400 font-mono font-bold text-[11px]">
                                 ({item.target_sets}x{item.target_reps})
                               </span>
@@ -1742,9 +1742,8 @@ export const WorkoutView: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        <p className="text-xs sm:text-sm font-medium text-pink-800/80 mt-0.5">
-                          {ex.name_th} · <span className="capitalize font-semibold">{ex.muscle_primary}</span> ·{' '}
-                          <span className="text-pink-600/80 capitalize">{ex.equipment}</span>
+                        <p className="text-xs font-semibold text-slate-500 mt-0.5">
+                          <span className="capitalize">{ex.muscle_primary}</span> · <span className="capitalize">{ex.equipment}</span>
                         </p>
                       </button>
 

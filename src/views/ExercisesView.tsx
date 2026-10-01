@@ -220,7 +220,6 @@ export const ExercisesView: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs sm:text-sm font-semibold text-pink-700/90 mt-0.5 line-clamp-1">{ex.name_th}</p>
                       <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                         <span className="text-[10px] font-bold bg-pink-100 text-rose-700 px-2 py-0.5 rounded-lg border border-pink-200">
                           {muscleInfo?.nameTh || ex.muscle_primary}
