@@ -210,17 +210,17 @@ export const ExercisesView: React.FC = () => {
                       <Dumbbell size={18} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="text-sm font-bold text-slate-800 group-hover:text-rose-600 transition truncate">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-base sm:text-lg font-black text-slate-900 group-hover:text-rose-600 transition truncate leading-tight">
                           {ex.name_en}
                         </span>
                         {ex.is_custom && (
-                          <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.2 rounded font-bold border border-purple-200">
+                          <span className="text-[10px] bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-bold border border-purple-200">
                             Custom
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{ex.name_th}</p>
+                      <p className="text-xs sm:text-sm font-semibold text-pink-700/90 mt-0.5 line-clamp-1">{ex.name_th}</p>
                       <div className="flex items-center gap-1.5 mt-2 flex-wrap">
                         <span className="text-[10px] font-bold bg-pink-100 text-rose-700 px-2 py-0.5 rounded-lg border border-pink-200">
                           {muscleInfo?.nameTh || ex.muscle_primary}

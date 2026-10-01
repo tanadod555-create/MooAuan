@@ -573,41 +573,41 @@ export const WorkoutView: React.FC = () => {
                 }`}
               >
                 {/* Exercise Header (Click to Toggle Collapse / Expand) */}
-                <div className="p-3.5 sm:p-4 bg-pink-50/70 border-b border-pink-200/80 flex items-center justify-between gap-2">
+                <div className="p-3.5 sm:p-4 bg-pink-50/70 border-b border-pink-200/80 flex items-center justify-between gap-2.5">
                   <button
                     type="button"
                     onClick={() => toggleExerciseCollapse(item.exercise_id)}
-                    className="flex-1 text-left flex items-center gap-2.5 min-w-0 cursor-pointer group"
+                    className="flex-1 text-left flex items-center gap-3 min-w-0 cursor-pointer group"
                   >
                     <div
-                      className={`w-7 h-7 rounded-xl flex items-center justify-center transition-transform duration-200 shrink-0 ${
+                      className={`w-8 h-8 rounded-xl flex items-center justify-center transition-transform duration-200 shrink-0 ${
                         isCollapsed ? 'bg-pink-100 text-slate-500' : 'bg-rose-100 text-rose-600 rotate-180'
                       }`}
                       title={isCollapsed ? 'แตะเพื่อขยาย' : 'แตะเพื่อย่อเก็บ'}
                     >
-                      <ChevronDown size={16} className="stroke-[2.5]" />
+                      <ChevronDown size={18} className="stroke-[2.5]" />
                     </div>
 
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                        <span className="text-xs font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 shrink-0">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs sm:text-sm font-black text-rose-600 bg-white px-2.5 py-0.5 rounded-lg border border-rose-300 shadow-2xs shrink-0">
                           #{exIdx + 1}
                         </span>
-                        <h3 className="text-sm sm:text-base font-black text-slate-800 group-hover:text-rose-600 transition truncate">
+                        <h3 className="text-base sm:text-lg md:text-xl font-black text-slate-900 group-hover:text-rose-600 transition truncate leading-snug">
                           {exerciseData?.name_en || item.exercise_id}
                         </h3>
                         {allSetsDone && (
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center gap-1 shrink-0">
-                            <Check size={11} className="stroke-[3]" /> ครบ {item.sets.length} เซ็ต
+                          <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1 shrink-0">
+                            <Check size={12} className="stroke-[3]" /> ครบ {item.sets.length} เซ็ต
                           </span>
                         )}
                         {isCollapsed && !allSetsDone && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 shrink-0">
+                          <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 shrink-0">
                             เสร็จ {completedSetsCount}/{item.sets.length} เซ็ต
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-pink-800/70 mt-0.5 block truncate">
+                      <span className="text-xs sm:text-sm font-bold text-pink-700/90 mt-1 block truncate">
                         {exerciseData?.name_th} · <span className="capitalize">{exerciseData?.equipment}</span>
                         {isCollapsed && maxWeight > 0 && ` · สูงสุด ${maxWeight} kg`}
                       </span>
@@ -1812,19 +1812,19 @@ export const WorkoutView: React.FC = () => {
                         onClick={() => setActiveExerciseModal(ex)}
                         className="text-left flex-1 pr-2 group"
                       >
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-bold text-slate-700 group-hover:text-rose-600 transition">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-base font-black text-slate-800 group-hover:text-rose-600 transition">
                             {ex.name_en}
                           </h4>
                           {isInSession && (
-                            <span className="text-[10px] bg-rose-100 text-rose-700 font-bold px-1.5 py-0.2 rounded border border-rose-200">
+                            <span className="text-[10px] bg-rose-100 text-rose-700 font-bold px-2 py-0.5 rounded-full border border-rose-200">
                               อยู่ในเซสชันแล้ว
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-pink-800/70 mt-0.5">
-                          {ex.name_th} · <span className="capitalize">{ex.muscle_primary}</span> ·{' '}
-                          <span className="text-pink-600/70 capitalize">{ex.equipment}</span>
+                        <p className="text-xs sm:text-sm font-medium text-pink-800/80 mt-0.5">
+                          {ex.name_th} · <span className="capitalize font-semibold">{ex.muscle_primary}</span> ·{' '}
+                          <span className="text-pink-600/80 capitalize">{ex.equipment}</span>
                         </p>
                       </button>
 
