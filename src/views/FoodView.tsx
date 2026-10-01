@@ -183,18 +183,18 @@ export const FoodView: React.FC = () => {
   const [showManualModal, setShowManualModal] = useState(false);
   const [manualName, setManualName] = useState('');
   const [manualMeal, setManualMeal] = useState<MealType>('lunch');
-  const [manualGrams, setManualGrams] = useState(200);
-  const [manualKcal, setManualKcal] = useState(350);
-  const [manualProtein, setManualProtein] = useState(25);
-  const [manualCarb, setManualCarb] = useState(40);
-  const [manualFat, setManualFat] = useState(10);
-  const [manualFiber, setManualFiber] = useState(0);
-  const [manualSugar, setManualSugar] = useState(0);
-  const [manualSodium, setManualSodium] = useState(0);
-  const [manualVitC, setManualVitC] = useState(0);
-  const [manualIron, setManualIron] = useState(0);
-  const [manualCalcium, setManualCalcium] = useState(0);
-  const [manualPotassium, setManualPotassium] = useState(0);
+  const [manualGrams, setManualGrams] = useState<number | ''>(200);
+  const [manualKcal, setManualKcal] = useState<number | ''>(350);
+  const [manualProtein, setManualProtein] = useState<number | ''>(25);
+  const [manualCarb, setManualCarb] = useState<number | ''>(40);
+  const [manualFat, setManualFat] = useState<number | ''>(10);
+  const [manualFiber, setManualFiber] = useState<number | ''>('');
+  const [manualSugar, setManualSugar] = useState<number | ''>('');
+  const [manualSodium, setManualSodium] = useState<number | ''>('');
+  const [manualVitC, setManualVitC] = useState<number | ''>('');
+  const [manualIron, setManualIron] = useState<number | ''>('');
+  const [manualCalcium, setManualCalcium] = useState<number | ''>('');
+  const [manualPotassium, setManualPotassium] = useState<number | ''>('');
   const [manualNote, setManualNote] = useState('');
 
   // Edit Food Modal State
@@ -203,18 +203,18 @@ export const FoodView: React.FC = () => {
   const [editForm, setEditForm] = useState<{
     name: string;
     meal: MealType;
-    grams: number;
-    kcal: number;
-    protein_g: number;
-    carb_g: number;
-    fat_g: number;
-    fiber_g: number;
-    sugar_g: number;
-    sodium_mg: number;
-    vitC_mg: number;
-    iron_mg: number;
-    calcium_mg: number;
-    potassium_mg: number;
+    grams: number | '';
+    kcal: number | '';
+    protein_g: number | '';
+    carb_g: number | '';
+    fat_g: number | '';
+    fiber_g: number | '';
+    sugar_g: number | '';
+    sodium_mg: number | '';
+    vitC_mg: number | '';
+    iron_mg: number | '';
+    calcium_mg: number | '';
+    potassium_mg: number | '';
     note: string;
   }>({
     name: '',
@@ -224,13 +224,13 @@ export const FoodView: React.FC = () => {
     protein_g: 25,
     carb_g: 40,
     fat_g: 10,
-    fiber_g: 0,
-    sugar_g: 0,
-    sodium_mg: 0,
-    vitC_mg: 0,
-    iron_mg: 0,
-    calcium_mg: 0,
-    potassium_mg: 0,
+    fiber_g: '',
+    sugar_g: '',
+    sodium_mg: '',
+    vitC_mg: '',
+    iron_mg: '',
+    calcium_mg: '',
+    potassium_mg: '',
     note: '',
   });
 
@@ -240,18 +240,18 @@ export const FoodView: React.FC = () => {
     setEditForm({
       name: log.name || '',
       meal: log.meal || 'lunch',
-      grams: log.grams || 0,
-      kcal: log.kcal || 0,
-      protein_g: log.protein_g || 0,
-      carb_g: log.carb_g || 0,
-      fat_g: log.fat_g || 0,
-      fiber_g: log.fiber_g || 0,
-      sugar_g: log.sugar_g || 0,
-      sodium_mg: log.sodium_mg || 0,
-      vitC_mg: log.micros?.vitC_mg || 0,
-      iron_mg: log.micros?.iron_mg || 0,
-      calcium_mg: log.micros?.calcium_mg || 0,
-      potassium_mg: log.micros?.potassium_mg || 0,
+      grams: log.grams ?? '',
+      kcal: log.kcal ?? '',
+      protein_g: log.protein_g ?? '',
+      carb_g: log.carb_g ?? '',
+      fat_g: log.fat_g ?? '',
+      fiber_g: log.fiber_g ?? '',
+      sugar_g: log.sugar_g ?? '',
+      sodium_mg: log.sodium_mg ?? '',
+      vitC_mg: log.micros?.vitC_mg ?? '',
+      iron_mg: log.micros?.iron_mg ?? '',
+      calcium_mg: log.micros?.calcium_mg ?? '',
+      potassium_mg: log.micros?.potassium_mg ?? '',
       note: log.note || '',
     });
     setShowEditModal(true);
@@ -265,19 +265,19 @@ export const FoodView: React.FC = () => {
     await updateFoodLog(editingLogId, {
       name: editForm.name.trim(),
       meal: editForm.meal,
-      grams: editForm.grams,
-      kcal: editForm.kcal,
-      protein_g: editForm.protein_g,
-      carb_g: editForm.carb_g,
-      fat_g: editForm.fat_g,
-      fiber_g: editForm.fiber_g,
-      sugar_g: editForm.sugar_g,
-      sodium_mg: editForm.sodium_mg,
+      grams: Number(editForm.grams) || 0,
+      kcal: Number(editForm.kcal) || 0,
+      protein_g: Number(editForm.protein_g) || 0,
+      carb_g: Number(editForm.carb_g) || 0,
+      fat_g: Number(editForm.fat_g) || 0,
+      fiber_g: editForm.fiber_g === '' ? undefined : Number(editForm.fiber_g),
+      sugar_g: editForm.sugar_g === '' ? undefined : Number(editForm.sugar_g),
+      sodium_mg: editForm.sodium_mg === '' ? undefined : Number(editForm.sodium_mg),
       micros: {
-        vitC_mg: editForm.vitC_mg,
-        iron_mg: editForm.iron_mg,
-        calcium_mg: editForm.calcium_mg,
-        potassium_mg: editForm.potassium_mg,
+        vitC_mg: editForm.vitC_mg === '' ? undefined : Number(editForm.vitC_mg),
+        iron_mg: editForm.iron_mg === '' ? undefined : Number(editForm.iron_mg),
+        calcium_mg: editForm.calcium_mg === '' ? undefined : Number(editForm.calcium_mg),
+        potassium_mg: editForm.potassium_mg === '' ? undefined : Number(editForm.potassium_mg),
       },
       note: editForm.note.trim() || undefined,
     });
@@ -375,14 +375,14 @@ export const FoodView: React.FC = () => {
         time: nowTime,
         meal: selectedMeal,
         name: item.name,
-        grams: item.grams,
-        kcal: item.kcal,
-        protein_g: item.protein_g,
-        carb_g: item.carb_g,
-        fat_g: item.fat_g,
-        fiber_g: item.fiber_g,
-        sugar_g: item.sugar_g,
-        sodium_mg: item.sodium_mg,
+        grams: Number(item.grams) || 0,
+        kcal: Number(item.kcal) || 0,
+        protein_g: Number(item.protein_g) || 0,
+        carb_g: Number(item.carb_g) || 0,
+        fat_g: Number(item.fat_g) || 0,
+        fiber_g: typeof item.fiber_g === 'number' ? item.fiber_g : (item.fiber_g ? Number(item.fiber_g) : undefined),
+        sugar_g: typeof item.sugar_g === 'number' ? item.sugar_g : (item.sugar_g ? Number(item.sugar_g) : undefined),
+        sodium_mg: typeof item.sodium_mg === 'number' ? item.sodium_mg : (item.sodium_mg ? Number(item.sodium_mg) : undefined),
         micros: item.micros,
         source: 'ai',
         confidence: item.confidence,
@@ -421,19 +421,19 @@ export const FoodView: React.FC = () => {
       time: nowTime,
       meal: manualMeal,
       name: manualName.trim(),
-      grams: manualGrams,
-      kcal: manualKcal,
-      protein_g: manualProtein,
-      carb_g: manualCarb,
-      fat_g: manualFat,
-      fiber_g: manualFiber,
-      sugar_g: manualSugar,
-      sodium_mg: manualSodium,
+      grams: Number(manualGrams) || 0,
+      kcal: Number(manualKcal) || 0,
+      protein_g: Number(manualProtein) || 0,
+      carb_g: Number(manualCarb) || 0,
+      fat_g: Number(manualFat) || 0,
+      fiber_g: manualFiber === '' ? 0 : Number(manualFiber),
+      sugar_g: manualSugar === '' ? 0 : Number(manualSugar),
+      sodium_mg: manualSodium === '' ? 0 : Number(manualSodium),
       micros: {
-        vitC_mg: manualVitC,
-        iron_mg: manualIron,
-        calcium_mg: manualCalcium,
-        potassium_mg: manualPotassium,
+        vitC_mg: manualVitC === '' ? 0 : Number(manualVitC),
+        iron_mg: manualIron === '' ? 0 : Number(manualIron),
+        calcium_mg: manualCalcium === '' ? 0 : Number(manualCalcium),
+        potassium_mg: manualPotassium === '' ? 0 : Number(manualPotassium),
       },
       source: 'manual',
       confidence: 1.0,
@@ -444,13 +444,18 @@ export const FoodView: React.FC = () => {
     setShowManualModal(false);
     setManualName('');
     setManualNote('');
-    setManualFiber(0);
-    setManualSugar(0);
-    setManualSodium(0);
-    setManualVitC(0);
-    setManualIron(0);
-    setManualCalcium(0);
-    setManualPotassium(0);
+    setManualGrams(200);
+    setManualKcal(350);
+    setManualProtein(25);
+    setManualCarb(40);
+    setManualFat(10);
+    setManualFiber('');
+    setManualSugar('');
+    setManualSodium('');
+    setManualVitC('');
+    setManualIron('');
+    setManualCalcium('');
+    setManualPotassium('');
   };
 
   return (
@@ -1521,9 +1526,9 @@ export const FoodView: React.FC = () => {
                         <span className="text-[10px] text-slate-500 font-semibold block mb-0.5">กรัม (g)</span>
                         <input
                           type="number"
-                          value={item.grams}
+                          value={item.grams === 0 ? '' : item.grams}
                           onChange={(e) =>
-                            handleUpdateAiItem(idx, 'grams', parseFloat(e.target.value) || 0)
+                            handleUpdateAiItem(idx, 'grams', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
                           className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700"
                         />
@@ -1532,9 +1537,9 @@ export const FoodView: React.FC = () => {
                         <span className="text-[10px] text-pink-600 font-bold block mb-0.5">kcal</span>
                         <input
                           type="number"
-                          value={item.kcal}
+                          value={item.kcal === 0 ? '' : item.kcal}
                           onChange={(e) =>
-                            handleUpdateAiItem(idx, 'kcal', parseFloat(e.target.value) || 0)
+                            handleUpdateAiItem(idx, 'kcal', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
                           className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-pink-600"
                         />
@@ -1543,9 +1548,9 @@ export const FoodView: React.FC = () => {
                         <span className="text-[10px] text-sky-700 font-bold block mb-0.5">โปรตีน (g)</span>
                         <input
                           type="number"
-                          value={item.protein_g}
+                          value={item.protein_g === 0 ? '' : item.protein_g}
                           onChange={(e) =>
-                            handleUpdateAiItem(idx, 'protein_g', parseFloat(e.target.value) || 0)
+                            handleUpdateAiItem(idx, 'protein_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
                           className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-sky-700"
                         />
@@ -1554,9 +1559,9 @@ export const FoodView: React.FC = () => {
                         <span className="text-[10px] text-amber-700 font-bold block mb-0.5">คาร์บ (g)</span>
                         <input
                           type="number"
-                          value={item.carb_g}
+                          value={item.carb_g === 0 ? '' : item.carb_g}
                           onChange={(e) =>
-                            handleUpdateAiItem(idx, 'carb_g', parseFloat(e.target.value) || 0)
+                            handleUpdateAiItem(idx, 'carb_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
                           className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-amber-700"
                         />
@@ -1568,9 +1573,9 @@ export const FoodView: React.FC = () => {
                         <span className="text-[10px] text-rose-600 font-bold block mb-0.5">ไขมัน (g)</span>
                         <input
                           type="number"
-                          value={item.fat_g}
+                          value={item.fat_g === 0 ? '' : item.fat_g}
                           onChange={(e) =>
-                            handleUpdateAiItem(idx, 'fat_g', parseFloat(e.target.value) || 0)
+                            handleUpdateAiItem(idx, 'fat_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
                           className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-rose-600"
                         />
@@ -1579,9 +1584,9 @@ export const FoodView: React.FC = () => {
                         <span className="text-[10px] text-amber-700 font-bold block mb-0.5">โซเดียม (mg)</span>
                         <input
                           type="number"
-                          value={item.sodium_mg || 0}
+                          value={item.sodium_mg ?? ''}
                           onChange={(e) =>
-                            handleUpdateAiItem(idx, 'sodium_mg', parseFloat(e.target.value) || 0)
+                            handleUpdateAiItem(idx, 'sodium_mg', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
                           className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700"
                         />
@@ -1590,9 +1595,9 @@ export const FoodView: React.FC = () => {
                         <span className="text-[10px] text-emerald-700 font-bold block mb-0.5">ไฟเบอร์ (g)</span>
                         <input
                           type="number"
-                          value={item.fiber_g || 0}
+                          value={item.fiber_g ?? ''}
                           onChange={(e) =>
-                            handleUpdateAiItem(idx, 'fiber_g', parseFloat(e.target.value) || 0)
+                            handleUpdateAiItem(idx, 'fiber_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
                           className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700"
                         />
@@ -1677,7 +1682,8 @@ export const FoodView: React.FC = () => {
                   <input
                     type="number"
                     value={manualGrams}
-                    onChange={(e) => setManualGrams(parseFloat(e.target.value) || 0)}
+                    placeholder="200"
+                    onChange={(e) => setManualGrams(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                     className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 font-bold focus:outline-none focus:border-pink-300"
                   />
                 </div>
@@ -1690,7 +1696,8 @@ export const FoodView: React.FC = () => {
                     type="number"
                     required
                     value={manualKcal}
-                    onChange={(e) => setManualKcal(parseFloat(e.target.value) || 0)}
+                    placeholder="350"
+                    onChange={(e) => setManualKcal(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                     className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-pink-600 font-black focus:outline-none focus:border-pink-300 text-sm"
                   />
                 </div>
@@ -1699,7 +1706,8 @@ export const FoodView: React.FC = () => {
                   <input
                     type="number"
                     value={manualProtein}
-                    onChange={(e) => setManualProtein(parseFloat(e.target.value) || 0)}
+                    placeholder="25"
+                    onChange={(e) => setManualProtein(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                     className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-sky-700 font-bold focus:outline-none focus:border-pink-300"
                   />
                 </div>
@@ -1711,7 +1719,8 @@ export const FoodView: React.FC = () => {
                   <input
                     type="number"
                     value={manualCarb}
-                    onChange={(e) => setManualCarb(parseFloat(e.target.value) || 0)}
+                    placeholder="40"
+                    onChange={(e) => setManualCarb(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                     className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-amber-700 font-bold focus:outline-none focus:border-pink-300"
                   />
                 </div>
@@ -1720,7 +1729,8 @@ export const FoodView: React.FC = () => {
                   <input
                     type="number"
                     value={manualFat}
-                    onChange={(e) => setManualFat(parseFloat(e.target.value) || 0)}
+                    placeholder="10"
+                    onChange={(e) => setManualFat(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                     className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-rose-600 font-bold focus:outline-none focus:border-pink-300"
                   />
                 </div>
@@ -1737,7 +1747,8 @@ export const FoodView: React.FC = () => {
                     <input
                       type="number"
                       value={manualSodium}
-                      onChange={(e) => setManualSodium(parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      onChange={(e) => setManualSodium(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                       className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
                     />
                   </div>
@@ -1746,7 +1757,8 @@ export const FoodView: React.FC = () => {
                     <input
                       type="number"
                       value={manualFiber}
-                      onChange={(e) => setManualFiber(parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      onChange={(e) => setManualFiber(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                       className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
                     />
                   </div>
@@ -1755,7 +1767,8 @@ export const FoodView: React.FC = () => {
                     <input
                       type="number"
                       value={manualSugar}
-                      onChange={(e) => setManualSugar(parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      onChange={(e) => setManualSugar(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                       className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
                     />
                   </div>
@@ -1767,7 +1780,8 @@ export const FoodView: React.FC = () => {
                     <input
                       type="number"
                       value={manualVitC}
-                      onChange={(e) => setManualVitC(parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      onChange={(e) => setManualVitC(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                       className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs"
                     />
                   </div>
@@ -1776,7 +1790,8 @@ export const FoodView: React.FC = () => {
                     <input
                       type="number"
                       value={manualIron}
-                      onChange={(e) => setManualIron(parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      onChange={(e) => setManualIron(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                       className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs"
                     />
                   </div>
@@ -1785,7 +1800,8 @@ export const FoodView: React.FC = () => {
                     <input
                       type="number"
                       value={manualCalcium}
-                      onChange={(e) => setManualCalcium(parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      onChange={(e) => setManualCalcium(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                       className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs"
                     />
                   </div>
@@ -1794,7 +1810,8 @@ export const FoodView: React.FC = () => {
                     <input
                       type="number"
                       value={manualPotassium}
-                      onChange={(e) => setManualPotassium(parseFloat(e.target.value) || 0)}
+                      placeholder="0"
+                      onChange={(e) => setManualPotassium(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                       className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs"
                     />
                   </div>
@@ -1902,10 +1919,11 @@ export const FoodView: React.FC = () => {
                   <input
                     type="number"
                     value={editForm.grams}
+                    placeholder="200"
                     onChange={(e) =>
                       setEditForm((prev) => ({
                         ...prev,
-                        grams: parseFloat(e.target.value) || 0,
+                        grams: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                       }))
                     }
                     className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 font-bold focus:outline-none focus:border-pink-300"
@@ -1920,10 +1938,11 @@ export const FoodView: React.FC = () => {
                     type="number"
                     required
                     value={editForm.kcal}
+                    placeholder="350"
                     onChange={(e) =>
                       setEditForm((prev) => ({
                         ...prev,
-                        kcal: parseFloat(e.target.value) || 0,
+                        kcal: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                       }))
                     }
                     className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-pink-600 font-black focus:outline-none focus:border-pink-300 text-sm"
@@ -1934,10 +1953,11 @@ export const FoodView: React.FC = () => {
                   <input
                     type="number"
                     value={editForm.protein_g}
+                    placeholder="25"
                     onChange={(e) =>
                       setEditForm((prev) => ({
                         ...prev,
-                        protein_g: parseFloat(e.target.value) || 0,
+                        protein_g: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                       }))
                     }
                     className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-sky-700 font-bold focus:outline-none focus:border-pink-300"
@@ -1951,10 +1971,11 @@ export const FoodView: React.FC = () => {
                   <input
                     type="number"
                     value={editForm.carb_g}
+                    placeholder="40"
                     onChange={(e) =>
                       setEditForm((prev) => ({
                         ...prev,
-                        carb_g: parseFloat(e.target.value) || 0,
+                        carb_g: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                       }))
                     }
                     className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-amber-700 font-bold focus:outline-none focus:border-pink-300"
@@ -1965,10 +1986,11 @@ export const FoodView: React.FC = () => {
                   <input
                     type="number"
                     value={editForm.fat_g}
+                    placeholder="10"
                     onChange={(e) =>
                       setEditForm((prev) => ({
                         ...prev,
-                        fat_g: parseFloat(e.target.value) || 0,
+                        fat_g: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                       }))
                     }
                     className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-rose-600 font-bold focus:outline-none focus:border-pink-300"
@@ -1987,10 +2009,11 @@ export const FoodView: React.FC = () => {
                     <input
                       type="number"
                       value={editForm.sodium_mg}
+                      placeholder="0"
                       onChange={(e) =>
                         setEditForm((prev) => ({
                           ...prev,
-                          sodium_mg: parseFloat(e.target.value) || 0,
+                          sodium_mg: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                         }))
                       }
                       className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
@@ -2001,10 +2024,11 @@ export const FoodView: React.FC = () => {
                     <input
                       type="number"
                       value={editForm.fiber_g}
+                      placeholder="0"
                       onChange={(e) =>
                         setEditForm((prev) => ({
                           ...prev,
-                          fiber_g: parseFloat(e.target.value) || 0,
+                          fiber_g: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                         }))
                       }
                       className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
@@ -2015,10 +2039,11 @@ export const FoodView: React.FC = () => {
                     <input
                       type="number"
                       value={editForm.sugar_g}
+                      placeholder="0"
                       onChange={(e) =>
                         setEditForm((prev) => ({
                           ...prev,
-                          sugar_g: parseFloat(e.target.value) || 0,
+                          sugar_g: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                         }))
                       }
                       className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"

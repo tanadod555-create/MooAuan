@@ -108,8 +108,8 @@ export const ProfileView: React.FC = () => {
   // New Metric Modal States (All Circumferences & Height)
   const [showMetricModal, setShowMetricModal] = useState(false);
   const [newMetricDate, setNewMetricDate] = useState(new Date().toISOString().split('T')[0]);
-  const [newMetricWeight, setNewMetricWeight] = useState(72.0);
-  const [newMetricHeight, setNewMetricHeight] = useState<number | undefined>(currentProfile.height_cm || 170);
+  const [newMetricWeight, setNewMetricWeight] = useState<number | ''>(72.0);
+  const [newMetricHeight, setNewMetricHeight] = useState<number | '' | undefined>(currentProfile.height_cm || 170);
   const [newMetricFat, setNewMetricFat] = useState<number | undefined>(16.0);
   const [newMetricWaist, setNewMetricWaist] = useState<number | undefined>(80);
   const [newMetricChest, setNewMetricChest] = useState<number | undefined>(undefined);
@@ -124,12 +124,12 @@ export const ProfileView: React.FC = () => {
   // Editable Profile States
   const [profileUnit, setProfileUnit] = useState<'cm' | 'inch'>('cm');
   const [editName, setEditName] = useState(currentProfile.name);
-  const [editHeight, setEditHeight] = useState(currentProfile.height_cm);
+  const [editHeight, setEditHeight] = useState<number | ''>(currentProfile.height_cm);
   const [editGoal, setEditGoal] = useState(currentProfile.goal);
-  const [editKcal, setEditKcal] = useState(currentProfile.kcal_target);
-  const [editProtein, setEditProtein] = useState(currentProfile.protein_target_g);
-  const [editCarb, setEditCarb] = useState(currentProfile.carb_target_g || 200);
-  const [editFat, setEditFat] = useState(currentProfile.fat_target_g || 60);
+  const [editKcal, setEditKcal] = useState<number | ''>(currentProfile.kcal_target);
+  const [editProtein, setEditProtein] = useState<number | ''>(currentProfile.protein_target_g);
+  const [editCarb, setEditCarb] = useState<number | ''>(currentProfile.carb_target_g || 200);
+  const [editFat, setEditFat] = useState<number | ''>(currentProfile.fat_target_g || 60);
   const [editWaist, setEditWaist] = useState<number | undefined>(currentProfile.waist_cm);
   const [editChest, setEditChest] = useState<number | undefined>(currentProfile.chest_cm);
   const [editShoulders, setEditShoulders] = useState<number | undefined>(currentProfile.shoulders_cm);
@@ -235,8 +235,8 @@ export const ProfileView: React.FC = () => {
 
     await addBodyMetric({
       date: newMetricDate,
-      weight_kg: newMetricWeight,
-      height_cm: finalHeight,
+      weight_kg: Number(newMetricWeight) || 0,
+      height_cm: newMetricHeight === '' ? undefined : (Number(newMetricHeight) || undefined),
       body_fat_pct: newMetricFat,
       waist_cm: finalWaist,
       chest_cm: finalChest,
@@ -248,8 +248,9 @@ export const ProfileView: React.FC = () => {
       neck_cm: finalNeck,
       note: newMetricNote.trim() || undefined,
     });
-    if (finalHeight && finalHeight !== currentProfile.height_cm) {
-      updateProfile({ height_cm: finalHeight });
+    const numHeight = Number(finalHeight);
+    if (numHeight > 0 && numHeight !== currentProfile.height_cm) {
+      updateProfile({ height_cm: numHeight });
     }
     setShowMetricModal(false);
     setNewMetricNote('');
@@ -268,12 +269,12 @@ export const ProfileView: React.FC = () => {
 
     updateProfile({
       name: editName,
-      height_cm: editHeight,
+      height_cm: Number(editHeight) || currentProfile.height_cm || 170,
       goal: editGoal,
-      kcal_target: editKcal,
-      protein_target_g: editProtein,
-      carb_target_g: editCarb,
-      fat_target_g: editFat,
+      kcal_target: Number(editKcal) || 2000,
+      protein_target_g: Number(editProtein) || 150,
+      carb_target_g: Number(editCarb) || 200,
+      fat_target_g: Number(editFat) || 60,
       waist_cm: finalWaist,
       chest_cm: finalChest,
       shoulders_cm: finalShoulders,
@@ -1088,7 +1089,8 @@ export const ProfileView: React.FC = () => {
               <input
                 type="number"
                 value={editHeight}
-                onChange={(e) => setEditHeight(parseFloat(e.target.value) || 0)}
+                placeholder="170"
+                onChange={(e) => setEditHeight(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                 className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-rose-400 focus:bg-white font-medium"
               />
             </div>
@@ -1111,7 +1113,8 @@ export const ProfileView: React.FC = () => {
               <input
                 type="number"
                 value={editKcal}
-                onChange={(e) => setEditKcal(parseFloat(e.target.value) || 0)}
+                placeholder="2000"
+                onChange={(e) => setEditKcal(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                 className="w-full bg-amber-50/60 border border-amber-200 rounded-xl px-3 py-2.5 text-amber-950 focus:outline-none focus:border-amber-400 focus:bg-white font-bold"
               />
             </div>
@@ -1120,7 +1123,8 @@ export const ProfileView: React.FC = () => {
               <input
                 type="number"
                 value={editProtein}
-                onChange={(e) => setEditProtein(parseFloat(e.target.value) || 0)}
+                placeholder="150"
+                onChange={(e) => setEditProtein(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                 className="w-full bg-sky-50/60 border border-sky-200 rounded-xl px-3 py-2.5 text-sky-950 focus:outline-none focus:border-sky-400 focus:bg-white font-bold"
               />
             </div>
@@ -1129,7 +1133,8 @@ export const ProfileView: React.FC = () => {
               <input
                 type="number"
                 value={editCarb}
-                onChange={(e) => setEditCarb(parseFloat(e.target.value) || 0)}
+                placeholder="200"
+                onChange={(e) => setEditCarb(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                 className="w-full bg-emerald-50/60 border border-emerald-200 rounded-xl px-3 py-2.5 text-emerald-950 focus:outline-none focus:border-emerald-400 focus:bg-white font-bold"
               />
             </div>
@@ -1138,7 +1143,8 @@ export const ProfileView: React.FC = () => {
               <input
                 type="number"
                 value={editFat}
-                onChange={(e) => setEditFat(parseFloat(e.target.value) || 0)}
+                placeholder="60"
+                onChange={(e) => setEditFat(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                 className="w-full bg-rose-50/60 border border-rose-200 rounded-xl px-3 py-2.5 text-rose-950 focus:outline-none focus:border-rose-400 focus:bg-white font-bold"
               />
             </div>
@@ -1398,7 +1404,8 @@ export const ProfileView: React.FC = () => {
                       step="0.1"
                       required
                       value={newMetricWeight}
-                      onChange={(e) => setNewMetricWeight(parseFloat(e.target.value) || 0)}
+                      placeholder="70.0"
+                      onChange={(e) => setNewMetricWeight(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
                       className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-2 text-slate-700 font-bold text-xs focus:outline-none focus:border-rose-400"
                     />
                   </div>
