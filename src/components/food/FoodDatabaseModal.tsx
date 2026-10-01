@@ -105,7 +105,7 @@ export const FoodDatabaseModal: React.FC<FoodDatabaseModalProps> = ({
                   ตารางโภชนาการด่วน & คลังอาหารไทย 📖
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
-                  {selectedUserKey === 'partner' ? '🌸 ของมะนาว (Manow)' : '🏋️‍♂️ ของแม็กนั่ม (Magnum)'}
+                  {selectedUserKey === 'partner' ? '🌸 ของมะนาว (Manow)' : '🏋️‍♂️ ของแม็กนั่ม (Maxnum)'}
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">

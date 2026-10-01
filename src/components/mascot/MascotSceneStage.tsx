@@ -42,9 +42,9 @@ export const MascotSceneStage: React.FC<MascotSceneStageProps> = ({
     partnerProfile,
   } = useApp();
 
-  const isMagnum = activeProfileKey === 'primary';
-  const currentProfile = isMagnum ? primaryProfile : partnerProfile;
-  const currentGender = isMagnum ? 'male' : 'female';
+  const isMaxnum = activeProfileKey === 'primary';
+  const currentProfile = isMaxnum ? primaryProfile : partnerProfile;
+  const currentGender = isMaxnum ? 'male' : 'female';
 
   // Filter history for current user
   const userHistory = allWorkoutHistory.filter(
@@ -60,7 +60,7 @@ export const MascotSceneStage: React.FC<MascotSceneStageProps> = ({
   // Real-time evolution calculation
   const evolution = calculatePigEvolution(userHistory, activeWorkout !== null);
   const activeLevel =
-    (isMagnum ? overrideLevel?.maxnum : overrideLevel?.manow) ?? evolution.level;
+    (isMaxnum ? overrideLevel?.maxnum : overrideLevel?.manow) ?? evolution.level;
   const levelConfig = PIG_10_LEVELS[activeLevel];
 
   // Real-time 4-condition scene

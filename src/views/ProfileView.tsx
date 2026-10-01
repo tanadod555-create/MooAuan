@@ -424,7 +424,7 @@ export const ProfileView: React.FC = () => {
   };
 
   const evolution = calculatePigEvolution(workoutHistory);
-  const isMagnum = activeProfileKey === 'primary';
+  const isMaxnum = activeProfileKey === 'primary';
   const levelCfg = PIG_10_LEVELS[evolution.level];
 
   return (
@@ -465,7 +465,7 @@ export const ProfileView: React.FC = () => {
           className="px-4 py-2 rounded-full bg-zinc-100 hover:bg-zinc-200/80 border border-black/[0.06] text-xs font-semibold text-zinc-700 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs self-stretch sm:self-auto justify-center"
         >
           <Users size={14} className="text-zinc-500" />
-          <span>สลับเป็น {isMagnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}</span>
+          <span>สลับเป็น {isMaxnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}</span>
         </button>
       </div>
 

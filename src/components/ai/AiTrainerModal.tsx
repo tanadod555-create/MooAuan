@@ -273,7 +273,7 @@ export const AiTrainerModal: React.FC<AiTrainerModalProps> = ({
                   </span>
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
-                  {activeProfileKey === 'partner' ? '🌸 ของมะนาว (Manow)' : '🏋️‍♂️ ของแม็กนั่ม (Magnum)'}
+                  {activeProfileKey === 'partner' ? '🌸 ของมะนาว (Manow)' : '🏋️‍♂️ ของแม็กนั่ม (Maxnum)'}
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 font-medium">

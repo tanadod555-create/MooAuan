@@ -11,7 +11,7 @@ interface BottomNavProps {
 
 export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
   const { activeWorkout, activeProfileKey } = useApp();
-  const isMagnum = activeProfileKey === 'primary';
+  const isMaxnum = activeProfileKey === 'primary';
 
   const navItems = [
     { key: 'workout' as TabKey, label: 'ฝึกซ้อม', icon: Dumbbell, hasBadge: !!activeWorkout, emoji: '🏋️' },
@@ -26,7 +26,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
     <div className="fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 w-[calc(100%-1.25rem)] max-w-md z-40 pb-safe pointer-events-none">
       <nav
         className={`rounded-3xl p-1.5 shadow-xl border-2 pointer-events-auto backdrop-blur-2xl transition-all duration-300 ${
-          isMagnum
+          isMaxnum
             ? 'bg-white/95 border-sky-300 shadow-sky-200/50'
             : 'bg-white/95 border-pink-300 shadow-pink-200/50'
         }`}
@@ -41,10 +41,10 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
                 onClick={() => onTabChange(item.key)}
                 className={`group relative flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-200 cursor-pointer select-none active:scale-90 ${
                   isActive
-                    ? isMagnum
+                    ? isMaxnum
                       ? 'bg-sky-400 text-white shadow-md shadow-sky-300/60 font-black scale-105'
                       : 'bg-pink-400 text-white shadow-md shadow-pink-300/60 font-black scale-105'
-                    : isMagnum
+                    : isMaxnum
                     ? 'text-slate-500 hover:text-sky-600 hover:bg-sky-50'
                     : 'text-slate-500 hover:text-pink-600 hover:bg-pink-50'
                 }`}

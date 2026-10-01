@@ -21,8 +21,8 @@ export const Header: React.FC<HeaderProps> = ({
     isFirebaseConnected,
   } = useApp();
 
-  const isMagnum = activeProfileKey === 'primary';
-  const otherName = isMagnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️';
+  const isMaxnum = activeProfileKey === 'primary';
+  const otherName = isMaxnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️';
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b-2 border-pink-100/90 shadow-xs px-3.5 sm:px-6 py-2.5 transition-all duration-300">
@@ -32,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={onOpenProfileModal}
             className={`relative flex items-center justify-center p-1 rounded-2xl border-2 transition-transform duration-200 hover:scale-110 active:scale-95 cursor-pointer shadow-xs ${
-              isMagnum
+              isMaxnum
                 ? 'bg-sky-100/80 border-sky-300'
                 : 'bg-pink-100/80 border-pink-300'
             }`}
@@ -53,10 +53,10 @@ export const Header: React.FC<HeaderProps> = ({
                 หมูอ้วน 🐷
                 <span
                   className={`text-xs font-bold font-mono px-1.5 py-0.2 rounded-md ${
-                    isMagnum ? 'bg-sky-100 text-sky-700' : 'bg-pink-100 text-pink-700'
+                    isMaxnum ? 'bg-sky-100 text-sky-700' : 'bg-pink-100 text-pink-700'
                   }`}
                 >
-                  {isMagnum ? 'Gym Hero' : 'Cozy Fit'}
+                  {isMaxnum ? 'Gym Hero' : 'Cozy Fit'}
                 </span>
               </h1>
               {/* Cloud Sync Status Indicator */}
@@ -74,11 +74,11 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <p className="text-xs text-slate-500 font-semibold flex items-center gap-1 mt-0.5">
               <span>กำลังเล่น:</span>
-              <strong className={isMagnum ? 'text-sky-600' : 'text-pink-600'}>
+              <strong className={isMaxnum ? 'text-sky-600' : 'text-pink-600'}>
                 {currentProfile.name}
               </strong>
               <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 font-bold">
-                {isMagnum ? 'P1 🎮' : 'P2 🌸'}
+                {isMaxnum ? 'P1 🎮' : 'P2 🌸'}
               </span>
             </p>
           </div>
@@ -100,9 +100,9 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* 3D Character Switcher Button */}
           <button
-            onClick={() => setActiveProfileKey(isMagnum ? 'partner' : 'primary')}
+            onClick={() => setActiveProfileKey(isMaxnum ? 'partner' : 'primary')}
             className={`px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer ${
-              isMagnum ? 'btn-candy-pink' : 'btn-candy-blue'
+              isMaxnum ? 'btn-candy-pink' : 'btn-candy-blue'
             }`}
             title={`คลิกเพื่อสลับตัวละครเป็น ${otherName}`}
           >

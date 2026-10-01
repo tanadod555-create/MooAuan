@@ -14,7 +14,7 @@ import { PigMascot } from './components/ui/PigMascot';
 
 export const MainContent: React.FC = () => {
   const { activeProfileKey } = useApp();
-  const isMagnum = activeProfileKey === 'primary';
+  const isMaxnum = activeProfileKey === 'primary';
 
   const [activeTab, setActiveTab] = useState<TabKey>('workout');
   const [showAiTrainer, setShowAiTrainer] = useState(false);
@@ -31,14 +31,14 @@ export const MainContent: React.FC = () => {
   // Sync theme class to document body
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      document.body.className = isMagnum ? 'theme-maxnum' : 'theme-manow';
+      document.body.className = isMaxnum ? 'theme-maxnum' : 'theme-manow';
     }
-  }, [isMagnum]);
+  }, [isMaxnum]);
 
   return (
     <div
       className={`min-h-screen ${
-        isMagnum ? 'theme-maxnum' : 'theme-manow'
+        isMaxnum ? 'theme-maxnum' : 'theme-manow'
       } flex flex-col font-sans relative transition-colors duration-300`}
     >
       {/* Top Header */}
@@ -69,14 +69,14 @@ export const MainContent: React.FC = () => {
         <button
           onClick={() => setShowAiTrainer(true)}
           className={`group relative flex items-center gap-2.5 pl-2 pr-4 py-2 rounded-full border-2 transition-all active:translate-y-1 active:shadow-xs cursor-pointer shadow-lg ${
-            isMagnum
+            isMaxnum
               ? 'bg-white border-sky-300 text-slate-800 shadow-sky-200/60 hover:border-sky-400'
               : 'bg-white border-pink-300 text-slate-800 shadow-pink-200/60 hover:border-pink-400'
           }`}
           title="แตะเพื่อคุยกับโค้ชหมูอ้วน AI"
         >
           <div className="relative animate-wiggle">
-            <PigMascot size="sm" expression={isMagnum ? 'workout' : 'cheer'} className="drop-shadow-xs" />
+            <PigMascot size="sm" expression={isMaxnum ? 'workout' : 'cheer'} className="drop-shadow-xs" />
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 ring-2 ring-white rounded-full animate-ping" />
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 ring-2 ring-white rounded-full" />
           </div>
@@ -86,10 +86,10 @@ export const MainContent: React.FC = () => {
             </span>
             <span
               className={`block text-[10px] font-bold leading-tight ${
-                isMagnum ? 'text-sky-600' : 'text-pink-600'
+                isMaxnum ? 'text-sky-600' : 'text-pink-600'
               }`}
             >
-              {isMagnum ? 'หมูอ้วนสายเวท 🏋️‍♂️' : 'หมูอ้วนเทรนเนอร์ 🌸'}
+              {isMaxnum ? 'หมูอ้วนสายเวท 🏋️‍♂️' : 'หมูอ้วนเทรนเนอร์ 🌸'}
             </span>
           </div>
         </button>

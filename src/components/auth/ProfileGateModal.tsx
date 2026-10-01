@@ -45,7 +45,7 @@ export const ProfileGateModal: React.FC<ProfileGateModalProps> = ({ isOpen, onCl
 
         {/* 2 Character Select Cards */}
         <div className="grid grid-cols-1 gap-3.5 relative z-10">
-          {/* Player 1: แม็กนั่ม (Magnum) */}
+          {/* Player 1: แม็กนั่ม (Maxnum) */}
           <button
             onClick={() => handleSelectProfile('primary')}
             className={`group relative p-4 rounded-[24px] border-2 text-left transition-all active:scale-[0.98] cursor-pointer ${
