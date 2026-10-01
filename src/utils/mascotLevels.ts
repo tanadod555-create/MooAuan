@@ -395,17 +395,23 @@ export function getMascotScene(
   };
 }
 
+export function getMascotWebp(gender: 'male' | 'female', level: PigEvolutionLevel): string {
+  const prefix = gender === 'female' ? 'manow' : 'maxnum';
+  return `./mascots/${prefix}_lv${level}.webp?v=2`;
+}
+
 export function getMascotGif(gender: 'male' | 'female', level: PigEvolutionLevel): string {
   const prefix = gender === 'female' ? 'manow' : 'maxnum';
-  return `./mascots/${prefix}_lv${level}.gif`;
+  return `./mascots/${prefix}_lv${level}.webp?v=2`;
 }
 
 export function getMascotPng(gender: 'male' | 'female', level: PigEvolutionLevel): string {
   const prefix = gender === 'female' ? 'manow' : 'maxnum';
-  return `./mascots/${prefix}_lv${level}.png`;
+  return `./mascots/${prefix}_lv${level}.png?v=2`;
 }
 
 export function getUserAvatar(gender: 'male' | 'female' | 'primary' | 'partner'): string {
   const isFemale = gender === 'female' || gender === 'partner';
-  return isFemale ? './mascots/manow_icon.png' : './mascots/maxnum_icon.png';
+  return isFemale ? './mascots/manow_icon.png?v=2' : './mascots/maxnum_icon.png?v=2';
 }
+
