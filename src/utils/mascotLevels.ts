@@ -396,16 +396,16 @@ export function getMascotScene(
 }
 
 export function getMascotGif(gender: 'male' | 'female', level: PigEvolutionLevel): string {
-  const prefix = gender === 'female' ? 'manow' : 'magnum';
+  const prefix = gender === 'female' ? 'manow' : 'maxnum';
   return `./mascots/${prefix}_lv${level}.gif`;
 }
 
 export function getMascotPng(gender: 'male' | 'female', level: PigEvolutionLevel): string {
-  const prefix = gender === 'female' ? 'manow' : 'magnum';
+  const prefix = gender === 'female' ? 'manow' : 'maxnum';
   return `./mascots/${prefix}_lv${level}.png`;
 }
 
 export function getUserAvatar(gender: 'male' | 'female' | 'primary' | 'partner'): string {
   const isFemale = gender === 'female' || gender === 'partner';
-  return isFemale ? './mascots/manow_icon.png' : './mascots/magnum_icon.png';
+  return isFemale ? './mascots/manow_icon.png' : './mascots/maxnum_icon.png';
 }

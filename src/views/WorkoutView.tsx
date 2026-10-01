@@ -1336,7 +1336,7 @@ export const WorkoutView: React.FC = () => {
                     }
                   }}
                   className="btn-candy-white px-3 py-1.5 text-xs flex items-center justify-center gap-1.5 cursor-pointer"
-                  title="รีเซ็ตโปรแกรมกลับสู่ตารางฝึกมาตรฐานของโค้ช Magnum / Manow"
+                  title="รีเซ็ตโปรแกรมกลับสู่ตารางฝึกมาตรฐานของโค้ช Maxnum / Manow"
                 >
                   <RotateCcw size={13} />
                   <span>โหลดตารางแนะนำ</span>

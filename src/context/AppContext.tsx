@@ -124,8 +124,8 @@ interface AppContextType {
 
 const DEFAULT_PRIMARY_PROFILE: UserProfile = {
   user_id: 'user_primary',
-  email: 'magnum@example.com',
-  name: 'แม็กนั่ม (Magnum)',
+  email: 'maxnum@example.com',
+  name: 'แม็กนั่ม (Maxnum)',
   sex: 'male',
   birth_year: 1998,
   height_cm: 175,
@@ -147,7 +147,7 @@ const DEFAULT_PRIMARY_PROFILE: UserProfile = {
 
 const DEFAULT_PARTNER_PROFILE: UserProfile = {
   user_id: 'user_partner',
-  email: 'manao@example.com',
+  email: 'manow@example.com',
   name: 'มะนาว (Manow)',
   sex: 'female',
   birth_year: 2000,
@@ -412,9 +412,9 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
     ]
   },
   {
-    session_id: 'hist_magnum_1',
+    session_id: 'hist_maxnum_1',
     user_id: 'primary',
-    user_name: 'แม็กนั่ม (Magnum)',
+    user_name: 'แม็กนั่ม (Maxnum)',
     date: '2026-09-29',
     program_name: 'Push Day (อก ไหล่ หลังแขน)',
     start_time: '18:15',
@@ -423,10 +423,10 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
     sets: [
       {
         set_id: 's_p1',
-        session_id: 'hist_magnum_1',
+        session_id: 'hist_maxnum_1',
         exercise_id: 'ex_bench_press',
         exercise_name: 'บาร์เบล เบนช์เพรส (Barbell Bench Press)',
-        user_name: 'แม็กนั่ม (Magnum)',
+        user_name: 'แม็กนั่ม (Maxnum)',
         set_no: 1,
         weight_kg: 60,
         reps: 8,
@@ -434,10 +434,10 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
       },
       {
         set_id: 's_p2',
-        session_id: 'hist_magnum_1',
+        session_id: 'hist_maxnum_1',
         exercise_id: 'ex_bench_press',
         exercise_name: 'บาร์เบล เบนช์เพรส (Barbell Bench Press)',
-        user_name: 'แม็กนั่ม (Magnum)',
+        user_name: 'แม็กนั่ม (Maxnum)',
         set_no: 2,
         weight_kg: 70,
         reps: 8,
@@ -445,10 +445,10 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
       },
       {
         set_id: 's_p3',
-        session_id: 'hist_magnum_1',
+        session_id: 'hist_maxnum_1',
         exercise_id: 'ex_bench_press',
         exercise_name: 'บาร์เบล เบนช์เพรส (Barbell Bench Press)',
-        user_name: 'แม็กนั่ม (Magnum)',
+        user_name: 'แม็กนั่ม (Maxnum)',
         set_no: 3,
         weight_kg: 75,
         reps: 6,
@@ -456,10 +456,10 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
       },
       {
         set_id: 's_p4',
-        session_id: 'hist_magnum_1',
+        session_id: 'hist_maxnum_1',
         exercise_id: 'ex_incline_db_press',
         exercise_name: 'อินไคลน์ ดัมเบลล์ เพรส (Incline Dumbbell Press)',
-        user_name: 'แม็กนั่ม (Magnum)',
+        user_name: 'แม็กนั่ม (Maxnum)',
         set_no: 1,
         weight_kg: 22,
         reps: 10,
@@ -467,10 +467,10 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
       },
       {
         set_id: 's_p5',
-        session_id: 'hist_magnum_1',
+        session_id: 'hist_maxnum_1',
         exercise_id: 'ex_incline_db_press',
         exercise_name: 'อินไคลน์ ดัมเบลล์ เพรส (Incline Dumbbell Press)',
-        user_name: 'แม็กนั่ม (Magnum)',
+        user_name: 'แม็กนั่ม (Maxnum)',
         set_no: 2,
         weight_kg: 24,
         reps: 8,
@@ -478,10 +478,10 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
       },
       {
         set_id: 's_p6',
-        session_id: 'hist_magnum_1',
+        session_id: 'hist_maxnum_1',
         exercise_id: 'ex_lateral_raise',
         exercise_name: 'ดัมเบลล์ แลทเทอรัล เรส (Dumbbell Lateral Raise)',
-        user_name: 'แม็กนั่ม (Magnum)',
+        user_name: 'แม็กนั่ม (Maxnum)',
         set_no: 1,
         weight_kg: 10,
         reps: 12,
@@ -489,10 +489,10 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
       },
       {
         set_id: 's_p7',
-        session_id: 'hist_magnum_1',
+        session_id: 'hist_maxnum_1',
         exercise_id: 'ex_lateral_raise',
         exercise_name: 'ดัมเบลล์ แลทเทอรัล เรส (Dumbbell Lateral Raise)',
-        user_name: 'แม็กนั่ม (Magnum)',
+        user_name: 'แม็กนั่ม (Maxnum)',
         set_no: 2,
         weight_kg: 12,
         reps: 10,
@@ -500,10 +500,10 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
       },
       {
         set_id: 's_p8',
-        session_id: 'hist_magnum_1',
+        session_id: 'hist_maxnum_1',
         exercise_id: 'ex_tricep_rope_pushdown',
         exercise_name: 'ไตรเซป โรป พุชดาวน์ (Tricep Rope Pushdown)',
-        user_name: 'แม็กนั่ม (Magnum)',
+        user_name: 'แม็กนั่ม (Maxnum)',
         set_no: 1,
         weight_kg: 25,
         reps: 12,
@@ -573,7 +573,7 @@ const DEFAULT_TODAY_FOOD_LOGS: FoodLog[] = [
   {
     log_id: 'log_1790839407501_71y1',
     user_id: 'primary',
-    user_name: 'แม็กนั่ม (Magnum)',
+    user_name: 'แม็กนั่ม (Maxnum)',
     date: '2026-10-01',
     time: '14:23',
     meal: 'lunch',
@@ -592,7 +592,7 @@ const DEFAULT_TODAY_FOOD_LOGS: FoodLog[] = [
   {
     log_id: 'log_1790839408673_td4r',
     user_id: 'primary',
-    user_name: 'แม็กนั่ม (Magnum)',
+    user_name: 'แม็กนั่ม (Maxnum)',
     date: '2026-10-01',
     time: '14:23',
     meal: 'lunch',
@@ -611,7 +611,7 @@ const DEFAULT_TODAY_FOOD_LOGS: FoodLog[] = [
   {
     log_id: 'log_1790839409855_2duq',
     user_id: 'primary',
-    user_name: 'แม็กนั่ม (Magnum)',
+    user_name: 'แม็กนั่ม (Maxnum)',
     date: '2026-10-01',
     time: '14:23',
     meal: 'lunch',
@@ -630,7 +630,7 @@ const DEFAULT_TODAY_FOOD_LOGS: FoodLog[] = [
   {
     log_id: 'log_1790840595574_tuxs',
     user_id: 'primary',
-    user_name: 'แม็กนั่ม (Magnum)',
+    user_name: 'แม็กนั่ม (Maxnum)',
     date: '2026-10-01',
     time: '14:43',
     meal: 'lunch',
@@ -756,8 +756,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Programs
   const [programs, setPrograms] = useState<Program[]>(() => {
     const v = localStorage.getItem('ft_programs_version');
-    if (v !== 'v2_magnum') {
-      localStorage.setItem('ft_programs_version', 'v2_magnum');
+    if (v !== 'v2_maxnum') {
+      localStorage.setItem('ft_programs_version', 'v2_maxnum');
       localStorage.setItem('ft_programs_primary', JSON.stringify(DEFAULT_PROGRAMS));
       return activeProfileKey === 'partner' ? DEFAULT_PARTNER_PROGRAMS : DEFAULT_PROGRAMS;
     }
@@ -766,7 +766,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return activeProfileKey === 'partner' ? DEFAULT_PARTNER_PROGRAMS : DEFAULT_PROGRAMS;
   });
 
-  // Unified Food Logs (Combined for Magnum & Manow + Seeded with user's today logs)
+  // Unified Food Logs (Combined for Maxnum & Manow + Seeded with user's today logs)
   const [allFoodLogs, setAllFoodLogs] = useState<FoodLog[]>(() => {
     let list: FoodLog[] = [];
     const savedUnified = localStorage.getItem('ft_food_logs_unified');
@@ -780,7 +780,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const primaryLogs: FoodLog[] = primarySaved ? JSON.parse(primarySaved) : [];
       const partnerLogs: FoodLog[] = partnerSaved ? JSON.parse(partnerSaved) : [];
       list = [
-        ...primaryLogs.map(l => ({ ...l, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' })),
+        ...primaryLogs.map(l => ({ ...l, user_id: 'primary', user_name: 'แม็กนั่ม (Maxnum)' })),
         ...partnerLogs.map(l => ({ ...l, user_id: 'partner', user_name: 'มะนาว (Manow)' }))
       ];
     }
@@ -802,7 +802,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const foodLogs = allFoodLogs.filter(l => (l.user_id || 'primary') === activeProfileKey);
 
-  // Unified Body Metrics (Combined for Magnum & Manow)
+  // Unified Body Metrics (Combined for Maxnum & Manow)
   const [allBodyMetrics, setAllBodyMetrics] = useState<BodyMetric[]>(() => {
     // Migration: One-time clearing of legacy/mock body metrics as requested
     const cleared = localStorage.getItem('ft_metrics_cleared_v2');
@@ -824,13 +824,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const bodyMetrics = allBodyMetrics.filter(m => (m.user_id || 'primary') === activeProfileKey);
 
-  // Unified Workout History (Combined for Magnum & Manow)
+  // Unified Workout History (Combined for Maxnum & Manow)
   const [allWorkoutHistory, setAllWorkoutHistory] = useState<WorkoutSession[]>(() => {
     const savedUnified = localStorage.getItem('ft_history_unified');
     if (savedUnified) {
       try {
         const parsed = JSON.parse(savedUnified);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) return parsed; // allow empty array (user deleted all)
       } catch {}
     }
     const primarySaved = localStorage.getItem('ft_history_primary');
@@ -839,10 +839,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const partnerH: WorkoutSession[] = partnerSaved ? JSON.parse(partnerSaved) : [];
     if (primaryH.length > 0 || partnerH.length > 0) {
       return [
-        ...primaryH.map(s => ({ ...s, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' })),
+        ...primaryH.map(s => ({ ...s, user_id: 'primary', user_name: 'แม็กนั่ม (Maxnum)' })),
         ...partnerH.map(s => ({ ...s, user_id: 'partner', user_name: 'มะนาว (Manow)' }))
       ];
     }
+    // Only seed defaults ONCE — if user already had data and deleted it, don't re-seed
+    const alreadySeeded = localStorage.getItem('ft_history_seeded');
+    if (alreadySeeded) return [];
+    localStorage.setItem('ft_history_seeded', '1');
     return DEFAULT_WORKOUT_HISTORY;
   });
 
@@ -1331,7 +1335,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteWorkoutSession = (sessionId: string) => {
-    setAllWorkoutHistory(prev => prev.filter(s => s.session_id !== sessionId));
+    setAllWorkoutHistory(prev => {
+      const updated = prev.filter(s => s.session_id !== sessionId);
+      localStorage.setItem('ft_history_unified', JSON.stringify(updated));
+      localStorage.setItem('ft_history_seeded', '1');
+      return updated;
+    });
     if (firestoreDbRef.current) {
       cloudDeleteWorkout(firestoreDbRef.current, sessionId).catch(console.error);
     }

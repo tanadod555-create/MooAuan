@@ -162,7 +162,7 @@ body {
   box-shadow: 0 1px 4px rgba(255, 101, 132, 0.2);
 }
 
-/* Blue Soda Button (Magnum) */
+/* Blue Soda Button (Maxnum) */
 .btn-candy-blue {
   background-color: #38bdf8;
   border-bottom: 4px solid #0284c7;
@@ -272,10 +272,10 @@ body.theme-manow {
 }
 
 /* ========================================================
-   THEME STYLING: MAGNUM 🏋️‍♂️ (Soda Pop Arcade Gym Game)
+   THEME STYLING: MAXNUM 🏋️‍♂️ (Soda Pop Arcade Gym Game)
    ======================================================== */
-.theme-magnum,
-body.theme-magnum {
+.theme-maxnum,
+body.theme-maxnum {
   background-color: #f0f8ff;
   background-image: 
     radial-gradient(#bae6fd 1.2px, transparent 1.2px),
@@ -285,7 +285,7 @@ body.theme-magnum {
   color: #0f172a;
 }
 
-.theme-magnum ::selection {
+.theme-maxnum ::selection {
   background-color: #bae6fd;
   color: #0369a1;
 }
@@ -306,11 +306,11 @@ body.theme-magnum {
   border: 2px solid #fff5f8;
 }
 
-body.theme-magnum ::-webkit-scrollbar-track {
+body.theme-maxnum ::-webkit-scrollbar-track {
   background: #f0f8ff;
 }
 
-body.theme-magnum ::-webkit-scrollbar-thumb {
+body.theme-maxnum ::-webkit-scrollbar-thumb {
   background: #38bdf8;
   border-radius: 9999px;
   border: 2px solid #f0f8ff;

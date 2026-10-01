@@ -29,8 +29,8 @@ export const PigMascot: React.FC<PigMascotProps> = ({
     sm: 'w-10 h-10',
     md: 'w-14 h-14',
     lg: 'w-24 h-24',
-    xl: 'w-36 h-36',
-    '2xl': 'w-48 h-48 sm:w-56 sm:h-56',
+    xl: 'w-48 h-48',
+    '2xl': 'w-60 h-60 sm:w-72 sm:h-72',
   };
 
   // If level is provided and useGif is true, render the animated GIF

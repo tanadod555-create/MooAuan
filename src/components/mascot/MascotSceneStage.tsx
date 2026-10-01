@@ -25,7 +25,7 @@ import {
 interface MascotSceneStageProps {
   onTapPig?: () => void;
   overrideLevel?: {
-    magnum?: PigEvolutionLevel;
+    maxnum?: PigEvolutionLevel;
     manow?: PigEvolutionLevel;
   };
 }
@@ -60,7 +60,7 @@ export const MascotSceneStage: React.FC<MascotSceneStageProps> = ({
   // Real-time evolution calculation
   const evolution = calculatePigEvolution(userHistory, activeWorkout !== null);
   const activeLevel =
-    (isMagnum ? overrideLevel?.magnum : overrideLevel?.manow) ?? evolution.level;
+    (isMagnum ? overrideLevel?.maxnum : overrideLevel?.manow) ?? evolution.level;
   const levelConfig = PIG_10_LEVELS[activeLevel];
 
   // Real-time 4-condition scene
@@ -89,7 +89,7 @@ export const MascotSceneStage: React.FC<MascotSceneStageProps> = ({
   return (
     <div className="relative w-full rounded-3xl overflow-hidden border-2 border-pink-200/90 shadow-lg shadow-pink-100/50 bg-slate-900 transition-all duration-300">
       {/* Background Image Stage with 4 dynamic conditions */}
-      <div className="relative w-full h-80 sm:h-96 overflow-hidden">
+      <div className="relative w-full h-96 sm:h-[28rem] overflow-hidden">
         <img
           src={sceneInfo.imageSrc}
           alt={sceneInfo.label}

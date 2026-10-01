@@ -720,7 +720,7 @@ const BASE_SEED_EXERCISES: Exercise[] = [
     mistakes: 'แอ่นหลังเพื่อดึงขาขึ้นสูงเกินไป'
   },
 
-  // --- MAGNUM TARGETED PROGRAM EXERCISES ---
+  // --- MAXNUM TARGETED PROGRAM EXERCISES ---
   {
     exercise_id: 'ex_machine_incline_press',
     name_en: 'Incline Bench Press Machine',

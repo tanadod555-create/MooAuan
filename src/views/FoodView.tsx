@@ -101,7 +101,7 @@ export const FoodView: React.FC = () => {
   );
 
   // Count logs for switcher pills
-  const magnumDayCount = (allFoodLogs || []).filter(
+  const maxnumDayCount = (allFoodLogs || []).filter(
     (l) => l.date === selectedDate && (l.user_id || 'primary') === 'primary'
   ).length;
   const manowDayCount = (allFoodLogs || []).filter(
@@ -490,7 +490,7 @@ export const FoodView: React.FC = () => {
           }`}
         >
           <img src={getUserAvatar('primary')} className="w-5 h-5 rounded-full object-cover border border-white/60" />
-          <span>แม็กนั่ม ({magnumDayCount})</span>
+          <span>แม็กนั่ม ({maxnumDayCount})</span>
         </button>
         <button
           onClick={() => setSelectedUserKey('partner')}

@@ -31,14 +31,14 @@ export const MainContent: React.FC = () => {
   // Sync theme class to document body
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      document.body.className = isMagnum ? 'theme-magnum' : 'theme-manow';
+      document.body.className = isMagnum ? 'theme-maxnum' : 'theme-manow';
     }
   }, [isMagnum]);
 
   return (
     <div
       className={`min-h-screen ${
-        isMagnum ? 'theme-magnum' : 'theme-manow'
+        isMagnum ? 'theme-maxnum' : 'theme-manow'
       } flex flex-col font-sans relative transition-colors duration-300`}
     >
       {/* Top Header */}
