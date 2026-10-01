@@ -27,8 +27,8 @@ export interface GeminiAnalysisResponse {
  */
 export async function resizeImageToMaxDimension(
   file: File,
-  maxDimension = 1024,
-  quality = 0.85
+  maxDimension = 640,
+  quality = 0.75
 ): Promise<{ base64: string; mimeType: string }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

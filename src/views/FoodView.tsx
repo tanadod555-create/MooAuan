@@ -188,6 +188,7 @@ export const FoodView: React.FC = () => {
   const [aiNotes, setAiNotes] = useState<string>('');
   const [selectedMeal, setSelectedMeal] = useState<MealType>('lunch');
   const [showAiResultModal, setShowAiResultModal] = useState(false);
+  const [bgScanCompleted, setBgScanCompleted] = useState(false);
 
   // Photo Note Flow: Holds the captured photo so user can add notes BEFORE analyzing
   const [pendingPhoto, setPendingPhoto] = useState<{
@@ -331,18 +332,22 @@ export const FoodView: React.FC = () => {
   const handleStartAnalysis = async () => {
     if (!pendingPhoto) return;
 
+    const currentPhoto = pendingPhoto;
+    const currentNote = aiUserNote;
+
     setShowPhotoNoteModal(false);
     setAnalyzing(true);
+    setBgScanCompleted(false);
     setAnalysisError(null);
 
     try {
       const result = await analyzeFoodImage({
-        base64Image: pendingPhoto.base64,
-        mimeType: pendingPhoto.mimeType,
+        base64Image: currentPhoto.base64,
+        mimeType: currentPhoto.mimeType,
         apiKey: settings.geminiApiKey || effectiveGeminiKey,
         proxyUrl: settings.geminiProxyUrl,
         useProxy: settings.useProxy,
-        userNotes: aiUserNote,
+        userNotes: currentNote,
       });
 
       if (!result.items || result.items.length === 0) {
@@ -353,8 +358,9 @@ export const FoodView: React.FC = () => {
       setBaseAiItems(result.items);
       setPortionMultiplier(1.0);
       setAiNotes(result.notes || '');
+      setBgScanCompleted(true);
       setShowAiResultModal(true);
-      setAiUserNote(''); // Clear note after scan completes so it does not persist across different food scans
+      setAiUserNote(''); // Clear note after scan completes
     } catch (err: any) {
       console.error(err);
       setAnalysisError(
@@ -1290,16 +1296,69 @@ export const FoodView: React.FC = () => {
         </button>
       </div>
 
-      {/* Analyzing Indicator */}
+      {/* Non-blocking Background Analyzing Indicator */}
       {analyzing && (
-        <div className="p-6 rounded-3xl bg-white/95 border border-pink-200 text-center space-y-3 shadow-sm animate-pulse">
-          <div className="w-12 h-12 mx-auto rounded-full bg-pink-100 flex items-center justify-center text-pink-500 animate-spin">
-            <Sparkles size={24} />
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50 to-sky-50 border border-pink-200/80 flex items-center justify-between gap-3 shadow-xs animate-fadeIn">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-pink-500 text-white flex items-center justify-center shrink-0 shadow-xs shadow-pink-300/50">
+              <Sparkles size={18} className="animate-spin" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <span>กำลังวิเคราะห์รูปอาหารในพื้นหลัง...</span>
+                <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-pink-100 text-pink-700 animate-pulse">
+                  Background
+                </span>
+              </h4>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                คุณสามารถกรอกน้ำ ดื่มน้ำ หรือสลับไปดูหน้าอื่นได้ทันที เมื่อเสร็จแล้วระบบจะแจ้งเตือน
+              </p>
+            </div>
           </div>
-          <h4 className="text-sm font-bold text-slate-700">กำลังวิเคราะห์อาหารด้วย Gemini Multimodal...</h4>
-          <p className="text-xs text-slate-500">
-            {aiUserNote ? `คำนวณตามหมายเหตุ: "${aiUserNote}"` : 'กำลังประเมินขนาดจาน ส่วนประกอบ และโภชนาการ'}
-          </p>
+          <span className="text-xs text-pink-600 font-bold hidden sm:inline">ประมวลผลอยู่ ⚡</span>
+        </div>
+      )}
+
+      {/* Floating Bottom Toast for Background Scanning / Completion */}
+      {(analyzing || (bgScanCompleted && aiResultItems.length > 0 && !showAiResultModal)) && (
+        <div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 max-w-sm animate-slideUp">
+          <div className="p-3.5 rounded-2xl bg-slate-900/95 text-white border border-slate-700 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {analyzing ? (
+                <Sparkles size={18} className="text-pink-400 animate-spin shrink-0" />
+              ) : (
+                <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+              )}
+              <div className="min-w-0">
+                <p className="text-xs font-bold truncate">
+                  {analyzing ? 'กำลังสแกนรูปอาหารในพื้นหลัง...' : '✨ AI วิเคราะห์อาหารเสร็จแล้ว!'}
+                </p>
+                <p className="text-[10px] text-slate-300 truncate">
+                  {analyzing ? 'ระบบกำลังประเมินแคลอรี่' : `พบ ${aiResultItems.length} รายการสำหรับ ${activeTargetProfile.name}`}
+                </p>
+              </div>
+            </div>
+
+            {!analyzing && (
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setShowAiResultModal(true)}
+                  className="px-3 py-1.5 rounded-xl bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs"
+                >
+                  ดูผลลัพธ์
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBgScanCompleted(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white"
+                  title="ปิดการแจ้งเตือน"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -1307,10 +1366,17 @@ export const FoodView: React.FC = () => {
       {analysisError && (
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 flex items-start gap-3 text-rose-700 text-xs shadow-2xs">
           <AlertTriangle size={18} className="shrink-0 text-rose-500 mt-0.5" />
-          <div>
+          <div className="flex-1">
             <p className="font-bold">เกิดข้อผิดพลาดในการวิเคราะห์</p>
             <p className="mt-0.5">{analysisError}</p>
           </div>
+          <button
+            type="button"
+            onClick={() => setAnalysisError(null)}
+            className="text-rose-400 hover:text-rose-700 p-1"
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
 
