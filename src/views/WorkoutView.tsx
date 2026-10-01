@@ -90,6 +90,17 @@ export const WorkoutView: React.FC = () => {
     allWorkoutHistory,
     activeProfileKey,
     currentProfile,
+    // Global Rest Timer from AppContext
+    restTimerSeconds,
+    restTimerInitial,
+    restTimerPaused,
+    restTimerSound,
+    startRestTimer,
+    addRestTimerSeconds,
+    resetRestTimer,
+    clearRestTimer,
+    toggleRestTimerPause,
+    toggleRestTimerSound,
   } = useApp();
 
   const [workoutTab, setWorkoutTab] = useState<'workout' | 'history'>('workout');
@@ -97,40 +108,7 @@ export const WorkoutView: React.FC = () => {
   const [showAddExerciseDrawer, setShowAddExerciseDrawer] = useState(false);
   const [drawerSearch, setDrawerSearch] = useState('');
   const [drawerMuscle, setDrawerMuscle] = useState<string>('all');
-  const [restTimerTargetMs, setRestTimerTargetMs] = useState<number | null>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('mooauan_rest_target_ms');
-      if (saved) {
-        const ms = Number(saved);
-        if (ms > Date.now()) return ms;
-      }
-    }
-    return null;
-  });
-
-  const [restTimerSeconds, setRestTimerSeconds] = useState<number | null>(() => {
-    if (typeof window !== 'undefined') {
-      const savedTarget = localStorage.getItem('mooauan_rest_target_ms');
-      if (savedTarget) {
-        const diff = Math.ceil((Number(savedTarget) - Date.now()) / 1000);
-        if (diff > 0) return diff;
-      }
-    }
-    return null;
-  });
-  const [restTimerInitial, setRestTimerInitial] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('mooauan_rest_initial');
-      if (saved) return Number(saved);
-    }
-    return 90;
-  });
-  const [restTimerPaused, setRestTimerPaused] = useState(false);
-  const [restTimerSound, setRestTimerSound] = useState(true);
   const [showRestTimer, setShowRestTimer] = useState(false);
-
-  // Reference to prevent duplicate finish alerts
-  const prevSecRef = React.useRef<number | null>(null);
 
   // Cardio Setup Modal State (Choose activity & target before starting)
   const [showCardioModal, setShowCardioModal] = useState(false);
@@ -229,128 +207,6 @@ export const WorkoutView: React.FC = () => {
     const mins = Math.floor(sec / 60);
     const remaining = sec % 60;
     return `${mins.toString().padStart(2, '0')}:${remaining.toString().padStart(2, '0')}`;
-  };
-
-  // Rest Timer Interval with Background/Tab Switch Recovery and Alerts
-  useEffect(() => {
-    if (restTimerSeconds === null) {
-      if (typeof window !== 'undefined') {
-        document.title = 'MooAuan - หมูอ้วน ฟิตเนส & ไดอารี่';
-      }
-      return;
-    }
-
-    const updateTimer = () => {
-      if (restTimerPaused) return;
-
-      let remaining = 0;
-      if (restTimerTargetMs) {
-        remaining = Math.max(0, Math.ceil((restTimerTargetMs - Date.now()) / 1000));
-      } else {
-        remaining = Math.max(0, (restTimerSeconds ?? 0) - 1);
-      }
-
-      setRestTimerSeconds(remaining);
-
-      // Document title countdown
-      if (typeof window !== 'undefined') {
-        if (remaining > 0) {
-          document.title = `(${formatSeconds(remaining)}) ⏳ พักเซต | MooAuan 🐷`;
-        } else {
-          document.title = `⏰ ครบเวลาพักแล้ว! ลุยต่อ | MooAuan 🐷`;
-        }
-      }
-
-      // Warning audio on 3, 2, 1 seconds
-      if (restTimerSound && remaining <= 3 && remaining >= 1 && prevSecRef.current !== remaining) {
-        playGymAlertSound('warning');
-      }
-
-      // Finish alerts
-      if (remaining === 0 && (prevSecRef.current === null || prevSecRef.current > 0)) {
-        if (restTimerSound) {
-          playGymAlertSound('finish');
-        }
-        triggerMobileVibrate([200, 100, 200, 100, 400]);
-        sendBackgroundNotification(
-          '⏰ พักเซ็ตครบเวลาแล้ว! 🐷',
-          'ถึงเวลาเล่นเซ็ตต่อไปแล้ว ลุยเลย!'
-        );
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('mooauan_rest_target_ms');
-        }
-      }
-
-      prevSecRef.current = remaining;
-    };
-
-    // Run ticker
-    const interval = setInterval(updateTimer, 1000);
-
-    // Visibility change listener (when returning from TikTok or background tab)
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        updateTimer();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('focus', handleVisibilityChange);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('focus', handleVisibilityChange);
-    };
-  }, [restTimerTargetMs, restTimerPaused, restTimerSound, restTimerSeconds]);
-
-  const startRestTimer = (seconds: number) => {
-    requestNotificationPermission().catch(() => {});
-    const targetMs = Date.now() + seconds * 1000;
-    setRestTimerInitial(seconds);
-    setRestTimerSeconds(seconds);
-    setRestTimerTargetMs(targetMs);
-    setRestTimerPaused(false);
-    prevSecRef.current = seconds;
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('mooauan_rest_target_ms', String(targetMs));
-      localStorage.setItem('mooauan_rest_initial', String(seconds));
-    }
-  };
-
-  const handleAddSeconds = (delta: number) => {
-    setRestTimerSeconds((prev) => {
-      const current = prev ?? restTimerInitial;
-      const next = Math.max(0, current + delta);
-      if (next > 0) {
-        const targetMs = Date.now() + next * 1000;
-        setRestTimerTargetMs(targetMs);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('mooauan_rest_target_ms', String(targetMs));
-        }
-      } else {
-        setRestTimerTargetMs(null);
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('mooauan_rest_target_ms');
-        }
-      }
-      return next;
-    });
-  };
-
-  const handleResetTimer = () => {
-    startRestTimer(restTimerInitial);
-  };
-
-  const handleClearRestTimer = () => {
-    setRestTimerSeconds(null);
-    setRestTimerTargetMs(null);
-    setShowRestTimer(false);
-    prevSecRef.current = null;
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('mooauan_rest_target_ms');
-      document.title = 'MooAuan - หมูอ้วน ฟิตเนส & ไดอารี่';
-    }
   };
 
   // Launch a workout from routine template
@@ -686,11 +542,14 @@ export const WorkoutView: React.FC = () => {
                   isPaused={restTimerPaused}
                   soundEnabled={restTimerSound}
                   onStart={startRestTimer}
-                  onPauseToggle={() => setRestTimerPaused((p) => !p)}
-                  onAddSeconds={handleAddSeconds}
-                  onReset={handleResetTimer}
-                  onClose={handleClearRestTimer}
-                  onSoundToggle={() => setRestTimerSound((s) => !s)}
+                  onPauseToggle={toggleRestTimerPause}
+                  onAddSeconds={addRestTimerSeconds}
+                  onReset={resetRestTimer}
+                  onClose={() => {
+                    clearRestTimer();
+                    setShowRestTimer(false);
+                  }}
+                  onSoundToggle={toggleRestTimerSound}
                 />
               </div>
             )}
@@ -1448,66 +1307,6 @@ export const WorkoutView: React.FC = () => {
             <Plus size={18} />
             เพิ่มท่าออกกำลังกายในเซสชันนี้
           </button>
-
-          {/* Floating Sticky Rest Timer Widget (Prominent Cancel/Skip Button) */}
-          {restTimerSeconds !== null && !showRestTimer && (
-            <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-40 bg-white/98 border-2 border-rose-400 rounded-3xl p-4 shadow-2xl shadow-rose-200/60 backdrop-blur-xl animate-fadeIn">
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div
-                  onClick={() => setShowRestTimer(true)}
-                  className="flex items-center gap-3 cursor-pointer"
-                >
-                  <Timer
-                    size={26}
-                    className={`text-rose-500 ${
-                      !restTimerPaused && restTimerSeconds > 0 ? 'animate-spin' : ''
-                    }`}
-                  />
-                  <div>
-                    <span className="text-[11px] text-pink-700 font-black block uppercase tracking-wider">
-                      เวลาพักระหว่างเซ็ต 🐷
-                    </span>
-                    <span
-                      className={`text-2xl sm:text-3xl font-black font-mono leading-none ${
-                        restTimerSeconds === 0 ? 'text-rose-600 animate-bounce' : 'text-slate-800'
-                      }`}
-                    >
-                      {restTimerSeconds === 0 ? 'ลุยต่อเลย!' : formatSeconds(restTimerSeconds)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleAddSeconds(30)}
-                    className="px-3 py-2 bg-pink-50 hover:bg-pink-100 active:scale-90 text-xs font-black text-pink-900 border border-pink-200 rounded-xl min-h-[38px] flex items-center justify-center cursor-pointer"
-                    title="เพิ่ม 30 วินาที"
-                  >
-                    +30s
-                  </button>
-                  <button
-                    onClick={() => setRestTimerPaused((p) => !p)}
-                    className="p-2.5 bg-pink-50 hover:bg-pink-100 active:scale-90 text-pink-900 border border-pink-200 rounded-xl min-h-[38px] min-w-[38px] flex items-center justify-center cursor-pointer"
-                    title={restTimerPaused ? 'ทำงานต่อ' : 'พักชั่วคราว'}
-                  >
-                    {restTimerPaused ? (
-                      <Play size={16} className="fill-current text-rose-500" />
-                    ) : (
-                      <Pause size={16} className="fill-current text-pink-800" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Large Skip Rest Button as requested by user */}
-              <button
-                onClick={handleClearRestTimer}
-                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-pink-200 active:scale-[0.98] transition cursor-pointer min-h-[48px]"
-              >
-                <span>ข้ามการพัก / พร้อมลุยต่อเลย ⚡</span>
-              </button>
-            </div>
-          )}
         </div>
       ) : (
         /* If No Active Workout: Show Quick Start & Routine Programs */

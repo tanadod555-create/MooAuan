@@ -18,6 +18,12 @@ import { PREDEFINED_FOODS, PredefinedFood } from '../data/foodDatabase';
 import { GoogleSheetsService } from '../services/googleSheets';
 import { getDefaultGeminiApiKey } from '../services/gemini';
 import {
+  playGymAlertSound,
+  triggerMobileVibrate,
+  sendBackgroundNotification,
+  requestNotificationPermission,
+} from '../utils/backgroundTimer';
+import {
   initFirebase,
   getFirestoreInstance,
   subscribeToFoodLogs,
@@ -129,6 +135,19 @@ interface AppContextType {
   syncFoodDatabaseToSheets: (foods?: PredefinedFood[]) => Promise<{ success: boolean; message: string }>;
   unifiedSpreadsheetUrl: string;
   openUnifiedSpreadsheet: () => void;
+
+  // Global Rest Timer (Runs persistently across all views/tabs)
+  restTimerSeconds: number | null;
+  restTimerInitial: number;
+  restTimerTargetMs: number | null;
+  restTimerPaused: boolean;
+  restTimerSound: boolean;
+  startRestTimer: (seconds: number) => void;
+  addRestTimerSeconds: (delta: number) => void;
+  resetRestTimer: () => void;
+  clearRestTimer: () => void;
+  toggleRestTimerPause: () => void;
+  toggleRestTimerSound: () => void;
 
   // Real-time Cloud (Firebase Firestore)
   isFirebaseConnected: boolean;
@@ -1182,6 +1201,174 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [activeWorkout?.session_id, activeWorkout?.is_timer_running, activeWorkout?.timer_started_at_ms]);
 
+  // --- GLOBAL REST TIMER (PERSISTENT ACROSS ALL VIEWS/TABS) ---
+  const [restTimerTargetMs, setRestTimerTargetMs] = useState<number | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('mooauan_rest_target_ms');
+      if (saved) {
+        const ms = Number(saved);
+        if (ms > Date.now()) return ms;
+      }
+    }
+    return null;
+  });
+
+  const [restTimerSeconds, setRestTimerSeconds] = useState<number | null>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTarget = localStorage.getItem('mooauan_rest_target_ms');
+      if (savedTarget) {
+        const diff = Math.ceil((Number(savedTarget) - Date.now()) / 1000);
+        if (diff > 0) return diff;
+      }
+    }
+    return null;
+  });
+
+  const [restTimerInitial, setRestTimerInitial] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('mooauan_rest_initial');
+      if (saved) return Number(saved);
+    }
+    return 90;
+  });
+
+  const [restTimerPaused, setRestTimerPaused] = useState(false);
+  const [restTimerSound, setRestTimerSound] = useState(true);
+  const prevRestSecRef = useRef<number | null>(null);
+
+  const startRestTimer = (seconds: number) => {
+    requestNotificationPermission().catch(() => {});
+    const targetMs = Date.now() + seconds * 1000;
+    setRestTimerInitial(seconds);
+    setRestTimerSeconds(seconds);
+    setRestTimerTargetMs(targetMs);
+    setRestTimerPaused(false);
+    prevRestSecRef.current = seconds;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mooauan_rest_target_ms', String(targetMs));
+      localStorage.setItem('mooauan_rest_initial', String(seconds));
+    }
+  };
+
+  const addRestTimerSeconds = (delta: number) => {
+    setRestTimerSeconds((prev) => {
+      const current = prev ?? restTimerInitial;
+      const next = Math.max(0, current + delta);
+      if (next > 0) {
+        const targetMs = Date.now() + next * 1000;
+        setRestTimerTargetMs(targetMs);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('mooauan_rest_target_ms', String(targetMs));
+        }
+      } else {
+        setRestTimerTargetMs(null);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('mooauan_rest_target_ms');
+        }
+      }
+      return next;
+    });
+  };
+
+  const resetRestTimer = () => {
+    startRestTimer(restTimerInitial);
+  };
+
+  const clearRestTimer = () => {
+    setRestTimerSeconds(null);
+    setRestTimerTargetMs(null);
+    prevRestSecRef.current = null;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('mooauan_rest_target_ms');
+      document.title = 'MooAuan - หมูอ้วน ฟิตเนส & ไดอารี่';
+    }
+  };
+
+  const toggleRestTimerPause = () => {
+    setRestTimerPaused((p) => !p);
+  };
+
+  const toggleRestTimerSound = () => {
+    setRestTimerSound((s) => !s);
+  };
+
+  // Rest Timer Interval with Background Sync & Notifications in AppContext
+  useEffect(() => {
+    if (restTimerSeconds === null) {
+      if (typeof window !== 'undefined') {
+        document.title = 'MooAuan - หมูอ้วน ฟิตเนส & ไดอารี่';
+      }
+      return;
+    }
+
+    const formatSec = (sec: number) => {
+      const mins = Math.floor(sec / 60);
+      const remaining = sec % 60;
+      return `${mins.toString().padStart(2, '0')}:${remaining.toString().padStart(2, '0')}`;
+    };
+
+    const updateTimer = () => {
+      if (restTimerPaused) return;
+
+      let remaining = 0;
+      if (restTimerTargetMs) {
+        remaining = Math.max(0, Math.ceil((restTimerTargetMs - Date.now()) / 1000));
+      } else {
+        remaining = Math.max(0, (restTimerSeconds ?? 0) - 1);
+      }
+
+      setRestTimerSeconds(remaining);
+
+      // Document title countdown
+      if (typeof window !== 'undefined') {
+        if (remaining > 0) {
+          document.title = `(${formatSec(remaining)}) ⏳ พักเซต | MooAuan 🐷`;
+        } else {
+          document.title = `⏰ ครบเวลาพักแล้ว! ลุยต่อ | MooAuan 🐷`;
+        }
+      }
+
+      // Warning audio on 3, 2, 1 seconds
+      if (restTimerSound && remaining <= 3 && remaining >= 1 && prevRestSecRef.current !== remaining) {
+        playGymAlertSound('warning');
+      }
+
+      // Finish alerts
+      if (remaining === 0 && (prevRestSecRef.current === null || prevRestSecRef.current > 0)) {
+        if (restTimerSound) {
+          playGymAlertSound('finish');
+        }
+        triggerMobileVibrate([200, 100, 200, 100, 400]);
+        sendBackgroundNotification(
+          '⏰ พักเซ็ตครบเวลาแล้ว! 🐷',
+          'ถึงเวลาเล่นเซ็ตต่อไปแล้ว ลุยเลย!'
+        );
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('mooauan_rest_target_ms');
+        }
+      }
+
+      prevRestSecRef.current = remaining;
+    };
+
+    const interval = setInterval(updateTimer, 1000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        updateTimer();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [restTimerTargetMs, restTimerPaused, restTimerSound, restTimerSeconds]);
+
   const updateProfile = (updates: Partial<UserProfile>, isPartner?: boolean) => {
     const isTargetPartner = isPartner || activeProfileKey === 'partner';
     let updatedProfile: UserProfile;
@@ -1825,6 +2012,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         workoutHistory,
         allWorkoutHistory,
         deleteWorkoutSession,
+        // Global Rest Timer
+        restTimerSeconds,
+        restTimerInitial,
+        restTimerTargetMs,
+        restTimerPaused,
+        restTimerSound,
+        startRestTimer,
+        addRestTimerSeconds,
+        resetRestTimer,
+        clearRestTimer,
+        toggleRestTimerPause,
+        toggleRestTimerSound,
         foodLogs,
         allFoodLogs,
         addFoodLog,
