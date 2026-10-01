@@ -459,14 +459,28 @@ export const ProfileView: React.FC = () => {
           </div>
         </div>
 
-        {/* Toggle Account Pill */}
-        <button
-          onClick={() => setActiveProfileKey(activeProfileKey === 'primary' ? 'partner' : 'primary')}
-          className="px-4 py-2 rounded-full bg-zinc-100 hover:bg-zinc-200/80 border border-black/[0.06] text-xs font-semibold text-zinc-700 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs self-stretch sm:self-auto justify-center"
-        >
-          <Users size={14} className="text-zinc-500" />
-          <span>สลับเป็น {isMaxnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}</span>
-        </button>
+        {/* Actions: Cloud Sync + Toggle Account */}
+        <div className="flex items-center gap-2 self-stretch sm:self-auto flex-wrap sm:flex-nowrap">
+          <button
+            type="button"
+            onClick={handleMigrateToCloud}
+            disabled={isMigratingFb}
+            className="flex-1 sm:flex-initial px-3.5 py-2 rounded-full bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-xs justify-center disabled:opacity-50"
+            title="อัปโหลดข้อมูลในเครื่องนี้ขึ้น Cloud"
+          >
+            <Upload size={13} className={isMigratingFb ? 'animate-bounce' : ''} />
+            <span>{isMigratingFb ? 'กำลังซิงค์...' : 'ซิงค์ Cloud ☁️'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveProfileKey(activeProfileKey === 'primary' ? 'partner' : 'primary')}
+            className="flex-1 sm:flex-initial px-4 py-2 rounded-full bg-zinc-100 hover:bg-zinc-200/80 border border-black/[0.06] text-xs font-semibold text-zinc-700 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs justify-center"
+          >
+            <Users size={14} className="text-zinc-500" />
+            <span>สลับเป็น {isMaxnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Sub-tab navigation: Kawaii Game Segmented Pill */}
@@ -1053,7 +1067,8 @@ export const ProfileView: React.FC = () => {
 
       {/* TAB 2: PROFILE DETAILS */}
       {activeTab === 'profile' && (
-        <form onSubmit={handleSaveProfile} className="bg-white/95 p-6 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-5">
+        <div className="space-y-6">
+          <form onSubmit={handleSaveProfile} className="bg-white/95 p-6 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-pink-100">
             <div>
               <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
@@ -1337,6 +1352,59 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
         </form>
+
+        {/* Cloud Database & Sync Management Card */}
+        <div className="bg-white/95 p-6 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-pink-100">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-lg ${
+                isFirebaseConnected ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
+              }`}>
+                <Cloud size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  ☁️ Cloud Database (Real-time Sync)
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                    isFirebaseConnected 
+                      ? 'bg-emerald-100 text-emerald-700 border border-emerald-200' 
+                      : 'bg-amber-100 text-amber-700 border border-amber-200'
+                  }`}>
+                    {isFirebaseConnected ? '● เชื่อมต่อแล้ว (Online)' : '○ กำลังเชื่อมต่อ...'}
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  ซิงค์ข้อมูลอาหาร, การฝึกซ้อม และสถิติระหว่างทุกเครื่องแบบ Real-time
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              type="button"
+              disabled={isMigratingFb}
+              onClick={handleMigrateToCloud}
+              className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-sky-500 via-blue-500 to-indigo-500 hover:from-sky-600 hover:to-indigo-600 text-white font-bold text-sm shadow-md shadow-sky-200 active:scale-95 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              {isMigratingFb ? (
+                <>
+                  <RefreshCw size={16} className="animate-spin" />
+                  <span>{migrationStatusMsg || 'กำลังอัปโหลดข้อมูลขึ้น Cloud...'}</span>
+                </>
+              ) : (
+                <>
+                  <Upload size={16} />
+                  <span>🚀 นำข้อมูลในเครื่องนี้อัปโหลดขึ้น Cloud (Migrate)</span>
+                </>
+              )}
+            </button>
+            <p className="text-[11px] text-center text-slate-400">
+              กดปุ่มนี้เพื่อนำประวัติอาหารและท่าออกกำลังกายในมือถือนี้ อัปโหลดขึ้น Cloud ให้คอมพิวเตอร์เห็นทันที
+            </p>
+          </div>
+        </div>
+        </div>
       )}
 
 
