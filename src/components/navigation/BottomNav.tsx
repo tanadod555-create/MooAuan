@@ -1,8 +1,8 @@
 import React from 'react';
-import { Dumbbell, Activity, BookOpen, UtensilsCrossed, BarChart3, Trophy } from 'lucide-react';
+import { Dumbbell, Activity, BookOpen, UtensilsCrossed, BarChart3, Trophy, Gamepad2 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
-export type TabKey = 'workout' | 'mascot' | 'food' | 'exercises' | 'anatomy' | 'stats';
+export type TabKey = 'workout' | 'mascot' | 'game' | 'food' | 'exercises' | 'anatomy' | 'stats';
 
 interface BottomNavProps {
   activeTab: TabKey;
@@ -16,6 +16,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
   const navItems = [
     { key: 'workout' as TabKey, label: 'ฝึกซ้อม', icon: Dumbbell, hasBadge: !!activeWorkout, emoji: '🏋️' },
     { key: 'mascot' as TabKey, label: 'หมูอ้วน', icon: Trophy, hasBadge: false, emoji: '🐷' },
+    { key: 'game' as TabKey, label: 'มินิเกม', icon: Gamepad2, hasBadge: false, emoji: '🎮' },
     { key: 'food' as TabKey, label: 'อาหาร', icon: UtensilsCrossed, emoji: '🍱' },
     { key: 'exercises' as TabKey, label: 'คลังท่า', icon: BookOpen, emoji: '📖' },
     { key: 'anatomy' as TabKey, label: 'กายวิภาค', icon: Activity, emoji: '✨' },
@@ -23,7 +24,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
   ];
 
   return (
-    <div className="fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 w-[calc(100%-1.25rem)] max-w-md z-40 pb-safe pointer-events-none">
+    <div className="fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] max-w-lg z-40 pb-safe pointer-events-none">
       <nav
         className={`rounded-3xl p-1.5 shadow-xl border-2 pointer-events-auto backdrop-blur-2xl transition-all duration-300 ${
           isMaxnum
@@ -31,7 +32,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
             : 'bg-white/95 border-pink-300 shadow-pink-200/50'
         }`}
       >
-        <div className="grid grid-cols-6 items-center gap-1">
+        <div className="grid grid-cols-7 items-center gap-0.5 sm:gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.key;

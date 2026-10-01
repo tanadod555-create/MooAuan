@@ -8,10 +8,12 @@ import { ExercisesView } from './views/ExercisesView';
 import { FoodView } from './views/FoodView';
 import { ProfileView } from './views/ProfileView';
 import { MascotBattleView } from './views/MascotBattleView';
+import { PiggyRunView } from './views/PiggyRunView';
 import { ProfileGateModal } from './components/auth/ProfileGateModal';
 import { AiTrainerModal } from './components/ai/AiTrainerModal';
 import { PigMascot } from './components/ui/PigMascot';
-import { Timer, Play, Pause, Plus, X, ChevronRight, Volume2, VolumeX } from 'lucide-react';
+import { PiggyRunModal } from './components/game/PiggyRunModal';
+import { Timer, Play, Pause, Plus, X, ChevronRight, Volume2, VolumeX, Gamepad2 } from 'lucide-react';
 
 export const MainContent: React.FC = () => {
   const {
@@ -27,6 +29,7 @@ export const MainContent: React.FC = () => {
   const isMaxnum = activeProfileKey === 'primary';
 
   const [activeTab, setActiveTab] = useState<TabKey>('workout');
+  const [isGameOpen, setIsGameOpen] = useState(false);
   const [showAiTrainer, setShowAiTrainer] = useState(false);
   const [showProfileGate, setShowProfileGate] = useState<boolean>(() => {
     // Show on entering website unless previously confirmed in this session
@@ -74,6 +77,7 @@ export const MainContent: React.FC = () => {
       <main className="flex-1 max-w-4xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-28">
         {activeTab === 'workout' && <WorkoutView />}
         {activeTab === 'mascot' && <MascotBattleView />}
+        {activeTab === 'game' && <PiggyRunView />}
         {activeTab === 'anatomy' && <AnatomyView />}
         {activeTab === 'exercises' && <ExercisesView />}
         {activeTab === 'food' && <FoodView />}
@@ -135,6 +139,17 @@ export const MainContent: React.FC = () => {
 
             {/* Right: Quick Timer Actions */}
             <div className="flex items-center gap-1.5 shrink-0">
+              {/* Play Minigame Button */}
+              <button
+                type="button"
+                onClick={() => setIsGameOpen(true)}
+                className="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-rose-400 hover:opacity-90 active:scale-95 text-slate-950 font-black text-xs transition cursor-pointer border border-yellow-300 shadow-xs flex items-center gap-1"
+                title="เล่นมินิเกมหมูอ้วนรันระหว่างพัก"
+              >
+                <Gamepad2 size={14} className="animate-bounce" />
+                <span className="hidden sm:inline">เล่นเกม 🎮</span>
+              </button>
+
               {/* +30s */}
               <button
                 type="button"
@@ -218,6 +233,14 @@ export const MainContent: React.FC = () => {
           </div>
         </button>
       </div>
+
+      {/* Global Piggy Run Modal (when opened from floating timer) */}
+      <PiggyRunModal
+        isOpen={isGameOpen}
+        onClose={() => setIsGameOpen(false)}
+        restSeconds={restTimerSeconds}
+        initialRestSeconds={restTimerSeconds ?? undefined}
+      />
 
       {/* Floating Bottom Nav */}
       <BottomNav activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab)} />

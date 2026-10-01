@@ -24,9 +24,18 @@ import {
   AlertTriangle,
   Crown,
   Heart,
+  Gamepad2,
+  Coins,
+  ShoppingBag,
 } from 'lucide-react';
 import { MagicCard } from '../components/ui/MagicCard';
 import { MascotSceneStage } from '../components/mascot/MascotSceneStage';
+import { PiggyRunModal } from '../components/game/PiggyRunModal';
+import {
+  loadPiggySaveData,
+  subscribeToCoinUpdates,
+  PiggyRunSaveData,
+} from '../services/piggyGameService';
 
 export const MascotBattleView: React.FC = () => {
   const {
@@ -75,6 +84,18 @@ export const MascotBattleView: React.FC = () => {
     'สู้ไม่ถอยอยู่แล้ว! วันนี้จะปั้นหุ่นให้แซงหน้าเลยคอยดู 🌸🐽'
   );
   const [isBanterLoading, setIsBanterLoading] = useState(false);
+
+  // Piggy Run Minigame Modal States
+  const [isGameModalOpen, setIsGameModalOpen] = useState(false);
+  const [gameInitialTab, setGameInitialTab] = useState<'game' | 'shop'>('game');
+  const [gameSaveData, setGameSaveData] = useState<PiggyRunSaveData>(() => loadPiggySaveData());
+
+  React.useEffect(() => {
+    const unsubscribe = subscribeToCoinUpdates(() => {
+      setGameSaveData(loadPiggySaveData());
+    });
+    return unsubscribe;
+  }, []);
 
   // Winner calculation
   const leader =
@@ -217,12 +238,72 @@ export const MascotBattleView: React.FC = () => {
             />
             <span>{isBanterLoading ? 'กำลังคิดมุก...' : 'ให้ AI บลัฟกัน 💬'}</span>
           </button>
-
-
         </div>
       </div>
 
+      {/* 3. Piggy Run Minigame Hero Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 p-1 shadow-lg shadow-pink-200">
+        <div className="bg-slate-950/95 rounded-[22px] p-4 sm:p-5 text-white flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5 w-full md:w-auto">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-amber-400 p-0.5 shadow-md shrink-0 flex items-center justify-center">
+              <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center text-2xl">
+                🏃💨
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-black text-base sm:text-lg text-white">
+                  MooAuan Piggy Run! 🐷✨
+                </h3>
+                <span className="text-[10px] bg-pink-500/30 text-pink-300 font-bold px-2 py-0.5 rounded-full border border-pink-500/40">
+                  มินิเกมวิ่งเก็บเหรียญ
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5">
+                วิ่งหลบดัมเบลล์ สไลด์มุดบาร์เบลล์ และสะสมเหรียญจากการยกเวทมาอัปเกรดสกิล!
+              </p>
 
+              {/* Mini Stats row */}
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <span className="inline-flex items-center gap-1 bg-yellow-400/20 text-yellow-300 px-2.5 py-0.5 rounded-lg text-xs font-bold border border-yellow-400/30">
+                  <Coins size={13} className="text-yellow-400" />
+                  <span>{gameSaveData.totalCoins.toLocaleString()} เหรียญ</span>
+                </span>
+                <span className="inline-flex items-center gap-1 bg-rose-500/20 text-rose-300 px-2.5 py-0.5 rounded-lg text-xs font-bold border border-rose-500/30">
+                  <Trophy size={13} className="text-amber-400" />
+                  <span>High Score: {gameSaveData.highScore.toLocaleString()}</span>
+                </span>
+                <span className="text-[11px] text-slate-400">
+                  ตัวละคร: {gameSaveData.selectedCharacter === 'manow' ? 'หมูมะนาว 🌸' : 'หมูแม็กนั่ม 🏋️‍♂️'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 w-full md:w-auto shrink-0 justify-end">
+            <button
+              onClick={() => {
+                setGameInitialTab('shop');
+                setIsGameModalOpen(true);
+              }}
+              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-yellow-300 border border-yellow-400/30 font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-sm"
+            >
+              <ShoppingBag size={15} />
+              <span>ร้านค้าสกิล</span>
+            </button>
+            <button
+              onClick={() => {
+                setGameInitialTab('game');
+                setIsGameModalOpen(true);
+              }}
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-pink-500/30 transition active:scale-95 cursor-pointer"
+            >
+              <Gamepad2 size={16} />
+              <span>เริ่มวิ่งเลย! 🕹️</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* 4. Side-by-Side Character Battle Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -464,6 +545,17 @@ export const MascotBattleView: React.FC = () => {
           })}
         </div>
       </div>
+
+      {/* Piggy Run Modal */}
+      <PiggyRunModal
+        isOpen={isGameModalOpen}
+        onClose={() => {
+          setIsGameModalOpen(false);
+          setGameSaveData(loadPiggySaveData());
+        }}
+        initialTab={gameInitialTab}
+        selectedCharacter={gameSaveData.selectedCharacter}
+      />
     </div>
   );
 };

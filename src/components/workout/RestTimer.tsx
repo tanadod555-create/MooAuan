@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Timer,
   Play,
@@ -11,8 +11,10 @@ import {
   Minus,
   Sparkles,
   Bell,
+  Gamepad2,
 } from 'lucide-react';
 import { PigMascot } from '../ui/PigMascot';
+import { PiggyRunModal } from '../game/PiggyRunModal';
 import {
   playGymAlertSound,
   triggerMobileVibrate,
@@ -45,6 +47,7 @@ export const RestTimer: React.FC<RestTimerProps> = ({
   onClose,
   onSoundToggle,
 }) => {
+  const [isGameModalOpen, setIsGameModalOpen] = useState(false);
   const lastSecondRef = useRef<number | null>(null);
 
   // Trigger beep on countdown 3, 2, 1 and finished 0
@@ -192,6 +195,15 @@ export const RestTimer: React.FC<RestTimerProps> = ({
             />
           </div>
 
+          {/* Play Minigame Button During Rest */}
+          <button
+            onClick={() => setIsGameModalOpen(true)}
+            className="w-full min-h-[46px] py-2.5 px-4 rounded-2xl bg-gradient-to-r from-amber-400 via-pink-500 to-rose-500 hover:from-amber-500 hover:via-pink-600 hover:to-rose-600 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md shadow-pink-200 active:scale-[0.98] transition cursor-pointer"
+          >
+            <Gamepad2 size={18} className="animate-bounce" />
+            <span>🎮 เล่นมินิเกมหมูอ้วนรัน ระหว่างพัก (Piggy Run!) 🏃💨</span>
+          </button>
+
           {/* Prominent Skip Rest Button requested by user */}
           <button
             onClick={onClose}
@@ -261,6 +273,14 @@ export const RestTimer: React.FC<RestTimerProps> = ({
           })}
         </div>
       </div>
+
+      {/* Piggy Run Minigame Modal */}
+      <PiggyRunModal
+        isOpen={isGameModalOpen}
+        onClose={() => setIsGameModalOpen(false)}
+        restSeconds={seconds}
+        initialRestSeconds={initialSeconds}
+      />
     </div>
   );
 };

@@ -47,6 +47,7 @@ import {
 } from '../services/firebase';
 
 import { Firestore, doc, getDoc } from 'firebase/firestore';
+import { awardCoins } from '../services/piggyGameService';
 
 
 export interface ActiveWorkoutExercise {
@@ -1669,6 +1670,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAllWorkoutHistory(prev => [finishedSession, ...prev]);
     setActiveWorkout(null);
 
+    // Award Big Coins for completing workout session & cardio!
+    const doneSetsCount = allSets.filter(s => s.done).length;
+    const workoutBonusCoins = 150 + doneSetsCount * 5;
+    awardCoins('workout_finish', workoutBonusCoins);
+    if (activeWorkout.cardio && activeWorkout.cardio.length > 0) {
+      awardCoins('cardio_finish', 60);
+    }
+
     // Cloud Firestore Sync
     if (firestoreDbRef.current) {
       cloudSaveWorkout(firestoreDbRef.current, finishedSession).catch((err) => {
@@ -1790,6 +1799,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const updateSet = (exercise_id: string, setIndex: number, updates: Partial<WorkoutSet>) => {
     setActiveWorkout(prev => {
       if (!prev) return null;
+      const targetEx = prev.exercises.find(e => e.exercise_id === exercise_id);
+      if (targetEx && targetEx.sets[setIndex]) {
+        const wasDone = targetEx.sets[setIndex].done;
+        if (updates.done === true && !wasDone) {
+          // Newly marked set as completed! Award 10 coins!
+          awardCoins('set_done', 10);
+        }
+      }
       return {
         ...prev,
         exercises: prev.exercises.map(ex => {
