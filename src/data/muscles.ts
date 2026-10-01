@@ -3,16 +3,16 @@ import { MuscleInfo, MuscleKey } from '../types';
 export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
   chest: {
     key: 'chest',
-    nameTh: 'อก (หน้าอก)',
+    nameTh: 'Chest (Pectorals)',
     nameEn: 'Pectoral Muscles',
     latinName: 'Pectoralis major & minor',
     view: 'front',
     description: 'กล้ามเนื้อหน้าอก เป็นกล้ามเนื้อพัดขนาดใหญ่ ทำหน้าที่หุบแขนเข้าหากึ่งกลางลำตัวและดันไปข้างหน้า',
-    submuscles: ['อกบน (Clavicular head)', 'อกกลาง (Sternal head)', 'อกล่าง (Abdominal head)', 'อกใน & Pec minor'],
+    submuscles: ['Upper Chest (Clavicular)', 'Mid Chest (Sternal)', 'Lower Chest (Costal)', 'Inner Chest & Pec Minor'],
     subdivisions: [
       {
         id: 'chest_upper',
-        nameTh: 'อกบน',
+        nameTh: 'Upper Chest (Clavicular Head)',
         nameEn: 'Upper Chest (Clavicular Head)',
         latinName: 'Pars clavicularis pectoralis majoris',
         originInsertion: 'เกาะจากกระดูกไหปลาร้า (Clavicle) ไปยังร่องกระดูกต้นแขน (Humerus)',
@@ -33,7 +33,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'chest_mid',
-        nameTh: 'อกกลาง',
+        nameTh: 'Mid Chest (Sternal Head)',
         nameEn: 'Mid Chest (Sternal Head)',
         latinName: 'Pars sternocostalis pectoralis majoris',
         originInsertion: 'เกาะจากกระดูกอก (Sternum) และกระดูกซี่โครงซี่ที่ 2-6 ไปยังกระดูกต้นแขน',
@@ -54,7 +54,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'chest_lower',
-        nameTh: 'อกล่าง',
+        nameTh: 'Lower Chest (Costal Head)',
         nameEn: 'Lower Chest (Abdominal / Costal Head)',
         latinName: 'Pars abdominalis pectoralis majoris',
         originInsertion: 'เกาะจากกระดูกซี่โครงล่างและปลอกกล้ามเนื้อหน้าท้อง (Rectus sheath) ไปยังกระดูกต้นแขน',
@@ -75,7 +75,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'chest_inner_minor',
-        nameTh: 'อกใน & กล้ามเนื้ออกลึก',
+        nameTh: 'Inner Chest & Pec Minor',
         nameEn: 'Inner Fibers & Pectoralis Minor',
         latinName: 'Pectoralis minor & Sternal margin',
         originInsertion: 'Pec minor อยู่ชั้นลึก เกาะจากกระดูกซี่โครง 3-5 ไปยัง Coracoid process ของสะบัก',
@@ -99,16 +99,16 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
 
   shoulders: {
     key: 'shoulders',
-    nameTh: 'ไหล่ (เดลทอยด์)',
+    nameTh: 'Deltoids (Shoulders)',
     nameEn: 'Deltoid Muscles',
     latinName: 'Deltoideus',
     view: 'both',
     description: 'กล้ามเนื้อหัวไหล่ทรงหมวกเกราะ 3 มิติ ทำหน้าที่ยกและกางแขนได้รอบทิศทาง 360 องศา',
-    submuscles: ['ไหล่หน้า (Anterior)', 'ไหล่ข้าง (Lateral)', 'ไหล่หลัง (Posterior)', 'Rotator Cuff (ข้อต่อหมุน)'],
+    submuscles: ['Anterior Deltoid (Front)', 'Lateral Deltoid (Side)', 'Posterior Deltoid (Rear)', 'Rotator Cuff'],
     subdivisions: [
       {
         id: 'deltoid_anterior',
-        nameTh: 'ไหล่หน้า',
+        nameTh: 'Anterior Deltoid (Front Delt)',
         nameEn: 'Anterior Deltoid (Front Delt)',
         latinName: 'Pars clavicularis deltoidei',
         originInsertion: 'เกาะจากขอบหน้าของกระดูกไหปลาร้า 1/3 ด้านนอก ไปยัง Deltoid tuberosity ของต้นแขน',
@@ -129,7 +129,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'deltoid_lateral',
-        nameTh: 'ไหล่ข้าง',
+        nameTh: 'Lateral Deltoid (Side Delt)',
         nameEn: 'Lateral Deltoid (Side Delt)',
         latinName: 'Pars acromialis deltoidei',
         originInsertion: 'เกาะจากขอบนอกของ Acromion (ยอดกระดูกสะบัก) ไปยัง Deltoid tuberosity',
@@ -149,7 +149,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'deltoid_posterior',
-        nameTh: 'ไหล่หลัง',
+        nameTh: 'Posterior Deltoid (Rear Delt)',
         nameEn: 'Posterior Deltoid (Rear Delt)',
         latinName: 'Pars spinalis deltoidei',
         originInsertion: 'เกาะจากสันกระดูกสะบัก (Spine of scapula) ไปยัง Deltoid tuberosity',
@@ -170,7 +170,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'rotator_cuff',
-        nameTh: 'กลุ่มกล้ามเนื้อหมุนข้อไหล่',
+        nameTh: 'Rotator Cuff (SITS)',
         nameEn: 'Rotator Cuff (SITS)',
         latinName: 'Supraspinatus, Infraspinatus, Teres minor, Subscapularis',
         originInsertion: 'เกาะรอบกระดูกสะบักเชื่อมเข้าครอบหัวกระดูกต้นแขน (Glenohumeral joint)',
@@ -194,16 +194,16 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
 
   biceps: {
     key: 'biceps',
-    nameTh: 'ต้นแขนด้านหน้า (ไบเซปส์)',
+    nameTh: 'Biceps (Arm Flexors)',
     nameEn: 'Biceps & Arm Flexors',
     latinName: 'Biceps brachii & Brachialis',
     view: 'front',
     description: 'กล้ามเนื้องอข้อศอกและหมุนหงายฝ่ามือ สร้างมิติแขนด้านหน้าให้ดูเต็มและมีลูกกล้ามโค้งสูง (Peak)',
-    submuscles: ['Long Head (มัดนอก/Peak)', 'Short Head (มัดใน/หนา)', 'Brachialis (มัดลึกดันแขนกว้าง)', 'Brachioradialis (ข้อพับแขน)'],
+    submuscles: ['Long Head (Outer/Peak)', 'Short Head (Inner/Thickness)', 'Brachialis', 'Brachioradialis'],
     subdivisions: [
       {
         id: 'biceps_long_head',
-        nameTh: 'ไบเซปส์มัดนอก (หัวยาว - ทำ Peak แขน)',
+        nameTh: 'Biceps Long Head (Peak)',
         nameEn: 'Biceps Brachii (Long Head)',
         latinName: 'Caput longum musculi bicipitis brachii',
         originInsertion: 'เกาะจาก Supraglenoid tubercle เหนือเบ้าข้อไหล่ ข้ามข้อต่อหัวไหล่ลงมายัง Radial tuberosity',
@@ -224,7 +224,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'biceps_short_head',
-        nameTh: 'ไบเซปส์มัดใน (หัวสั้น - สร้างความหนาด้านใน)',
+        nameTh: 'Biceps Short Head (Inner)',
         nameEn: 'Biceps Brachii (Short Head)',
         latinName: 'Caput breve musculi bicipitis brachii',
         originInsertion: 'เกาะจาก Coracoid process ของกระดูกสะบัก ไปยังกระดูกรัศมี (Radius)',
@@ -244,7 +244,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'brachialis',
-        nameTh: 'บราเคียลิส (กล้ามเนื้อดันแขนหนา)',
+        nameTh: 'Brachialis',
         nameEn: 'Brachialis Muscle',
         latinName: 'Musculus brachialis',
         originInsertion: 'เกาะจากครึ่งล่างด้านหน้าของกระดูกต้นแขน ไปยัง Tuberosity ของกระดูกอัลนา (Ulna)',
@@ -266,16 +266,16 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
 
   triceps: {
     key: 'triceps',
-    nameTh: 'ต้นแขนด้านหลัง (ไตรเซปส์)',
+    nameTh: 'Triceps',
     nameEn: 'Triceps Muscles',
     latinName: 'Triceps brachii',
     view: 'back',
     description: 'คิดเป็น 60% ของมวลรวมแขนทั้งหมด มี 3 หัว ทำหน้าที่เหยียดข้อศอกและดึงแขนเข้าหาลำตัว',
-    submuscles: ['Long Head (หัวยาว/มวลใหญ่)', 'Lateral Head (หัวนอก/เกือกม้า)', 'Medial Head (หัวใน/ลึก)'],
+    submuscles: ['Long Head', 'Lateral Head (Horseshoe)', 'Medial Head'],
     subdivisions: [
       {
         id: 'triceps_long_head',
-        nameTh: 'ไตรเซปส์หัวยาว (มัดมวลรวมใหญ่สุด)',
+        nameTh: 'Triceps Long Head',
         nameEn: 'Triceps Long Head',
         latinName: 'Caput longum musculi tricipitis brachii',
         originInsertion: 'เป็นมัดเดียวที่เกาะข้ามข้อไหล่ จาก Infraglenoid tubercle ของสะบัก ไปยัง Olecranon ของศอก',
@@ -295,7 +295,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'triceps_lateral_head',
-        nameTh: 'ไตรเซปส์หัวนอก (รูปเกือกม้า Horseshoe)',
+        nameTh: 'Triceps Lateral Head (Horseshoe)',
         nameEn: 'Triceps Lateral Head',
         latinName: 'Caput laterale musculi tricipitis brachii',
         originInsertion: 'เกาะจากผิวด้านหลังของกระดูกต้นแขนเหนือ Radial groove ไปยัง Olecranon',
@@ -314,7 +314,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'triceps_medial_head',
-        nameTh: 'ไตรเซปส์หัวใน (มัดลึกแกนกลาง)',
+        nameTh: 'Triceps Medial Head',
         nameEn: 'Triceps Medial Head',
         latinName: 'Caput mediale musculi tricipitis brachii',
         originInsertion: 'เกาะจากผิวด้านหลังของกระดูกต้นแขนใต้ Radial groove ไปยัง Olecranon',
@@ -336,16 +336,16 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
 
   forearms: {
     key: 'forearms',
-    nameTh: 'แขนท่อนล่าง (ปลายแขน)',
+    nameTh: 'Forearms & Grip',
     nameEn: 'Forearms & Grip',
     latinName: 'Antebrachial flexors & extensors',
     view: 'both',
     description: 'ควบคุมพลังการจับ กำมือ และการเคลื่อนไหวข้อมือทุกมิติ ทั้งงอ เหยียด และบิด',
-    submuscles: ['กลุ่มงอข้อมือ (Flexors)', 'กลุ่มเหยียดข้อมือ (Extensors)', 'Brachioradialis (กล้ามเนื้อท่อนบน)'],
+    submuscles: ['Wrist Flexors', 'Wrist Extensors', 'Brachioradialis'],
     subdivisions: [
       {
         id: 'forearm_flexors',
-        nameTh: 'กลุ่มงอข้อมือด้านใน (Wrist Flexors)',
+        nameTh: 'Wrist Flexors (Anterior Compartment)',
         nameEn: 'Anterior Forearm Compartment (Flexors)',
         latinName: 'Flexor carpi radialis, ulnaris & Digitorum',
         originInsertion: 'เกาะจาก Medial epicondyle ของข้อศอกลงไปยังกระดูกฝ่ามือและนิ้วมือ',
@@ -365,7 +365,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'forearm_extensors',
-        nameTh: 'กลุ่มเหยียดข้อมือด้านนอก (Wrist Extensors)',
+        nameTh: 'Wrist Extensors (Posterior Compartment)',
         nameEn: 'Posterior Forearm Compartment (Extensors)',
         latinName: 'Extensor carpi radialis & ulnaris',
         originInsertion: 'เกาะจาก Lateral epicondyle ของข้อศอกไปยังหลังมือ',
@@ -388,16 +388,16 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
 
   abs: {
     key: 'abs',
-    nameTh: 'หน้าท้องและแกนกลางลำตัว',
+    nameTh: 'Abdominals & Core',
     nameEn: 'Abdominals & Core',
     latinName: 'Rectus abdominis & Obliques',
     view: 'front',
     description: 'ผนังกล้ามเนื้อพยุงกระดูกสันหลัง ป้องกันแรงกดทับ และสร้างมิติซิกแพคคมชัด',
-    submuscles: ['ซิกแพคบน (Upper Rectus)', 'ซิกแพคล่าง (Lower Rectus)', 'เอวด้านข้าง (Obliques)', 'แกนกลางลึก (Transversus) & ฟันปลา (Serratus)'],
+    submuscles: ['Upper Rectus Abdominis', 'Lower Rectus Abdominis', 'Obliques', 'Transverse Abdominis & Serratus'],
     subdivisions: [
       {
         id: 'abs_upper',
-        nameTh: 'หน้าท้องส่วนบน (Upper Abs)',
+        nameTh: 'Upper Rectus Abdominis',
         nameEn: 'Upper Rectus Abdominis',
         latinName: 'Pars superior recti abdominis',
         originInsertion: 'เกาะจากกระดูก Xiphoid process และกระดูกซี่โครง 5-7 วิ่งลงสู่แนวกึ่งกลาง',
@@ -416,7 +416,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'abs_lower',
-        nameTh: 'หน้าท้องส่วนล่าง (Lower Abs)',
+        nameTh: 'Lower Rectus Abdominis',
         nameEn: 'Lower Rectus Abdominis',
         latinName: 'Pars inferior recti abdominis',
         originInsertion: 'เกาะลงไปยัง Pubic crest และ Pubic symphysis ของกระดูกเชิงกราน',
@@ -436,7 +436,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'obliques',
-        nameTh: 'กล้ามเนื้อด้านข้างลำตัว (Obliques & V-Line)',
+        nameTh: 'External & Internal Obliques',
         nameEn: 'External & Internal Obliques',
         latinName: 'Musculus obliquus externus & internus abdominis',
         originInsertion: 'เกาะจากขอบซี่โครง 8 ซี่ล่าง วิ่งเฉียงเป็นรูปตัว V ลงสู่ขอบกระดูกเชิงกราน',
@@ -460,16 +460,16 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
 
   quads: {
     key: 'quads',
-    nameTh: 'ต้นขาด้านหน้า (ควอดริเซปส์)',
+    nameTh: 'Quadriceps',
     nameEn: 'Quadriceps Femoris',
     latinName: 'Quadriceps femoris',
     view: 'front',
     description: 'กลุ่มกล้ามเนื้อ 4 มัดด้านหน้าขา สร้างแรงถีบขับเคลื่อนและเหยียดเข่าอันทรงพลัง',
-    submuscles: ['Rectus Femoris (มัดกลาง/2ข้อต่อ)', 'Vastus Lateralis (มัดกวาดนอก)', 'Vastus Medialis / VMO (หยดน้ำ)', 'Vastus Intermedius (มัดลึก)'],
+    submuscles: ['Rectus Femoris', 'Vastus Lateralis', 'Vastus Medialis (VMO)', 'Vastus Intermedius'],
     subdivisions: [
       {
         id: 'quad_rectus_femoris',
-        nameTh: 'เรคตัส ฟีมอริส (มัดตรงกลาง - สองข้อต่อ)',
+        nameTh: 'Rectus Femoris',
         nameEn: 'Rectus Femoris',
         latinName: 'Musculus rectus femoris',
         originInsertion: 'เกาะจาก Anterior inferior iliac spine (เชิงกราน) ข้ามข้อสะโพกและเข่าลงสู่ลูกสะบ้า',
@@ -489,7 +489,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'quad_vastus_lateralis',
-        nameTh: 'วาสตัส แลทเทอราลิส (มัดกวาดข้าง Sweeping Quad)',
+        nameTh: 'Vastus Lateralis (Outer Sweep)',
         nameEn: 'Vastus Lateralis',
         latinName: 'Musculus vastus lateralis',
         originInsertion: 'เกาะจาก Greater trochanter และ Linea aspera ของกระดูกต้นขา ไปยังลูกสะบ้า',
@@ -508,7 +508,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'quad_vmo',
-        nameTh: 'วาสตัส เมเดียลิส (มัดหยดน้ำเหนือเข่า - VMO)',
+        nameTh: 'Vastus Medialis Oblique (VMO Tear Drop)',
         nameEn: 'Vastus Medialis Oblique (VMO)',
         latinName: 'Musculus vastus medialis',
         originInsertion: 'เกาะจากขอบในของกระดูกต้นขาลงสู่อุปกรณ์ยึดลูกสะบ้าด้านใน',
@@ -531,16 +531,16 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
 
   hamstrings: {
     key: 'hamstrings',
-    nameTh: 'ต้นขาด้านหลัง (แฮมสตริงส์)',
+    nameTh: 'Hamstrings',
     nameEn: 'Hamstring Complex',
     latinName: 'Hamstrings',
     view: 'back',
     description: 'กล้ามเนื้อขับเคลื่อนด้านหลัง ช่วยงอเข่าและเหยียดสะโพก ป้องกันเอ็นไขว้หน้า (ACL)',
-    submuscles: ['Biceps Femoris (มัดนอก)', 'Semitendinosus & Semimembranosus (มัดใน)'],
+    submuscles: ['Biceps Femoris (Lateral)', 'Semitendinosus & Semimembranosus (Medial)'],
     subdivisions: [
       {
         id: 'hamstring_biceps_femoris',
-        nameTh: 'ไบเซปส์ ฟีมอริส (แฮมสตริงมัดนอก)',
+        nameTh: 'Biceps Femoris (Lateral Hamstring)',
         nameEn: 'Biceps Femoris (Long & Short Head)',
         latinName: 'Musculus biceps femoris',
         originInsertion: 'หัวยาวเกาะจาก Ischial tuberosity (กระดูกก้นกบ) หัวสั้นเกาะจากกระดูกต้นขา วิ่งสู่หัวกระดูก Fibula',
@@ -561,7 +561,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'hamstring_medial',
-        nameTh: 'เซมิเทนดิโนซัส & เซมิเมมบราโนซัส (แฮมสตริงมัดใน)',
+        nameTh: 'Semitendinosus & Semimembranosus (Medial Hamstring)',
         nameEn: 'Medial Hamstrings (Semi-T & Semi-M)',
         latinName: 'Semitendinosus & Semimembranosus',
         originInsertion: 'เกาะจากกระดูกก้นกบ (Ischial tuberosity) วิ่งลงสู่ผิวด้านในของกระดูก Tibia',
@@ -584,16 +584,16 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
 
   glutes: {
     key: 'glutes',
-    nameTh: 'สะโพกและก้น',
+    nameTh: 'Gluteal Muscles (Glutes)',
     nameEn: 'Gluteal Muscles',
     latinName: 'Gluteal muscles',
     view: 'back',
     description: 'กล้ามเนื้อที่มีพละกำลังมากที่สุดในร่างกายมนุษย์ สร้างพลังสปริ้นต์ กระโดด และรูปทรงสะโพกกลมแน่น',
-    submuscles: ['Gluteus Maximus (ก้นใหญ่/พลังถีบ)', 'Gluteus Medius (ก้นข้าง/สะโพกกลม)', 'Gluteus Minimus (ก้นมัดลึก)'],
+    submuscles: ['Gluteus Maximus', 'Gluteus Medius', 'Gluteus Minimus'],
     subdivisions: [
       {
         id: 'glute_maximus',
-        nameTh: 'กลูเตียส แม็กซิมัส (ก้นใหญ่ - ขับเคลื่อนพลัง)',
+        nameTh: 'Gluteus Maximus',
         nameEn: 'Gluteus Maximus',
         latinName: 'Musculus gluteus maximus',
         originInsertion: 'เกาะจากผิวนอกของกระดูกเชิงกรานและ Sacrum ไปยัง Gluteal tuberosity และ IT Band',
@@ -614,7 +614,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'glute_medius',
-        nameTh: 'กลูเตียส มีเดียส (ก้นข้าง - สร้างสะโพกผายทรงกลม)',
+        nameTh: 'Gluteus Medius',
         nameEn: 'Gluteus Medius',
         latinName: 'Musculus gluteus medius',
         originInsertion: 'เกาะจากผิวนอกกระดูก Ilia ไปยัง Greater trochanter ของกระดูกต้นขา',
@@ -637,16 +637,16 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
 
   calves: {
     key: 'calves',
-    nameTh: 'น่อง',
+    nameTh: 'Calves',
     nameEn: 'Calves',
     latinName: 'Gastrocnemius & Soleus',
     view: 'back',
     description: 'สปริงธรรมชาติของร่างกาย ช่วยเขย่งปลายเท้าและดันพื้นในทุกก้าวเดิน',
-    submuscles: ['Gastrocnemius (น่องมัดนอก 2 แฉก)', 'Soleus (น่องมัดลึกแบน)', 'Tibialis Anterior (หน้าแข้ง)'],
+    submuscles: ['Gastrocnemius', 'Soleus', 'Tibialis Anterior'],
     subdivisions: [
       {
         id: 'calf_gastroc',
-        nameTh: 'แกสโตรคนีเมียส (น่องหัวใจสองแฉก - ข้ามข้อเข่า)',
+        nameTh: 'Gastrocnemius (Two Heads)',
         nameEn: 'Gastrocnemius (Medial & Lateral Heads)',
         latinName: 'Musculus gastrocnemius',
         originInsertion: 'เกาะจาก Femoral condyles (เหนือข้อเข่า) ข้ามข้อเข่าและข้อเท้าลงสู่เอ็นร้อยหวาย (Achilles)',
@@ -665,7 +665,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'calf_soleus',
-        nameTh: 'โซเลียส (น่องมัดลึก - ทำงานตอนงอเข่า)',
+        nameTh: 'Soleus',
         nameEn: 'Soleus Muscle',
         latinName: 'Musculus soleus',
         originInsertion: 'เกาะจากกระดูก Tibia & Fibula (ใต้เข่า) ลงสู่เอ็นร้อยหวาย ไม่ข้ามข้อเข่า',
@@ -687,16 +687,16 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
 
   traps: {
     key: 'traps',
-    nameTh: 'บ่าและสะบัก (ทราพีเซียส)',
+    nameTh: 'Trapezius & Upper Back',
     nameEn: 'Trapezius',
     latinName: 'Trapezius',
     view: 'back',
     description: 'กล้ามเนื้อรูปว่าวคลุมตั้งแต่ต้นคอจนถึงกลางหลัง ควบคุมการเคลื่อนไหวของกระดูกสะบักทุกทิศทาง',
-    submuscles: ['บ่าบน (Upper Traps)', 'สะบักกลาง (Middle Traps & Rhomboids)', 'สะบักล่าง (Lower Traps)'],
+    submuscles: ['Upper Trapezius', 'Middle Trapezius & Rhomboids', 'Lower Trapezius'],
     subdivisions: [
       {
         id: 'traps_upper',
-        nameTh: 'บ่าบน (Upper Trapezius)',
+        nameTh: 'Upper Trapezius',
         nameEn: 'Upper Trapezius',
         latinName: 'Pars descendens trapezii',
         originInsertion: 'เกาะจากฐานกะโหลกศีรษะและแนวกระดูกคอ ไปยังกระดูกไหปลาร้า 1/3 ด้านนอก',
@@ -716,7 +716,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'traps_mid_rhomboids',
-        nameTh: 'สะบักกลาง & รอมบอยด์ (หนากลางหลัง)',
+        nameTh: 'Middle Trapezius & Rhomboids',
         nameEn: 'Middle Trapezius & Rhomboids',
         latinName: 'Pars transversa trapezii & Rhomboidei',
         originInsertion: 'เกาะจากกระดูกสันหลังช่วงอก T1-T5 วิ่งขวางมาเกาะขอบในของสะบัก',
@@ -735,7 +735,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'traps_lower',
-        nameTh: 'สะบักล่าง (Lower Trapezius)',
+        nameTh: 'Lower Trapezius',
         nameEn: 'Lower Trapezius',
         latinName: 'Pars ascendens trapezii',
         originInsertion: 'เกาะจากกระดูกสันหลังช่วงอก T6-T12 วิ่งเฉียงขึ้นไปเกาะ Spine of scapula',
@@ -758,16 +758,16 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
 
   lats: {
     key: 'lats',
-    nameTh: 'ปีกหลัง (แลททิสซิมุส ดอร์ไซ)',
+    nameTh: 'Latissimus Dorsi (Lats)',
     nameEn: 'Latissimus Dorsi',
     latinName: 'Latissimus dorsi & Teres major',
     view: 'back',
     description: 'กล้ามเนื้อแผ่นใหญ่ที่สุดของร่างกายท่อนบน สร้างทรวดทรงรูปตัว V (V-Taper) อันทรงพลัง',
-    submuscles: ['ปีกหลังบน-กลาง (Thoracic / Mid Lats)', 'ปีกหลังล่าง (Lumbar & Iliac Lats)', 'ปีกคู่บน (Teres Major)'],
+    submuscles: ['Upper / Thoracic Lats', 'Lower / Iliac Lats', 'Teres Major'],
     subdivisions: [
       {
         id: 'lats_upper_thoracic',
-        nameTh: 'ปีกหลังบน-กลาง (สร้างความกว้างปีกหลัง V-Shape)',
+        nameTh: 'Upper / Thoracic Latissimus Dorsi',
         nameEn: 'Upper / Thoracic Latissimus Dorsi',
         latinName: 'Pars thoracica latissimi dorsi',
         originInsertion: 'เกาะจากกระดูกสันหลังช่วงอกส่วนล่าง วิ่งเฉียงขึ้นโอบเข้าสู่ร่องกระดูกต้นแขน',
@@ -787,7 +787,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'lats_lower_iliac',
-        nameTh: 'ปีกหลังส่วนล่าง (เกาะสะโพก - Lats แนบลำตัว)',
+        nameTh: 'Lower / Iliac Latissimus Dorsi',
         nameEn: 'Lower / Iliac Latissimus Dorsi',
         latinName: 'Pars iliaca latissimi dorsi',
         originInsertion: 'เกาะจากขอบกระดูกเชิงกราน (Iliac crest) และ Thoracolumbar fascia วิ่งขึ้นตรงสู่ต้นแขน',
@@ -807,7 +807,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'teres_major',
-        nameTh: 'เทเรส เมเจอร์ (ปีกคู่บน)',
+        nameTh: 'Teres Major',
         nameEn: 'Teres Major',
         latinName: 'Musculus teres major',
         originInsertion: 'เกาะจากมุมล่างของกระดูกสะบัก วิ่งขนานไปเกาะกระดูกต้นแขนเคียงข้าง Lats',
@@ -829,16 +829,16 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
 
   lowback: {
     key: 'lowback',
-    nameTh: 'หลังส่วนล่างและแกนพยุงสันหลัง',
+    nameTh: 'Lower Back (Erector Spinae)',
     nameEn: 'Lower Back & Spinal Erectors',
     latinName: 'Erector spinae & Quadratus lumborum',
     view: 'back',
     description: 'เสาหลักแห่งความมั่นคงของแนวกระดูกสันหลัง ป้องกันการบาดเจ็บและช่วยส่งถ่ายพลังงานทั่วร่างกาย',
-    submuscles: ['Erector Spinae (สันหลังแนวยาว)', 'Quadratus Lumborum & Multifidus (กล้ามเนื้อพยุงเอวมัดลึก)'],
+    submuscles: ['Erector Spinae', 'Quadratus Lumborum & Multifidus'],
     subdivisions: [
       {
         id: 'erector_spinae',
-        nameTh: 'อิเรกเตอร์ สไปนี (กล้ามเนื้อสันหลังแนวยาว)',
+        nameTh: 'Erector Spinae',
         nameEn: 'Erector Spinae (Spinalis, Longissimus, Iliocostalis)',
         latinName: 'Musculus erector spinae',
         originInsertion: 'ทอดยาวเป็นคู่ขนานตามแนวกระดูกสันหลังตั้งแต่ Sacrum ขึ้นไปถึงฐานกะโหลกศีรษะ',
@@ -858,7 +858,7 @@ export const MUSCLE_GROUPS: Record<MuscleKey, MuscleInfo> = {
       },
       {
         id: 'quadratus_lumborum',
-        nameTh: 'ควอดราตัส ลัมโบรัม (กล้ามเนื้อพยุงเอวและเชิงกราน)',
+        nameTh: 'Quadratus Lumborum (QL)',
         nameEn: 'Quadratus Lumborum (QL) & Multifidus',
         latinName: 'Musculus quadratus lumborum & multifidi',
         originInsertion: 'เกาะจากขอบกระดูกเชิงกรานด้านหลังขึ้นไปเกาะกระดูกซี่โครงที่ 12 และกระดูกสันหลังส่วนเอว L1-L4',
