@@ -67,6 +67,8 @@ export interface Exercise {
   feeling?: string;
   breathing?: string;
   mistakes?: string;
+  youtube_id?: string;
+  youtube_short_url?: string;
 }
 
 export interface UserProfile {

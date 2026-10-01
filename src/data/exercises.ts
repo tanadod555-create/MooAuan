@@ -1,6 +1,7 @@
 import { Exercise } from '../types';
+import { EXERCISE_YOUTUBE_VIDEOS } from './exerciseVideos';
 
-export const SEED_EXERCISES: Exercise[] = [
+const BASE_SEED_EXERCISES: Exercise[] = [
   // --- CHEST ---
   {
     exercise_id: 'ex_bench_press',
@@ -826,3 +827,10 @@ export const SEED_EXERCISES: Exercise[] = [
     mistakes: 'ใช้ดัมเบลล์หนักเกินไปจนต้องเหวี่ยงตัว หรือใช้สะบักดึงแทนไหล่หลัง'
   }
 ];
+
+export const SEED_EXERCISES: Exercise[] = BASE_SEED_EXERCISES.map((ex) => ({
+  ...ex,
+  youtube_id: EXERCISE_YOUTUBE_VIDEOS[ex.exercise_id]?.videoId || ex.youtube_id,
+  youtube_short_url: EXERCISE_YOUTUBE_VIDEOS[ex.exercise_id]?.shortUrl || ex.youtube_short_url,
+}));
+

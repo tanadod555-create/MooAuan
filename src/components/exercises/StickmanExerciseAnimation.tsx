@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Exercise, MovementPattern } from '../../types';
-import { Play, Pause, Video, Sparkles, X, Check, ExternalLink, RefreshCw, Eye } from 'lucide-react';
+import { Play, Pause, Video, Sparkles, X, Check, ExternalLink, RefreshCw, Eye, Film } from 'lucide-react';
+import { getExerciseVideo, extractYoutubeId, ExerciseVideoInfo } from '../../data/exerciseVideos';
 
 interface StickmanProps {
   exercise: Exercise;
@@ -12,27 +13,33 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
   const [showMediaModal, setShowMediaModal] = useState(false);
   const [mediaInput, setMediaInput] = useState('');
   const [activeMediaUrl, setActiveMediaUrl] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'stickman' | 'custom'>('stickman');
+  const [viewMode, setViewMode] = useState<'video' | 'stickman'>('video');
   const [phaseText, setPhaseText] = useState<'concentric' | 'eccentric'>('concentric');
+  const [currentVideo, setCurrentVideo] = useState<ExerciseVideoInfo>(() =>
+    getExerciseVideo(exercise.exercise_id, exercise.youtube_id || exercise.youtube_short_url)
+  );
 
   const storageKey = `ft_custom_media_${exercise.exercise_id}`;
 
-  // Load custom media if user pasted one before
+  // Load custom media or default YouTube short for exercise
   useEffect(() => {
     const saved = localStorage.getItem(storageKey);
     if (saved) {
       setActiveMediaUrl(saved);
-      setViewMode('custom');
+      setCurrentVideo(getExerciseVideo(exercise.exercise_id, saved));
     } else {
       setActiveMediaUrl('');
-      setViewMode('stickman');
+      setCurrentVideo(
+        getExerciseVideo(exercise.exercise_id, exercise.youtube_id || exercise.youtube_short_url)
+      );
     }
-  }, [exercise.exercise_id]);
+    setViewMode('video');
+  }, [exercise.exercise_id, exercise.youtube_id, exercise.youtube_short_url]);
 
   // Phase indicator toggler synced with animation loop (approx 3s cycle)
   useEffect(() => {
     if (!isPlaying) return;
-    const intervalMs = (1500 / speed);
+    const intervalMs = 1500 / speed;
     const interval = setInterval(() => {
       setPhaseText((prev) => (prev === 'concentric' ? 'eccentric' : 'concentric'));
     }, intervalMs);
@@ -44,19 +51,21 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
     if (!mediaInput.trim()) {
       localStorage.removeItem(storageKey);
       setActiveMediaUrl('');
-      setViewMode('stickman');
+      setCurrentVideo(getExerciseVideo(exercise.exercise_id));
     } else {
       localStorage.setItem(storageKey, mediaInput.trim());
       setActiveMediaUrl(mediaInput.trim());
-      setViewMode('custom');
+      setCurrentVideo(getExerciseVideo(exercise.exercise_id, mediaInput.trim()));
     }
+    setViewMode('video');
     setShowMediaModal(false);
   };
 
   const handleRemoveMedia = () => {
     localStorage.removeItem(storageKey);
     setActiveMediaUrl('');
-    setViewMode('stickman');
+    setCurrentVideo(getExerciseVideo(exercise.exercise_id));
+    setViewMode('video');
     setShowMediaModal(false);
   };
 
@@ -114,103 +123,104 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
   const animDuration = `${3 / speed}s`;
   const animState = isPlaying ? 'running' : 'paused';
 
-  // Helper for YouTube embed
-  const getEmbedUrl = (url: string) => {
-    if (url.includes('youtube.com/watch?v=')) {
-      const id = url.split('v=')[1]?.split('&')[0];
-      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}`;
-    }
-    if (url.includes('youtu.be/')) {
-      const id = url.split('youtu.be/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&loop=1&playlist=${id}`;
-    }
-    return url;
-  };
-
-  const isVideoUrl =
-    activeMediaUrl.match(/\.(mp4|webm|ogg)$/i) ||
-    activeMediaUrl.includes('streamable.com') ||
-    activeMediaUrl.includes('blob:');
-
-  const isYouTube = activeMediaUrl.includes('youtube.com') || activeMediaUrl.includes('youtu.be');
+  const isCustomDirectVideo =
+    activeMediaUrl &&
+    (activeMediaUrl.match(/\.(mp4|webm|ogg)$/i) ||
+      activeMediaUrl.includes('streamable.com') ||
+      activeMediaUrl.includes('blob:'));
 
   return (
-    <div className="w-full bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-md flex flex-col">
+    <div className="w-full bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-lg flex flex-col">
       {/* Top Bar: Mode Switcher & Custom Clip Trigger */}
-      <div className="px-4 py-2.5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between text-xs">
-        <div className="flex items-center gap-1.5">
+      <div className="px-3 sm:px-4 py-2.5 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between text-xs gap-2 flex-wrap">
+        <div className="flex items-center gap-1 sm:gap-1.5">
+          <button
+            onClick={() => setViewMode('video')}
+            className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 cursor-pointer text-xs ${
+              viewMode === 'video'
+                ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-xs'
+                : 'text-slate-400 hover:text-white bg-slate-800/60'
+            }`}
+          >
+            <Film size={13} />
+            <span>🎬 วิดีโอ Shorts</span>
+          </button>
+
           <button
             onClick={() => setViewMode('stickman')}
-            className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 cursor-pointer text-xs ${
               viewMode === 'stickman'
                 ? 'bg-rose-500 text-white shadow-xs'
                 : 'text-slate-400 hover:text-white bg-slate-800/60'
             }`}
           >
-            <span>🏃‍♂️ Stickman จำลองท่า</span>
+            <span>🏃 Stickman</span>
           </button>
-
-          {activeMediaUrl && (
-            <button
-              onClick={() => setViewMode('custom')}
-              className={`px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                viewMode === 'custom'
-                  ? 'bg-rose-500 text-white shadow-xs'
-                  : 'text-slate-400 hover:text-white bg-slate-800/60'
-              }`}
-            >
-              <span>🎬 คลิปของฉัน</span>
-            </button>
-          )}
         </div>
 
         <button
           onClick={() => {
-            setMediaInput(activeMediaUrl);
+            setMediaInput(activeMediaUrl || currentVideo.shortUrl);
             setShowMediaModal(true);
           }}
-          className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-1 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-1 rounded-lg border border-rose-500/30 transition cursor-pointer"
+          className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-1 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1.5 rounded-xl border border-rose-500/30 transition cursor-pointer"
         >
           <Video size={13} />
-          <span>{activeMediaUrl ? 'แก้ไขคลิป/รูป' : '+ แปะคลิป/GIF ของตัวเอง'}</span>
+          <span>{activeMediaUrl ? 'แก้ไขคลิป' : 'เปลี่ยนคลิป/ใส่ลิงก์'}</span>
         </button>
       </div>
 
-      {/* Main Canvas Area */}
-      <div className="relative w-full h-56 sm:h-64 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center overflow-hidden">
-        {/* Subtle grid background */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#33415515_1px,transparent_1px),linear-gradient(to_bottom,#33415515_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
-
-        {viewMode === 'custom' && activeMediaUrl ? (
-          /* Custom Video / Image View */
-          <div className="w-full h-full flex items-center justify-center p-2">
-            {isYouTube ? (
-              <iframe
-                src={getEmbedUrl(activeMediaUrl)}
-                title="Exercise Demonstration"
-                className="w-full h-full rounded-xl"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
-            ) : isVideoUrl ? (
+      {/* Main Display Area */}
+      {viewMode === 'video' ? (
+        /* YouTube Shorts Player View */
+        <div className="w-full flex flex-col items-center justify-center p-3 sm:p-4 bg-slate-950">
+          {isCustomDirectVideo ? (
+            <div className="relative w-full max-w-[280px] sm:max-w-[310px] aspect-[9/16] max-h-[460px] rounded-2xl overflow-hidden shadow-2xl border border-rose-500/20 bg-black flex items-center justify-center">
               <video
                 src={activeMediaUrl}
                 autoPlay
                 loop
                 muted
                 playsInline
-                className="max-h-full max-w-full rounded-xl object-contain"
+                controls
+                className="w-full h-full object-cover"
               />
-            ) : (
-              <img
-                src={activeMediaUrl}
-                alt="Exercise Demonstration"
-                className="max-h-full max-w-full rounded-xl object-contain"
+            </div>
+          ) : (
+            <div className="relative w-full max-w-[280px] sm:max-w-[310px] aspect-[9/16] max-h-[460px] rounded-2xl overflow-hidden shadow-2xl border border-rose-500/20 bg-black">
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${currentVideo.videoId}?autoplay=0&rel=0&modestbranding=1&playsinline=1`}
+                title={exercise.name_en}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
               />
-            )}
+            </div>
+          )}
+
+          {/* Video Footer Info & Direct Link */}
+          <div className="flex items-center justify-between w-full max-w-[310px] mt-2.5 px-1 text-xs">
+            <div className="flex items-center gap-1.5 text-slate-300 truncate">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse shrink-0" />
+              <span className="truncate font-medium">{currentVideo.channelName || 'YouTube Shorts'}</span>
+            </div>
+            <a
+              href={currentVideo.shortUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-rose-400 hover:text-rose-300 font-bold flex items-center gap-1 transition shrink-0 active:scale-95"
+            >
+              <span>เปิดดูใน YouTube</span>
+              <ExternalLink size={12} />
+            </a>
           </div>
-        ) : (
-          /* Stickman Vector Animation */
+        </div>
+      ) : (
+        /* Stickman Vector Animation View */
+        <div className="relative w-full h-64 sm:h-72 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center overflow-hidden">
+          {/* Subtle grid background */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#33415515_1px,transparent_1px),linear-gradient(to_bottom,#33415515_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
+
           <div className="relative w-full h-full flex items-center justify-center">
             {/* Phase Badge Floating Overlay */}
             <div className="absolute top-2.5 left-3 z-10 flex items-center gap-2">
@@ -637,8 +647,8 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
               ))}
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Media Edit Modal */}
       {showMediaModal && (
@@ -648,7 +658,7 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
               <div className="flex items-center gap-2">
                 <Video size={18} className="text-pink-500" />
                 <h3 className="font-bold text-slate-800 text-base">
-                  แปะลิงก์คลิปหรือรูปท่านี้
+                  เปลี่ยนคลิปวิดีโอท่านี้ (YouTube Shorts)
                 </h3>
               </div>
               <button
@@ -660,17 +670,17 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
             </div>
 
             <p className="text-xs text-slate-500 leading-relaxed">
-              ใส่ URL วิดีโอ (YouTube, MP4) หรือรูปภาพ/GIF ที่คุณบันทึกไว้ เพื่อใช้ดูแทน Stickman ได้ทุกเมื่อ
+              ใส่ลิงก์ YouTube Shorts เช่น <code className="bg-pink-50 text-rose-600 px-1 py-0.5 rounded font-mono text-[11px]">https://www.youtube.com/shorts/...</code> หรือ URL วิดีโอเพื่อแสดงคลิปเล่นในเว็บได้ทันที
             </p>
 
             <form onSubmit={handleSaveMedia} className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  URL วิดีโอ / รูปภาพ / GIF:
+                  URL YouTube Shorts หรือ วิดีโอ:
                 </label>
                 <input
                   type="url"
-                  placeholder="https://youtu.be/... หรือ https://.../exercise.gif หรือ .mp4"
+                  placeholder="https://www.youtube.com/shorts/..."
                   value={mediaInput}
                   onChange={(e) => setMediaInput(e.target.value)}
                   className="w-full px-3 py-2 bg-pink-50/40 border border-pink-200 rounded-xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-pink-300 focus:bg-white"

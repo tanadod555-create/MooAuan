@@ -88,7 +88,7 @@ export const ExercisesView: React.FC = () => {
               คลังท่าออกกำลังกาย (Exercise Library)
             </h2>
             <p className="text-xs text-slate-500 mt-1">
-              รวมท่าเวทเทรนนิ่ง พร้อม Stickman แอนิเมชัน และคำแนะนำชีวกลศาสตร์ ({exercises.length} ท่า)
+              รวมท่าเวทเทรนนิ่ง พร้อมวิดีโอ YouTube Shorts สอนวิธีเล่นจริง และคำแนะนำชีวกลศาสตร์ ({exercises.length} ท่า)
             </p>
           </div>
           <button
@@ -174,7 +174,7 @@ export const ExercisesView: React.FC = () => {
       <div className="space-y-2.5">
         <div className="flex items-center justify-between text-xs text-slate-500 px-1">
           <span>พบ {filteredExercises.length} รายการ</span>
-          <span className="text-[11px] text-pink-500 font-medium">แตะเพื่อดู Stickman แอนิเมชัน & วิธีฝึก</span>
+          <span className="text-[11px] text-pink-500 font-medium">แตะเพื่อดูคลิป YouTube Shorts & เทคนิคฝึก</span>
         </div>
 
         {filteredExercises.length === 0 ? (
