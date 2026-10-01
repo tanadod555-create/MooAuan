@@ -61,7 +61,7 @@ export const ProfileView: React.FC = () => {
     testFirebaseConnection,
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'stats' | 'profile' | 'settings'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'profile'>('stats');
 
   // Circumference Unit System: 'cm' | 'inch'
   const [circumferenceUnit, setCircumferenceUnit] = useState<'cm' | 'inch'>(() => {
@@ -458,7 +458,7 @@ export const ProfileView: React.FC = () => {
       </div>
 
       {/* Sub-tab navigation: Kawaii Game Segmented Pill */}
-      <div className="flex items-center p-1.5 bg-white border-2 border-slate-200/90 rounded-full shadow-[0_4px_0_#e2e8f0] max-w-xl mx-auto gap-1">
+      <div className="flex items-center p-1.5 bg-white border-2 border-slate-200/90 rounded-full shadow-[0_4px_0_#e2e8f0] max-w-md mx-auto gap-1">
         <button
           onClick={() => setActiveTab('stats')}
           className={`flex-1 py-2 px-3 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
@@ -484,19 +484,6 @@ export const ProfileView: React.FC = () => {
         >
           <User size={15} />
           <span>ข้อมูลโปรไฟล์ 👤</span>
-        </button>
-        <button
-          onClick={() => setActiveTab('settings')}
-          className={`flex-1 py-2 px-3 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
-            activeTab === 'settings'
-              ? activeProfileKey === 'partner'
-                ? 'bg-pink-400 text-white shadow-md shadow-pink-300/50'
-                : 'bg-sky-400 text-white shadow-md shadow-sky-300/50'
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <SettingsIcon size={15} />
-          <span>ตั้งค่า Cloud & AI ⚙️</span>
         </button>
       </div>
 
@@ -1311,284 +1298,31 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 space-y-3">
             <button
               type="submit"
-              className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-rose-600 hover:to-pink-600 text-white font-black text-sm shadow-md shadow-rose-200 active:scale-95 transition"
+              className="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-rose-600 hover:to-pink-600 text-white font-black text-sm shadow-md shadow-rose-200 active:scale-95 transition cursor-pointer"
             >
               บันทึกข้อมูลโปรไฟล์และสัดส่วน
             </button>
+
+            {/* Clean JSON Backup button */}
+            <div className="pt-3 border-t border-pink-100 flex items-center justify-between text-xs">
+              <span className="text-slate-500 font-medium">สำรองข้อมูลทั้งหมดในเครื่องเป็น JSON:</span>
+              <button
+                type="button"
+                onClick={handleExportData}
+                className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center gap-1.5 transition cursor-pointer"
+              >
+                <Download size={14} />
+                <span>ดาวน์โหลด Backup</span>
+              </button>
+            </div>
           </div>
         </form>
       )}
 
-      {/* TAB 3: CLOUD DATABASE, GOOGLE SHEETS & GEMINI API SETTINGS */}
-      {activeTab === 'settings' && (
-        <div className="space-y-5">
-          {/* Firebase Cloud Real-time Database Card */}
-          <div className="bg-white/95 p-6 rounded-3xl border border-rose-200/90 shadow-lg shadow-rose-100/50 space-y-4 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-200/20 to-rose-300/20 rounded-bl-full pointer-events-none" />
 
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 to-rose-500 flex items-center justify-center text-white shadow-md shadow-amber-200/50">
-                  <Flame size={22} className="animate-pulse" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-800 flex items-center gap-1.5">
-                    Cloud Database (Firebase Firestore)
-                    <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-bold">
-                      Real-time 2 เครื่อง
-                    </span>
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    ซิงค์ข้อมูลอาหาร, การออกกำลังกาย และสัดส่วนสดๆ ทันทีระหว่าง 2 เครื่อง
-                  </p>
-                </div>
-              </div>
-
-              {isFirebaseConnected ? (
-                <div className="flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200 font-bold shadow-sm">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-                  <Wifi size={14} className="text-emerald-600" />
-                  <span>Real-time Sync ทำงานอยู่</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200 font-bold">
-                  <WifiOff size={14} />
-                  <span>ยังไม่ได้เชื่อมต่อ Cloud</span>
-                </div>
-              )}
-            </div>
-
-            {/* Quick Paste Snippet Area */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/70 to-rose-50/70 border border-amber-200/80 space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <Sparkles size={14} className="text-amber-500" />
-                  วางโค้ด firebaseConfig (ระบบจะแยกค่าให้อัตโนมัติ):
-                </label>
-                <a
-                  href="https://console.firebase.google.com/"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[11px] text-rose-600 hover:text-rose-700 font-bold flex items-center gap-1 hover:underline"
-                >
-                  เปิด Firebase Console
-                  <ExternalLink size={11} />
-                </a>
-              </div>
-              <textarea
-                rows={3}
-                placeholder={`const firebaseConfig = {\n  apiKey: "AIzaSy...",\n  projectId: "mooauan-db",\n  appId: "1:123..."\n};`}
-                value={rawFbSnippet}
-                onChange={(e) => handleParseFirebaseSnippet(e.target.value)}
-                className="w-full bg-white border border-amber-200 rounded-xl p-3 text-xs text-slate-700 font-mono focus:outline-none focus:border-amber-400 placeholder-slate-400 shadow-inner"
-              />
-            </div>
-
-            {/* Individual Form Inputs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Firebase API Key *
-                </label>
-                <input
-                  type="password"
-                  placeholder="AIzaSyD-..."
-                  value={fbApiKey}
-                  onChange={(e) => setFbApiKey(e.target.value)}
-                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-mono focus:outline-none focus:border-rose-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Project ID *
-                </label>
-                <input
-                  type="text"
-                  placeholder="เช่น mooauan-db"
-                  value={fbProjectId}
-                  onChange={(e) => setFbProjectId(e.target.value)}
-                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-mono focus:outline-none focus:border-rose-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  App ID *
-                </label>
-                <input
-                  type="text"
-                  placeholder="เช่น 1:123456789:web:abcdef"
-                  value={fbAppId}
-                  onChange={(e) => setFbAppId(e.target.value)}
-                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-mono focus:outline-none focus:border-rose-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Auth Domain (ทางเลือก)
-                </label>
-                <input
-                  type="text"
-                  placeholder="mooauan-db.firebaseapp.com"
-                  value={fbAuthDomain}
-                  onChange={(e) => setFbAuthDomain(e.target.value)}
-                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 font-mono focus:outline-none focus:border-rose-400"
-                />
-              </div>
-            </div>
-
-            {/* Test Status Message */}
-            {fbTestResult && (
-              <div
-                className={`p-3 rounded-2xl text-xs font-bold border flex items-center gap-2 ${
-                  fbTestResult.success
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                    : 'bg-rose-50 text-rose-800 border-rose-200'
-                }`}
-              >
-                <span>{fbTestResult.message}</span>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-3 pt-2 border-t border-pink-100">
-              <button
-                type="button"
-                onClick={handleTestAndSaveFirebase}
-                disabled={isTestingFb}
-                className="py-2.5 px-5 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-rose-200 active:scale-95 transition disabled:opacity-50"
-              >
-                <Zap size={15} />
-                {isTestingFb ? 'กำลังทดสอบเชื่อมต่อ...' : '💾 บันทึก & เชื่อมต่อ Cloud Database'}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleMigrateToCloud}
-                disabled={isMigratingFb || (!isFirebaseConnected && !fbApiKey)}
-                className="py-2.5 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-xs flex items-center gap-2 transition disabled:opacity-50"
-              >
-                <Upload size={15} />
-                {isMigratingFb ? (
-                  <span>{migrationStatusMsg || 'กำลังย้ายข้อมูล...'}</span>
-                ) : (
-                  <span>📤 ย้ายข้อมูลเดิมในเครื่องขึ้น Cloud</span>
-                )}
-              </button>
-            </div>
-
-            {/* Step-by-Step Info Box */}
-            <details className="text-[11px] text-slate-600 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-              <summary className="font-bold cursor-pointer text-slate-700 flex items-center gap-1.5 select-none">
-                📖 วิธีสร้าง Firebase ฟรีใน 2 นาที (คลิกเพื่อดูวิธี)
-              </summary>
-              <ol className="list-decimal list-inside space-y-1.5 mt-2.5 text-slate-600 leading-relaxed pl-1">
-                <li>ไปที่ <a href="https://console.firebase.google.com/" target="_blank" rel="noreferrer" className="text-rose-600 font-bold underline">console.firebase.google.com</a> แล้วกด <strong>Create a project</strong></li>
-                <li>ไปที่เมนู <strong>Build ➔ Firestore Database</strong> ➔ กด <strong>Create database</strong> (เลือก Location Singapore และ Test mode)</li>
-                <li>ไปที่รูปฟันเฟือง ⚙️ <strong>Project settings</strong> ➔ เลื่อนลงมาที่ <strong>Your apps</strong> ➔ กดไอคอนเว็บ <code>&lt;/&gt;</code> เพื่อสร้าง Web App</li>
-                <li>ก็อปปี้โค้ดใน <code>firebaseConfig</code> มาวางในช่องด้านบน แล้วกด <strong>บันทึก & เชื่อมต่อ</strong></li>
-                <li>ให้อีกเครื่องหนึ่งเปิดเว็บแล้วใส่ Config เดียวกัน ทั้ง 2 เครื่องจะซิงค์ข้อมูลตรงกันสดๆ ทันทีครับ</li>
-              </ol>
-            </details>
-          </div>
-
-          {/* Gemini AI Configuration Card */}
-          <div className="bg-white/95 p-6 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-4">
-            <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
-              <Sparkles size={18} className="text-amber-500" />
-              การตั้งค่า Gemini AI สำหรับวิเคราะห์อาหาร
-            </h3>
-
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-bold text-pink-900">
-                  Gemini API Key (ใช้งานส่วนตัวโดยตรง):
-                </label>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-bold border border-emerald-200">
-                  ✓ เชื่อมต่อระบบอัตโนมัติแล้ว
-                </span>
-              </div>
-              <input
-                type="password"
-                placeholder="AIzaSy..."
-                value={geminiKey}
-                onChange={(e) => setGeminiKey(e.target.value)}
-                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-rose-400 font-mono"
-              />
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-[11px] text-pink-700/70 block">
-                  เชื่อมต่อคีย์อัตโนมัติให้แล้ว สแกนอาหารได้ทันที หรือแก้ไขเป็นคีย์ส่วนตัวได้
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setGeminiKey(getDefaultGeminiApiKey())}
-                  className="text-[11px] text-rose-600 hover:text-rose-700 font-bold hover:underline"
-                >
-                  คืนค่าเริ่มต้น
-                </button>
-              </div>
-            </div>
-
-            {/* Proxy URL configuration */}
-            <div className="pt-2 border-t border-pink-100 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-pink-900">
-                  หรือเรียกผ่าน Proxy (Cloudflare Worker / Google Apps Script):
-                </span>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={useProxy}
-                    onChange={(e) => setUseProxy(e.target.checked)}
-                    className="sr-only peer"
-                  />
-                  <div className="w-9 h-5 bg-pink-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
-                </label>
-              </div>
-
-              {useProxy && (
-                <input
-                  type="text"
-                  placeholder="https://my-gemini-proxy.workers.dev"
-                  value={geminiProxy}
-                  onChange={(e) => setGeminiProxy(e.target.value)}
-                  className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-rose-400 font-mono"
-                />
-              )}
-            </div>
-
-            <button
-              onClick={handleSaveSettings}
-              className="w-full py-2.5 rounded-xl bg-pink-100 hover:bg-pink-200 text-slate-700 font-bold text-xs border border-pink-200 transition"
-            >
-              บันทึกการตั้งค่าทั้งหมด
-            </button>
-          </div>
-
-          {/* Backup & Export JSON Card */}
-          <div className="bg-white/95 p-6 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-3">
-            <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
-              <Download size={18} className="text-sky-500" />
-              สำรองข้อมูล (Export Backup)
-            </h3>
-            <p className="text-xs text-pink-800/70">
-              ดาวน์โหลดประวัติการฝึกซ้อม น้ำหนัก และรายการอาหารทั้งหมดเป็นไฟล์ JSON เพื่อความปลอดภัย
-            </p>
-            <button
-              onClick={handleExportData}
-              className="py-2.5 px-4 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-xs font-bold flex items-center gap-2 transition"
-            >
-              <Download size={15} />
-              ดาวน์โหลด JSON Backup
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Record Weight / Metric Modal */}
       {showMetricModal && (

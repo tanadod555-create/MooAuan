@@ -1014,30 +1014,7 @@ export const FoodView: React.FC = () => {
         </div>
       </MagicCard>
 
-      {/* Gemini AI API Connection Status Banner */}
-      <div className="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-white/90 border border-pink-200/70 text-xs shadow-2xs">
-        <div className="flex items-center gap-2">
-          <span
-            className={`w-2.5 h-2.5 rounded-full ${
-              effectiveGeminiKey ? 'bg-emerald-400 animate-ping' : 'bg-amber-300'
-            }`}
-          />
-          <span className={effectiveGeminiKey ? 'text-slate-700 font-bold' : 'text-amber-700 font-medium'}>
-            {effectiveGeminiKey
-              ? '✨ Gemini Multimodal AI: พร้อมสแกนวิเคราะห์ภาพอาหารทันที'
-              : 'ยังไม่ได้ระบุ Gemini API Key (จำเป็นสำหรับการสแกนรูป)'}
-          </span>
-        </div>
-        <button
-          onClick={() => {
-            setApiKeyInput(effectiveGeminiKey);
-            setShowApiKeyModal(true);
-          }}
-          className="text-xs text-pink-600 hover:text-pink-700 font-bold underline"
-        >
-          {effectiveGeminiKey ? 'ตั้งค่า Key' : 'เชื่อมต่อ Key ด่วน'}
-        </button>
-      </div>
+
 
       {/* Action Buttons: Camera / Gallery / Quick Food DB / Manual Add */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
