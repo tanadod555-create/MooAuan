@@ -42,7 +42,11 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2.5">
           <button
             onClick={onOpenProfileModal}
-            className="relative flex items-center justify-center p-0.5 rounded-2xl bg-gradient-to-tr from-pink-300 via-rose-300 to-pink-200 shadow-md shadow-pink-300/30 hover:scale-105 active:scale-95 transition"
+            className={`relative flex items-center justify-center p-0.5 rounded-2xl shadow-md hover:scale-105 active:scale-95 transition ${
+              activeProfileKey === 'primary'
+                ? 'bg-gradient-to-tr from-sky-300 via-blue-300 to-sky-200 shadow-sky-300/30'
+                : 'bg-gradient-to-tr from-pink-300 via-rose-300 to-pink-200 shadow-pink-300/30'
+            }`}
             title="กดเพื่อเลือกโปรไฟล์หรือเปลี่ยนคนใช้งาน"
           >
             <PigMascot
@@ -55,17 +59,25 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="flex items-center gap-1.5">
               <h1 className="font-bold text-sm sm:text-base text-slate-700 tracking-tight flex items-center gap-1">
                 หมูอ้วน
-                <span className="text-[11px] font-normal text-pink-400 font-mono">MooAuan</span>
+                <span className={`text-[11px] font-normal font-mono ${activeProfileKey === 'primary' ? 'text-sky-500' : 'text-pink-400'}`}>
+                  MooAuan
+                </span>
               </h1>
-              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-pink-100 text-pink-700 font-bold border border-pink-200/70 flex items-center gap-0.5">
-                <Sparkles size={9} className="text-pink-400" />
-                <span>คิ้วท์</span>
+              <span
+                className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold border flex items-center gap-0.5 ${
+                  activeProfileKey === 'primary'
+                    ? 'bg-sky-100 text-sky-700 border-sky-200/70'
+                    : 'bg-pink-100 text-pink-700 border-pink-200/70'
+                }`}
+              >
+                <Sparkles size={9} className={activeProfileKey === 'primary' ? 'text-sky-400' : 'text-pink-400'} />
+                <span>{activeProfileKey === 'primary' ? 'ฟิต' : 'คิ้วท์'}</span>
               </span>
             </div>
             <p className="text-[10px] sm:text-[11px] text-slate-500 flex items-center gap-1 font-medium">
               <span>กำลังดูแล:</span>
-              <strong className={activeProfileKey === 'primary' ? 'text-pink-600' : 'text-rose-500'}>
-                {activeProfileKey === 'primary' ? '🏋️‍♂️ แม็กนั่ม' : '🌸 มะนาว (Manow)'}
+              <strong className={activeProfileKey === 'primary' ? 'text-sky-600' : 'text-rose-500'}>
+                {activeProfileKey === 'primary' ? '🏋️‍♂️ แม็กนั่ม (Magnum)' : '🌸 มะนาว (Manow)'}
               </strong>
             </p>
           </div>

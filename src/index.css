@@ -294,3 +294,261 @@ body {
   fill: #ec4899 !important;
   filter: drop-shadow(0 0 12px #ec4899);
 }
+
+/* ========================================================
+   MAGNUM THEME (PASTEL BLUE & SKY FOR MAGNUM)
+   ======================================================== */
+.theme-magnum,
+body.theme-magnum {
+  background-color: #f0f7ff !important;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(186, 230, 253, 0.45) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(191, 219, 254, 0.45) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(224, 242, 254, 0.5) 0px, transparent 50%) !important;
+  color: #1e293b !important;
+}
+
+.theme-magnum #root,
+.theme-magnum main,
+.theme-magnum .min-h-screen {
+  background-color: transparent !important;
+  color: #1e293b !important;
+}
+
+/* Custom Cute Scrollbar for Magnum */
+body.theme-magnum ::-webkit-scrollbar-track {
+  background: #f0f7ff;
+}
+
+body.theme-magnum ::-webkit-scrollbar-thumb {
+  background: #bae6fd;
+}
+
+body.theme-magnum ::-webkit-scrollbar-thumb:hover {
+  background: #38bdf8;
+}
+
+/* Selection for Magnum */
+body.theme-magnum ::selection,
+.theme-magnum ::selection {
+  background-color: #bae6fd !important;
+  color: #0369a1 !important;
+}
+
+/* Background overrides in Magnum theme */
+.theme-magnum .bg-\[\#fff5f8\],
+.theme-magnum .bg-\[\#fff4f8\],
+.theme-magnum .bg-\[\#fff0f5\],
+.theme-magnum .bg-\[\#fff0f6\] {
+  background-color: #f0f7ff !important;
+}
+
+.theme-magnum .bg-pink-50,
+.theme-magnum .bg-pink-50\/30,
+.theme-magnum .bg-pink-50\/40,
+.theme-magnum .bg-pink-50\/50,
+.theme-magnum .bg-pink-50\/60,
+.theme-magnum .bg-pink-50\/70,
+.theme-magnum .bg-pink-50\/80 {
+  background-color: rgba(240, 249, 255, 0.85) !important;
+}
+
+.theme-magnum .bg-pink-100 {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+}
+
+.theme-magnum .bg-rose-50,
+.theme-magnum .bg-rose-50\/50,
+.theme-magnum .bg-rose-50\/60,
+.theme-magnum .bg-rose-50\/70,
+.theme-magnum .bg-rose-50\/80 {
+  background-color: #f0f9ff !important;
+}
+
+.theme-magnum .bg-rose-100 {
+  background-color: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+
+.theme-magnum .bg-rose-500 {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+}
+
+/* Borders in Magnum theme */
+.theme-magnum .border-pink-100 {
+  border-color: #e0f2fe !important;
+}
+
+.theme-magnum .border-pink-200,
+.theme-magnum .border-pink-200\/60,
+.theme-magnum .border-pink-200\/70,
+.theme-magnum .border-pink-200\/80,
+.theme-magnum .border-pink-200\/90 {
+  border-color: #bae6fd !important;
+}
+
+.theme-magnum .border-pink-300 {
+  border-color: #7dd3fc !important;
+}
+
+.theme-magnum .border-rose-100,
+.theme-magnum .border-rose-200,
+.theme-magnum .border-rose-300,
+.theme-magnum .border-rose-300\/80 {
+  border-color: #93c5fd !important;
+}
+
+.theme-magnum .border-rose-500 {
+  border-color: #0284c7 !important;
+}
+
+/* Text in Magnum theme */
+.theme-magnum .text-pink-300 {
+  color: #7dd3fc !important;
+}
+
+.theme-magnum .text-pink-400 {
+  color: #38bdf8 !important;
+}
+
+.theme-magnum .text-pink-500 {
+  color: #0ea5e9 !important;
+}
+
+.theme-magnum .text-pink-600 {
+  color: #0284c7 !important;
+}
+
+.theme-magnum .text-pink-700 {
+  color: #0369a1 !important;
+}
+
+.theme-magnum .text-pink-800,
+.theme-magnum .text-pink-900,
+.theme-magnum .text-pink-950 {
+  color: #0c4a6e !important;
+}
+
+.theme-magnum .text-rose-400 {
+  color: #60a5fa !important;
+}
+
+.theme-magnum .text-rose-500 {
+  color: #3b82f6 !important;
+}
+
+.theme-magnum .text-rose-600 {
+  color: #2563eb !important;
+}
+
+.theme-magnum .text-rose-700 {
+  color: #1d4ed8 !important;
+}
+
+/* Gradients in Magnum theme */
+.theme-magnum .from-pink-300 {
+  --tw-gradient-from: #7dd3fc var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(125 211 252 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.theme-magnum .from-pink-400 {
+  --tw-gradient-from: #38bdf8 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(56 189 248 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.theme-magnum .from-pink-500 {
+  --tw-gradient-from: #0ea5e9 var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(14 165 233 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.theme-magnum .from-rose-400 {
+  --tw-gradient-from: #60a5fa var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(96 165 250 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.theme-magnum .from-rose-500 {
+  --tw-gradient-from: #2563eb var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(37 99 235 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+
+.theme-magnum .to-rose-300 {
+  --tw-gradient-to: #93c5fd var(--tw-gradient-to-position) !important;
+}
+
+.theme-magnum .to-rose-400 {
+  --tw-gradient-to: #60a5fa var(--tw-gradient-to-position) !important;
+}
+
+.theme-magnum .to-rose-500 {
+  --tw-gradient-to: #3b82f6 var(--tw-gradient-to-position) !important;
+}
+
+.theme-magnum .to-pink-400 {
+  --tw-gradient-to: #38bdf8 var(--tw-gradient-to-position) !important;
+}
+
+.theme-magnum .to-pink-500 {
+  --tw-gradient-to: #0ea5e9 var(--tw-gradient-to-position) !important;
+}
+
+.theme-magnum .via-rose-300 {
+  --tw-gradient-stops: var(--tw-gradient-from), #93c5fd var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+.theme-magnum .via-rose-400 {
+  --tw-gradient-stops: var(--tw-gradient-from), #60a5fa var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+
+/* Hover, Focus, & Shadow */
+.theme-magnum .hover\:bg-pink-50:hover,
+.theme-magnum .hover\:bg-pink-100:hover,
+.theme-magnum .hover\:bg-rose-50:hover {
+  background-color: #e0f2fe !important;
+}
+
+.theme-magnum .focus\:border-rose-400:focus,
+.theme-magnum .focus\:border-pink-300:focus,
+.theme-magnum .focus\:border-pink-200:focus {
+  border-color: #38bdf8 !important;
+}
+
+.theme-magnum .shadow-pink-100,
+.theme-magnum .shadow-pink-100\/40,
+.theme-magnum .shadow-pink-100\/50,
+.theme-magnum .shadow-pink-200,
+.theme-magnum .shadow-pink-300,
+.theme-magnum .shadow-pink-300\/30,
+.theme-magnum .shadow-pink-300\/50 {
+  --tw-shadow-color: rgba(186, 230, 253, 0.45) !important;
+}
+
+.theme-magnum header {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: #bae6fd !important;
+  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.08) !important;
+}
+
+.theme-magnum nav.fixed {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: #bae6fd !important;
+  box-shadow: 0 -4px 16px rgba(56, 189, 248, 0.1) !important;
+}
+
+/* Muscle Highlight for Magnum in Anatomy */
+.theme-magnum .muscle-path:hover {
+  fill: #38bdf8 !important;
+  filter: drop-shadow(0 0 8px #38bdf8);
+}
+
+.theme-magnum .muscle-path.active {
+  fill: #0284c7 !important;
+  filter: drop-shadow(0 0 12px #0284c7);
+}
+

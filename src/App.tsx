@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { AppProvider } from './context/AppContext';
+import React, { useState, useEffect } from 'react';
+import { AppProvider, useApp } from './context/AppContext';
 import { Header } from './components/navigation/Header';
 import { BottomNav, TabKey } from './components/navigation/BottomNav';
 import { WorkoutView } from './views/WorkoutView';
@@ -13,6 +13,9 @@ import { AiTrainerModal } from './components/ai/AiTrainerModal';
 import { PigMascot } from './components/ui/PigMascot';
 
 export const MainContent: React.FC = () => {
+  const { activeProfileKey } = useApp();
+  const isMagnum = activeProfileKey === 'primary';
+
   const [activeTab, setActiveTab] = useState<TabKey>('workout');
   const [showAiTrainer, setShowAiTrainer] = useState(false);
   const [showProfileGate, setShowProfileGate] = useState<boolean>(() => {
@@ -25,8 +28,21 @@ export const MainContent: React.FC = () => {
     setShowProfileGate(false);
   };
 
+  // Sync theme class to document body
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.body.className = isMagnum ? 'theme-magnum' : 'theme-manow theme-pastel-pink';
+    }
+  }, [isMagnum]);
+
   return (
-    <div className="min-h-screen bg-[#fff5f8] text-slate-700 flex flex-col font-sans selection:bg-pink-200 selection:text-slate-800 relative">
+    <div
+      className={`min-h-screen ${
+        isMagnum
+          ? 'theme-magnum bg-[#f0f7ff] text-slate-800 selection:bg-sky-200 selection:text-sky-950'
+          : 'theme-manow theme-pastel-pink bg-[#fff5f8] text-slate-700 selection:bg-pink-200 selection:text-slate-800'
+      } flex flex-col font-sans relative transition-colors duration-300`}
+    >
       {/* Top Header */}
       <Header
         onOpenSettings={() => setActiveTab('stats')}
@@ -54,17 +70,27 @@ export const MainContent: React.FC = () => {
       <div className="fixed bottom-20 right-3.5 sm:right-6 z-30">
         <button
           onClick={() => setShowAiTrainer(true)}
-          className="group relative flex items-center gap-2 pl-2 pr-3.5 py-2 rounded-full bg-gradient-to-r from-pink-400 via-rose-400 to-pink-400 hover:from-pink-500 hover:to-rose-500 text-white shadow-lg shadow-pink-300/50 active:scale-95 transition cursor-pointer border-2 border-white/90"
+          className={`group relative flex items-center gap-2 pl-2 pr-3.5 py-2 rounded-full text-white shadow-lg active:scale-95 transition cursor-pointer border-2 border-white/90 ${
+            isMagnum
+              ? 'bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 hover:from-sky-500 hover:to-indigo-600 shadow-sky-300/50'
+              : 'bg-gradient-to-r from-pink-400 via-rose-400 to-pink-400 hover:from-pink-500 hover:to-rose-500 shadow-pink-300/50'
+          }`}
           title="แตะเพื่อคุยกับโค้ชหมูอ้วน AI ได้ทุกเมื่อ"
         >
           <div className="relative">
-            <PigMascot size="sm" expression="cheer" className="drop-shadow-xs" />
+            <PigMascot size="sm" expression={isMagnum ? 'workout' : 'cheer'} className="drop-shadow-xs" />
             <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full animate-ping" />
             <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full" />
           </div>
           <div className="text-left">
             <span className="block text-[11px] font-black leading-tight">โค้ช AI 💬</span>
-            <span className="block text-[9px] text-pink-100 font-medium leading-tight">หมูอ้วนเทรนเนอร์</span>
+            <span
+              className={`block text-[9px] font-medium leading-tight ${
+                isMagnum ? 'text-sky-100' : 'text-pink-100'
+              }`}
+            >
+              {isMagnum ? 'หมูอ้วนสายเวท' : 'หมูอ้วนเทรนเนอร์'}
+            </span>
           </div>
         </button>
       </div>
