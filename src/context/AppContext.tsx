@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   UserProfile,
   Exercise,
@@ -10,11 +10,32 @@ import {
   BodyMetric,
   Program,
   AppSettings,
+  FirebaseConfig,
 } from '../types';
 import { SEED_EXERCISES } from '../data/exercises';
 import { PREDEFINED_FOODS, PredefinedFood } from '../data/foodDatabase';
 import { GoogleSheetsService } from '../services/googleSheets';
 import { getDefaultGeminiApiKey } from '../services/gemini';
+import {
+  initFirebase,
+  getFirestoreInstance,
+  subscribeToFoodLogs,
+  subscribeToWorkoutHistory,
+  subscribeToBodyMetrics,
+  subscribeToCustomExercises,
+  subscribeToProfiles,
+  cloudSaveFoodLog,
+  cloudDeleteFoodLog,
+  cloudSaveWorkout,
+  cloudDeleteWorkout,
+  cloudSaveBodyMetric,
+  cloudDeleteBodyMetric,
+  cloudSaveCustomExercise,
+  cloudSaveProfile,
+  migrateAllDataToCloud,
+} from '../services/firebase';
+import { Firestore, doc, getDoc } from 'firebase/firestore';
+
 
 export interface ActiveWorkoutExercise {
   exercise_id: string;
@@ -90,7 +111,14 @@ interface AppContextType {
   syncFoodDatabaseToSheets: (foods?: PredefinedFood[]) => Promise<{ success: boolean; message: string }>;
   unifiedSpreadsheetUrl: string;
   openUnifiedSpreadsheet: () => void;
+
+  // Real-time Cloud (Firebase Firestore)
+  isFirebaseConnected: boolean;
+  firebaseError: string | null;
+  migrateLocalDataToFirebase: (onProgress?: (msg: string) => void) => Promise<{ success: boolean; count: number }>;
+  testFirebaseConnection: (config?: FirebaseConfig) => Promise<{ success: boolean; message: string }>;
 }
+
 
 const DEFAULT_PRIMARY_PROFILE: UserProfile = {
   user_id: 'user_primary',
@@ -689,6 +717,140 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isFirebaseConnected, setIsFirebaseConnected] = useState(false);
+  const [firebaseError, setFirebaseError] = useState<string | null>(null);
+  const firestoreDbRef = useRef<Firestore | null>(null);
+
+  // Initialize and listen to Firebase Firestore Real-time changes
+  useEffect(() => {
+    if (!settings.firebaseConfig?.apiKey || !settings.firebaseConfig?.projectId) {
+      setIsFirebaseConnected(false);
+      firestoreDbRef.current = null;
+      return;
+    }
+
+    try {
+      const db = initFirebase(settings.firebaseConfig);
+      if (!db) {
+        setIsFirebaseConnected(false);
+        return;
+      }
+      firestoreDbRef.current = db;
+      setIsFirebaseConnected(true);
+      setFirebaseError(null);
+
+      // 1. Food Logs Real-time listener
+      const unsubFood = subscribeToFoodLogs(
+        db,
+        (logs) => {
+          if (logs && logs.length > 0) {
+            setAllFoodLogs(logs);
+          }
+        },
+        (err) => setFirebaseError(`Food Logs: ${err.message}`)
+      );
+
+      // 2. Workout History Real-time listener
+      const unsubWorkouts = subscribeToWorkoutHistory(
+        db,
+        (workouts) => {
+          if (workouts && workouts.length > 0) {
+            setAllWorkoutHistory(workouts);
+          }
+        },
+        (err) => setFirebaseError(`Workout History: ${err.message}`)
+      );
+
+      // 3. Body Metrics Real-time listener
+      const unsubMetrics = subscribeToBodyMetrics(
+        db,
+        (metrics) => {
+          if (metrics && metrics.length > 0) {
+            setAllBodyMetrics(metrics);
+          }
+        },
+        (err) => setFirebaseError(`Body Metrics: ${err.message}`)
+      );
+
+      // 4. Custom Exercises Real-time listener
+      const unsubExercises = subscribeToCustomExercises(
+        db,
+        (customs) => {
+          if (customs && customs.length > 0) {
+            setExercises((prev) => {
+              const baseMap = new Map(SEED_EXERCISES.map((e) => [e.exercise_id, e]));
+              customs.forEach((c) => baseMap.set(c.exercise_id, c));
+              return Array.from(baseMap.values());
+            });
+          }
+        },
+        (err) => setFirebaseError(`Exercises: ${err.message}`)
+      );
+
+      // 5. User Profiles Real-time listener
+      const unsubProfiles = subscribeToProfiles(
+        db,
+        ({ primary, partner }) => {
+          if (primary) setPrimaryProfile((prev) => ({ ...prev, ...primary }));
+          if (partner) setPartnerProfile((prev) => ({ ...prev, ...partner }));
+        },
+        (err) => setFirebaseError(`Profiles: ${err.message}`)
+      );
+
+      return () => {
+        unsubFood();
+        unsubWorkouts();
+        unsubMetrics();
+        unsubExercises();
+        unsubProfiles();
+      };
+    } catch (e: any) {
+      console.error('Firebase setup error:', e);
+      setIsFirebaseConnected(false);
+      setFirebaseError(e.message || 'Firebase initialization failed');
+    }
+  }, [JSON.stringify(settings.firebaseConfig)]);
+
+  const testFirebaseConnection = async (config?: FirebaseConfig): Promise<{ success: boolean; message: string }> => {
+    const targetConfig = config || settings.firebaseConfig;
+    if (!targetConfig?.apiKey || !targetConfig?.projectId) {
+      return { success: false, message: 'กรุณากรอก Firebase API Key และ Project ID ให้ครบถ้วน' };
+    }
+    try {
+      const db = initFirebase(targetConfig);
+      if (!db) throw new Error('ไม่สามารถเริ่มต้น Firebase ได้');
+      const testDocRef = doc(db, 'user_profiles', 'test_ping');
+      await getDoc(testDocRef);
+      setIsFirebaseConnected(true);
+      setFirebaseError(null);
+      return { success: true, message: '🟢 เชื่อมต่อ Cloud Database (Firebase Firestore) สำเร็จแบบ Real-time เรียบร้อยแล้ว!' };
+    } catch (err: any) {
+      setIsFirebaseConnected(false);
+      setFirebaseError(err.message);
+      return { success: false, message: `🔴 เชื่อมต่อไม่สำเร็จ: ${err.message}` };
+    }
+  };
+
+  const migrateLocalDataToFirebase = async (onProgress?: (msg: string) => void) => {
+    const db = firestoreDbRef.current || (settings.firebaseConfig ? initFirebase(settings.firebaseConfig) : null);
+    if (!db) {
+      throw new Error('กรุณาตั้งค่าและเชื่อมต่อ Firebase ให้สำเร็จก่อนทำการย้ายข้อมูล');
+    }
+    const customExs = exercises.filter((e) => e.is_custom);
+    return await migrateAllDataToCloud(
+      db,
+      {
+        foodLogs: allFoodLogs,
+        workoutHistory: allWorkoutHistory,
+        bodyMetrics: allBodyMetrics,
+        customExercises: customExs,
+        primaryProfile,
+        partnerProfile,
+      },
+      onProgress
+    );
+  };
+
 
   // Unified Spreadsheet Link
   const unifiedSpreadsheetUrl = 'https://docs.google.com/spreadsheets/d/1cBYIM2WiqqGHIJi8t_JiUF4py30g3CGgQhGWwKWH2_A/edit';
@@ -780,6 +942,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setPrimaryProfile(updatedProfile);
     }
 
+    // Cloud Firestore Sync
+    if (firestoreDbRef.current) {
+      cloudSaveProfile(firestoreDbRef.current, updatedProfile, isTargetPartner).catch((err) => {
+        console.error('Firebase save profile error:', err);
+      });
+    }
+
     if (settings.appsScriptUrl || (settings.autoSyncGoogleSheets && settings.googleAccessToken)) {
       sheetsService.syncProfile(updatedProfile, updatedProfile.name).catch(err => {
         console.error('Auto sync profile failed:', err);
@@ -798,7 +967,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('ft_custom_exercises', JSON.stringify(customOnly));
       return updated;
     });
+
+    // Cloud Firestore Sync
+    if (firestoreDbRef.current) {
+      cloudSaveCustomExercise(firestoreDbRef.current, newEx).catch((err) => {
+        console.error('Firebase save exercise error:', err);
+      });
+    }
   };
+
 
   // Workout management
   const startWorkout = (name = 'บันทึกการฝึก', initialExercises?: Exercise[]) => {
@@ -982,6 +1159,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAllWorkoutHistory(prev => [finishedSession, ...prev]);
     setActiveWorkout(null);
 
+    // Cloud Firestore Sync
+    if (firestoreDbRef.current) {
+      cloudSaveWorkout(firestoreDbRef.current, finishedSession).catch((err) => {
+        console.error('Firebase save workout error:', err);
+      });
+    }
+
     // Auto-sync to Google Sheets via Apps Script or OAuth
     if (settings.appsScriptUrl || (settings.autoSyncGoogleSheets && settings.googleAccessToken)) {
       try {
@@ -1000,6 +1184,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteWorkoutSession = (sessionId: string) => {
     setAllWorkoutHistory(prev => prev.filter(s => s.session_id !== sessionId));
+    if (firestoreDbRef.current) {
+      cloudDeleteWorkout(firestoreDbRef.current, sessionId).catch(console.error);
+    }
   };
 
   const addExerciseToWorkout = (exercise: Exercise) => {
@@ -1111,6 +1298,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
     setAllFoodLogs(prev => [newLog, ...prev]);
 
+    // Cloud Firestore Sync
+    if (firestoreDbRef.current) {
+      cloudSaveFoodLog(firestoreDbRef.current, newLog).catch(console.error);
+    }
+
     if (settings.appsScriptUrl || (settings.autoSyncGoogleSheets && settings.googleAccessToken)) {
       try {
         await sheetsService.syncFoodLog(newLog, currentName);
@@ -1121,11 +1313,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateFoodLog = async (log_id: string, updates: Partial<FoodLog>) => {
-    setAllFoodLogs(prev => prev.map(l => l.log_id === log_id ? { ...l, ...updates } : l));
+    setAllFoodLogs(prev => {
+      const updated = prev.map(l => (l.log_id === log_id ? { ...l, ...updates } : l));
+      const target = updated.find(l => l.log_id === log_id);
+      if (target && firestoreDbRef.current) {
+        cloudSaveFoodLog(firestoreDbRef.current, target).catch(console.error);
+      }
+      return updated;
+    });
   };
 
   const deleteFoodLog = (log_id: string) => {
     setAllFoodLogs(prev => prev.filter(l => l.log_id !== log_id));
+    if (firestoreDbRef.current) {
+      cloudDeleteFoodLog(firestoreDbRef.current, log_id).catch(console.error);
+    }
   };
 
   const addBodyMetric = async (metricData: Omit<BodyMetric, 'id'>) => {
@@ -1137,6 +1339,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       user_name: currentName,
     };
     setAllBodyMetrics(prev => [newMetric, ...prev]);
+
+    // Cloud Firestore Sync
+    if (firestoreDbRef.current) {
+      cloudSaveBodyMetric(firestoreDbRef.current, newMetric).catch(console.error);
+    }
 
     if (settings.appsScriptUrl || (settings.autoSyncGoogleSheets && settings.googleAccessToken)) {
       try {
@@ -1151,6 +1358,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAllBodyMetrics(prev =>
       prev.filter(m => (m.id ? m.id !== metricIdOrDate : m.date !== metricIdOrDate))
     );
+    if (firestoreDbRef.current) {
+      cloudDeleteBodyMetric(firestoreDbRef.current, metricIdOrDate).catch(console.error);
+    }
   };
 
   const clearAllBodyMetrics = () => {
@@ -1278,11 +1488,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         syncFoodDatabaseToSheets,
         unifiedSpreadsheetUrl,
         openUnifiedSpreadsheet,
+        isFirebaseConnected,
+        firebaseError,
+        migrateLocalDataToFirebase,
+        testFirebaseConnection,
       }}
     >
       {children}
     </AppContext.Provider>
   );
+
 };
 
 export const useApp = () => {

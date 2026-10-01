@@ -216,6 +216,15 @@ export interface FoodLog {
   note?: string;
 }
 
+export interface FirebaseConfig {
+  apiKey: string;
+  authDomain?: string;
+  projectId: string;
+  storageBucket?: string;
+  messagingSenderId?: string;
+  appId: string;
+}
+
 export interface AppSettings {
   activeProfileKey: 'primary' | 'partner';
   googleClientId: string;
@@ -227,4 +236,7 @@ export interface AppSettings {
   geminiProxyUrl?: string;
   useProxy?: boolean;
   autoSyncGoogleSheets: boolean;
+  firebaseConfig?: FirebaseConfig;
+  useFirebase?: boolean;
 }
+
