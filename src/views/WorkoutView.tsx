@@ -670,7 +670,7 @@ export const WorkoutView: React.FC = () => {
                             onClick={() => {
                               document
                                 .getElementById(`set-card-${item.exercise_id}-${sIdx}`)
-                                ?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                             }}
                             className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition active:scale-95 cursor-pointer flex items-center gap-1 border ${
                               s.done
@@ -686,13 +686,13 @@ export const WorkoutView: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Horizontal Sets Carousel (Scroll Left-Right) */}
-                    <div className="p-3 sm:p-4 pt-1 flex gap-3.5 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin scroll-smooth">
+                    {/* Full-Width Sets List (Vertical Stack) */}
+                    <div className="p-3 sm:p-4 pt-1 space-y-3">
                       {item.sets.map((set, setIdx) => (
                         <div
                           key={set.set_id || setIdx}
                           id={`set-card-${item.exercise_id}-${setIdx}`}
-                          className={`w-[88vw] max-w-[360px] sm:w-[350px] shrink-0 snap-center p-3.5 sm:p-4 rounded-3xl border transition-all ${
+                          className={`w-full p-3.5 sm:p-4 rounded-3xl border transition-all ${
                             set.done
                               ? 'bg-rose-50/60 border-rose-200 shadow-2xs'
                               : 'bg-white border-pink-200/90 shadow-xs'
@@ -730,7 +730,7 @@ export const WorkoutView: React.FC = () => {
                           </div>
 
                           {/* Weight & Reps Stepper Controllers */}
-                          <div className="space-y-3 mb-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                             {/* 1. Weight (kg) Stepper */}
                             <div className="bg-pink-50/50 rounded-2xl p-3 border border-pink-100/90 space-y-2">
                               <div className="flex items-center justify-between px-1">
@@ -914,16 +914,14 @@ export const WorkoutView: React.FC = () => {
                         </div>
                       ))}
 
-                      {/* Add Next Set Horizontal Card */}
+                      {/* Add Next Set Full-Width Button */}
                       <button
                         type="button"
                         onClick={() => addSetToExercise(item.exercise_id)}
-                        className="w-28 sm:w-32 shrink-0 snap-center rounded-3xl bg-pink-50/60 hover:bg-pink-100/80 text-rose-600 font-bold text-xs flex flex-col items-center justify-center gap-2 border-2 border-dashed border-pink-300 transition active:scale-95 cursor-pointer p-4 min-h-[200px]"
+                        className="w-full py-3.5 px-4 rounded-2xl bg-pink-50/70 hover:bg-pink-100/90 text-rose-600 font-black text-xs sm:text-sm flex items-center justify-center gap-2 border-2 border-dashed border-pink-300 transition active:scale-98 cursor-pointer shadow-2xs"
                       >
-                        <div className="w-10 h-10 rounded-2xl bg-white border border-pink-200 text-rose-500 flex items-center justify-center shadow-xs">
-                          <Plus size={20} className="stroke-[2.5]" />
-                        </div>
-                        <span className="font-black text-slate-700 text-center">เพิ่มเซ็ต {item.sets.length + 1}</span>
+                        <Plus size={18} className="stroke-[3]" />
+                        <span>เพิ่มเซ็ต {item.sets.length + 1}</span>
                       </button>
                     </div>
 
