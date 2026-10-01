@@ -966,7 +966,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               return l;
             });
             setAllFoodLogs(sanitizedLogs);
+            localStorage.setItem('ft_food_logs', JSON.stringify(sanitizedLogs));
           }
+          // Auto-sync: Check if local storage has food logs missing from Cloud
+          try {
+            const savedLocal = localStorage.getItem('ft_food_logs');
+            if (savedLocal) {
+              const parsed: FoodLog[] = JSON.parse(savedLocal);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                const cloudIds = new Set((logs || []).map((l) => l.log_id));
+                const missing = parsed.filter((p) => p.log_id && !cloudIds.has(p.log_id));
+                missing.forEach((item) => cloudSaveFoodLog(db, item).catch(console.error));
+              }
+            }
+          } catch {}
         },
         (err) => setFirebaseError(`Food Logs: ${err.message}`)
       );
@@ -977,7 +990,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         (workouts) => {
           if (workouts && workouts.length > 0) {
             setAllWorkoutHistory(workouts);
+            localStorage.setItem('ft_history_unified', JSON.stringify(workouts));
           }
+          // Auto-sync: Check if local storage has workouts missing from Cloud
+          try {
+            const savedLocal = localStorage.getItem('ft_history_unified');
+            if (savedLocal) {
+              const parsed: WorkoutSession[] = JSON.parse(savedLocal);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                const cloudIds = new Set((workouts || []).map((w) => w.session_id));
+                const missing = parsed.filter((p) => p.session_id && !cloudIds.has(p.session_id));
+                missing.forEach((item) => cloudSaveWorkout(db, item).catch(console.error));
+              }
+            }
+          } catch {}
         },
         (err) => setFirebaseError(`Workout History: ${err.message}`)
       );
@@ -988,7 +1014,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         (metrics) => {
           if (metrics && metrics.length > 0) {
             setAllBodyMetrics(metrics);
+            localStorage.setItem('ft_metrics_v2', JSON.stringify(metrics));
           }
+          // Auto-sync: Check if local storage has metrics missing from Cloud
+          try {
+            const savedLocal = localStorage.getItem('ft_metrics_v2');
+            if (savedLocal) {
+              const parsed: BodyMetric[] = JSON.parse(savedLocal);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                const cloudIds = new Set((metrics || []).map((m) => m.id || m.date));
+                const missing = parsed.filter((p) => (p.id || p.date) && !cloudIds.has(p.id || p.date));
+                missing.forEach((item) => cloudSaveBodyMetric(db, item).catch(console.error));
+              }
+            }
+          } catch {}
         },
         (err) => setFirebaseError(`Body Metrics: ${err.message}`)
       );
@@ -1004,6 +1043,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               return Array.from(baseMap.values());
             });
           }
+          // Auto-sync local custom exercises to cloud
+          try {
+            const savedCustoms = localStorage.getItem('ft_custom_exercises');
+            if (savedCustoms) {
+              const parsed: Exercise[] = JSON.parse(savedCustoms);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                const cloudIds = new Set((customs || []).map((c) => c.exercise_id));
+                const missing = parsed.filter((p) => p.exercise_id && !cloudIds.has(p.exercise_id));
+                missing.forEach((item) => cloudSaveCustomExercise(db, item).catch(console.error));
+              }
+            }
+          } catch {}
         },
         (err) => setFirebaseError(`Exercises: ${err.message}`)
       );
@@ -1022,9 +1073,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const unsubWater = subscribeToWaterLogs(
         db,
         (logs) => {
-          if (logs) {
+          if (logs && logs.length > 0) {
             setAllWaterLogs(logs);
+            localStorage.setItem('ft_water_logs', JSON.stringify(logs));
           }
+          // Auto-sync: Check if local storage has water logs missing from Cloud
+          try {
+            const savedLocal = localStorage.getItem('ft_water_logs');
+            if (savedLocal) {
+              const parsed: WaterLog[] = JSON.parse(savedLocal);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                const cloudIds = new Set((logs || []).map((w) => w.id));
+                const missing = parsed.filter((p) => p.id && !cloudIds.has(p.id));
+                missing.forEach((item) => cloudSaveWaterLog(db, item).catch(console.error));
+              }
+            }
+          } catch {}
         },
         (err) => setFirebaseError(`Water Logs: ${err.message}`)
       );
@@ -1679,8 +1743,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     // Cloud Firestore Sync
-    if (firestoreDbRef.current) {
-      cloudSaveWorkout(firestoreDbRef.current, finishedSession).catch((err) => {
+    const db = firestoreDbRef.current || getFirestoreInstance();
+    if (db) {
+      cloudSaveWorkout(db, finishedSession).catch((err) => {
         console.error('Firebase save workout error:', err);
       });
     }
@@ -1708,8 +1773,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('ft_history_seeded', '1');
       return updated;
     });
-    if (firestoreDbRef.current) {
-      cloudDeleteWorkout(firestoreDbRef.current, sessionId).catch(console.error);
+    const db = firestoreDbRef.current || getFirestoreInstance();
+    if (db) {
+      cloudDeleteWorkout(db, sessionId).catch(console.error);
     }
   };
 
@@ -1831,8 +1897,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAllFoodLogs(prev => [newLog, ...prev]);
 
     // Cloud Firestore Sync
-    if (firestoreDbRef.current) {
-      cloudSaveFoodLog(firestoreDbRef.current, newLog).catch(console.error);
+    const db = firestoreDbRef.current || getFirestoreInstance();
+    if (db) {
+      cloudSaveFoodLog(db, newLog).catch(console.error);
     }
 
     if (settings.appsScriptUrl || (settings.autoSyncGoogleSheets && settings.googleAccessToken)) {
@@ -1848,8 +1915,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAllFoodLogs(prev => {
       const updated = prev.map(l => (l.log_id === log_id ? { ...l, ...updates } : l));
       const target = updated.find(l => l.log_id === log_id);
-      if (target && firestoreDbRef.current) {
-        cloudSaveFoodLog(firestoreDbRef.current, target).catch(console.error);
+      const db = firestoreDbRef.current || getFirestoreInstance();
+      if (target && db) {
+        cloudSaveFoodLog(db, target).catch(console.error);
       }
       return updated;
     });
@@ -1857,8 +1925,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteFoodLog = (log_id: string) => {
     setAllFoodLogs(prev => prev.filter(l => l.log_id !== log_id));
-    if (firestoreDbRef.current) {
-      cloudDeleteFoodLog(firestoreDbRef.current, log_id).catch(console.error);
+    const db = firestoreDbRef.current || getFirestoreInstance();
+    if (db) {
+      cloudDeleteFoodLog(db, log_id).catch(console.error);
     }
   };
 
@@ -1879,15 +1948,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setAllWaterLogs(prev => [newLog, ...prev]);
 
-    if (firestoreDbRef.current) {
-      cloudSaveWaterLog(firestoreDbRef.current, newLog).catch(console.error);
+    const db = firestoreDbRef.current || getFirestoreInstance();
+    if (db) {
+      cloudSaveWaterLog(db, newLog).catch(console.error);
     }
   };
 
   const deleteWaterLog = (id: string) => {
     setAllWaterLogs(prev => prev.filter(w => w.id !== id));
-    if (firestoreDbRef.current) {
-      cloudDeleteWaterLog(firestoreDbRef.current, id).catch(console.error);
+    const db = firestoreDbRef.current || getFirestoreInstance();
+    if (db) {
+      cloudDeleteWaterLog(db, id).catch(console.error);
     }
   };
 
@@ -1902,8 +1973,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAllBodyMetrics(prev => [newMetric, ...prev]);
 
     // Cloud Firestore Sync
-    if (firestoreDbRef.current) {
-      cloudSaveBodyMetric(firestoreDbRef.current, newMetric).catch(console.error);
+    const db = firestoreDbRef.current || getFirestoreInstance();
+    if (db) {
+      cloudSaveBodyMetric(db, newMetric).catch(console.error);
     }
 
     if (settings.appsScriptUrl || (settings.autoSyncGoogleSheets && settings.googleAccessToken)) {
@@ -1919,8 +1991,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setAllBodyMetrics(prev =>
       prev.filter(m => (m.id ? m.id !== metricIdOrDate : m.date !== metricIdOrDate))
     );
-    if (firestoreDbRef.current) {
-      cloudDeleteBodyMetric(firestoreDbRef.current, metricIdOrDate).catch(console.error);
+    const db = firestoreDbRef.current || getFirestoreInstance();
+    if (db) {
+      cloudDeleteBodyMetric(db, metricIdOrDate).catch(console.error);
     }
   };
 
