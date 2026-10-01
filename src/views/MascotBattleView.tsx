@@ -291,16 +291,6 @@ export const MascotBattleView: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Custom Animation/Image Slot Button */}
-          <button
-            onClick={() => setShowCustomSlotModal(true)}
-            className="px-3 py-1.5 rounded-xl bg-white hover:bg-pink-50 border border-pink-200 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow-2xs cursor-pointer"
-            title="ใส่ภาพวาดหรือแอนิเมชันหมูของตัวเอง"
-          >
-            <ImageIcon size={14} className="text-pink-500" />
-            <span>ช่องใส่รูป/อนิเมชัน</span>
-          </button>
-
           {/* Test/Preview Simulator Slider Toggle */}
           <button
             onClick={() => setShowSimControls(!showSimControls)}
@@ -376,7 +366,7 @@ export const MascotBattleView: React.FC = () => {
         <div className="flex items-center gap-2">
           <Swords size={18} className="text-rose-500" />
           <span className="text-xs sm:text-sm font-black text-slate-800">
-            สถานะการแข่งขันสัปดาห์นี้:
+            สถานะสัปดาห์นี้:
           </span>
           <span
             className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
@@ -389,7 +379,7 @@ export const MascotBattleView: React.FC = () => {
           >
             {leader === 'magnum' && `🏋️‍♂️ แม็กนั่มนำอยู่ (${magnumWeekCount} ต่อ ${manowWeekCount} เซสชัน)`}
             {leader === 'manow' && `🌸 มะนาวนำอยู่ (${manowWeekCount} ต่อ ${magnumWeekCount} เซสชัน)`}
-            {leader === 'tie' && `🔥 เสมอกันอย่างดุเดือด (${magnumWeekCount} เซสชันเท่ากัน)`}
+            {leader === 'tie' && `🔥 เสมอกัน (${magnumWeekCount} เซสชันเท่ากัน)`}
           </span>
         </div>
 
@@ -413,170 +403,207 @@ export const MascotBattleView: React.FC = () => {
         </button>
       </div>
 
-      {/* Main Side-by-Side Pig Arena */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        {/* =========================================
-            LEFT: MAGNUM'S PIG (หมูแม็กนั่ม)
-            ========================================= */}
-        <div
-          onClick={handleTapMagnumPig}
-          className="group relative bg-white/95 hover:bg-white rounded-3xl border-2 border-sky-200/80 hover:border-sky-300 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between overflow-hidden"
-        >
-          {/* Top Badge */}
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-black px-3 py-1 rounded-full bg-sky-100 text-sky-800 border border-sky-200 flex items-center gap-1">
-              <span>🏋️‍♂️ หมูแม็กนั่ม (Magnum)</span>
-            </span>
-            <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${magnumState.badgeColor}`}>
-              {magnumState.title}
+      {/* =========================================
+          COZY MOOAUAN LIVING ROOM & GYM HOME
+          หมูสองตัวยืนอยู่ด้วยกันข้างกันเหมือนในบ้าน
+          ========================================= */}
+      <div className="relative rounded-3xl border-2 border-pink-300/80 bg-gradient-to-b from-[#fff5f7] via-[#ffeef2] to-[#fedfe7] p-4 sm:p-6 shadow-md overflow-hidden">
+        {/* Room Header Frame on the Wall */}
+        <div className="relative z-10 flex items-center justify-between gap-2 mb-4">
+          <div className="flex items-center gap-2 bg-white/80 backdrop-blur-xs px-3 py-1 rounded-full border border-pink-200 shadow-2xs">
+            <span className="text-sm">🏠</span>
+            <span className="text-xs font-black text-slate-800">
+              บ้านหมูอ้วนคู่หู (MooAuan Cozy Home)
             </span>
           </div>
+          <span className="text-[11px] font-bold text-pink-500 bg-white/70 px-2.5 py-0.5 rounded-full border border-pink-200">
+            แตะตัวน้องหมูเพื่อฟังเสียงแซวกัน 🐽
+          </span>
+        </div>
 
-          {/* Interactive Speech Bubble */}
-          <div className="my-3 min-h-[64px] flex items-center">
-            <div className="relative w-full bg-sky-50/90 border border-sky-200 text-slate-800 rounded-2xl p-3 text-xs leading-relaxed shadow-2xs group-hover:scale-[1.01] transition">
-              <span className="font-bold text-sky-600 block mb-0.5 text-[11px]">
-                💬 เสียงจากหมูแม็กนั่ม (แตะตัวหมูเพื่อฟัง):
-              </span>
-              <p className="font-medium italic">"{magnumSpeech}"</p>
-              <div className="absolute -bottom-2 left-8 w-3 h-3 bg-sky-50 border-b border-r border-sky-200 rotate-45" />
-            </div>
+        {/* Room Wall Decorations */}
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-3 opacity-40 pointer-events-none">
+          <div className="w-16 h-10 border border-pink-300 rounded-md bg-white/60 flex items-center justify-center text-[9px] font-bold text-pink-600 shadow-2xs">
+            🖼️ Magnum & Manow
           </div>
-
-          {/* Visual Pig Character Display */}
-          <div className="relative py-6 flex flex-col items-center justify-center">
-            {customMagnumImg ? (
-              <img
-                src={customMagnumImg}
-                alt="Magnum Custom Pig"
-                className="w-36 h-36 object-contain rounded-2xl drop-shadow-md animate-bounce-subtle"
-              />
-            ) : (
-              <PigEvolutionVisual level={magnumLevel} expression="workout" gender="male" />
-            )}
-
-            {/* Stage Title & Fat Status */}
-            <div className="text-center mt-4 space-y-1">
-              <h3 className="text-lg font-black text-slate-800">
-                {magnumState.title}
-              </h3>
-              <p className="text-xs text-slate-500 font-medium max-w-xs">
-                {magnumState.description}
-              </p>
-              <div className="flex items-center justify-center gap-2 pt-1 font-mono text-xs">
-                <span className="bg-sky-50 px-2.5 py-0.5 rounded-full text-sky-700 font-bold border border-sky-200">
-                  {magnumState.bodyFatLabel}
-                </span>
-                <span className="text-slate-400">•</span>
-                <span className="text-slate-600">
-                  น้ำหนักจริง: <strong className="text-slate-800">{magnumMetric?.weight_kg || 71.9} kg</strong>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Stats Card */}
-          <div className="mt-3 pt-3 border-t border-sky-100 grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="bg-sky-50/50 p-2 rounded-xl border border-sky-100">
-              <span className="text-[10px] text-sky-600 font-bold block">อาทิตย์นี้</span>
-              <strong className="text-base font-black text-slate-800 font-mono">
-                {magnumWeekCount} <span className="text-[10px] font-normal">วัน</span>
-              </strong>
-            </div>
-            <div className="bg-sky-50/50 p-2 rounded-xl border border-sky-100">
-              <span className="text-[10px] text-sky-600 font-bold block">รวมทั้งหมด</span>
-              <strong className="text-base font-black text-slate-800 font-mono">
-                {magnumTotalCount} <span className="text-[10px] font-normal">ครั้ง</span>
-              </strong>
-            </div>
-            <div className="bg-sky-50/50 p-2 rounded-xl border border-sky-100">
-              <span className="text-[10px] text-sky-600 font-bold block">ระดับความฟิต</span>
-              <strong className="text-base font-black text-rose-500 font-mono">
-                Lv.{magnumLevel} <span className="text-[10px] font-normal">/ 4</span>
-              </strong>
-            </div>
+          <div className="w-7 h-7 rounded-full border border-pink-300 bg-white/60 flex items-center justify-center text-[10px]">
+            ⏰
           </div>
         </div>
 
-        {/* =========================================
-            RIGHT: MANOW'S PIG (หมูมะนาว)
-            ========================================= */}
-        <div
-          onClick={handleTapManowPig}
-          className="group relative bg-white/95 hover:bg-white rounded-3xl border-2 border-pink-300/80 hover:border-pink-400 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between overflow-hidden"
-        >
-          {/* Top Badge */}
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-xs font-black px-3 py-1 rounded-full bg-pink-100 text-rose-700 border border-pink-200 flex items-center gap-1">
-              <span>🌸 หมูมะนาว (Manow)</span>
-            </span>
-            <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${manowState.badgeColor}`}>
-              {manowState.title}
-            </span>
-          </div>
+        {/* Room Floor Base (Warm Rug & Wooden Floor Styling) */}
+        <div className="relative z-10">
+          {/* Side-by-Side Speech Bubbles on Wall */}
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            {/* Magnum Speech Bubble */}
+            <div
+              onClick={handleTapMagnumPig}
+              className="bg-sky-50/95 border border-sky-200/90 rounded-2xl p-2.5 sm:p-3 text-xs shadow-xs cursor-pointer hover:bg-sky-100/80 transition relative"
+            >
+              <div className="flex items-center gap-1 font-bold text-sky-700 text-[11px] mb-0.5">
+                <span>🏋️‍♂️ แม็กนั่ม:</span>
+              </div>
+              <p className="font-medium text-slate-700 leading-snug italic line-clamp-3">
+                "{magnumSpeech.replace(/^หมูแม็กนั่ม:\s*"?/, '').replace(/"?$/, '')}"
+              </p>
+              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-sky-50 border-b border-r border-sky-200/90 rotate-45" />
+            </div>
 
-          {/* Interactive Speech Bubble */}
-          <div className="my-3 min-h-[64px] flex items-center">
-            <div className="relative w-full bg-rose-50/90 border border-pink-200 text-slate-800 rounded-2xl p-3 text-xs leading-relaxed shadow-2xs group-hover:scale-[1.01] transition">
-              <span className="font-bold text-rose-600 block mb-0.5 text-[11px]">
-                💬 เสียงจากหมูมะนาว (แตะตัวหมูเพื่อฟัง):
-              </span>
-              <p className="font-medium italic">"{manowSpeech}"</p>
-              <div className="absolute -bottom-2 left-8 w-3 h-3 bg-rose-50 border-b border-r border-pink-200 rotate-45" />
+            {/* Manow Speech Bubble */}
+            <div
+              onClick={handleTapManowPig}
+              className="bg-rose-50/95 border border-pink-200/90 rounded-2xl p-2.5 sm:p-3 text-xs shadow-xs cursor-pointer hover:bg-rose-100/80 transition relative"
+            >
+              <div className="flex items-center gap-1 font-bold text-rose-600 text-[11px] mb-0.5">
+                <span>🌸 มะนาว:</span>
+              </div>
+              <p className="font-medium text-slate-700 leading-snug italic line-clamp-3">
+                "{manowSpeech.replace(/^หมูมะนาว:\s*"?/, '').replace(/"?$/, '')}"
+              </p>
+              <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-rose-50 border-b border-r border-pink-200/90 rotate-45" />
             </div>
           </div>
 
-          {/* Visual Pig Character Display */}
-          <div className="relative py-6 flex flex-col items-center justify-center">
-            {customManowImg ? (
-              <img
-                src={customManowImg}
-                alt="Manow Custom Pig"
-                className="w-36 h-36 object-contain rounded-2xl drop-shadow-md animate-bounce-subtle"
-              />
-            ) : (
-              <PigEvolutionVisual level={manowLevel} expression="happy" gender="female" />
-            )}
+          {/* Living Room Floor / Workout Mat with BOTH PIGS STANDING SIDE BY SIDE */}
+          <div className="relative bg-gradient-to-r from-sky-50/60 via-pink-100/70 to-rose-50/60 border-2 border-pink-200/90 rounded-[32px] p-4 sm:p-6 shadow-inner">
+            {/* Mat border stitch effect */}
+            <div className="absolute inset-2 border border-dashed border-pink-300/60 rounded-[26px] pointer-events-none" />
 
-            {/* Stage Title & Fat Status */}
-            <div className="text-center mt-4 space-y-1">
-              <h3 className="text-lg font-black text-slate-800">
-                {manowState.title}
-              </h3>
-              <p className="text-xs text-slate-500 font-medium max-w-xs">
-                {manowState.description}
-              </p>
-              <div className="flex items-center justify-center gap-2 pt-1 font-mono text-xs">
-                <span className="bg-pink-50 px-2.5 py-0.5 rounded-full text-rose-700 font-bold border border-pink-200">
-                  {manowState.bodyFatLabel}
-                </span>
-                <span className="text-slate-400">•</span>
-                <span className="text-slate-600">
-                  น้ำหนักจริง: <strong className="text-slate-800">{manowMetric?.weight_kg || 49.0} kg</strong>
-                </span>
+            {/* Two Pigs Standing Side by Side */}
+            <div className="grid grid-cols-2 gap-4 items-end justify-center py-2 sm:py-4">
+              {/* MAGNUM PIG (Left) */}
+              <div
+                onClick={handleTapMagnumPig}
+                className="flex flex-col items-center justify-center cursor-pointer group transition active:scale-95"
+              >
+                <div className="relative">
+                  {customMagnumImg ? (
+                    <img
+                      src={customMagnumImg}
+                      alt="Magnum Custom Pig"
+                      className="w-32 h-32 sm:w-40 sm:h-40 object-contain drop-shadow-md animate-bounce-subtle"
+                    />
+                  ) : (
+                    <PigEvolutionVisual level={magnumLevel} expression="workout" gender="male" />
+                  )}
+                  {/* Subtle ground shadow */}
+                  <div className="w-24 h-4 bg-pink-900/10 rounded-full mx-auto blur-[2px] mt-1" />
+                </div>
+
+                {/* Name & Evolution Badge */}
+                <div className="text-center mt-2 space-y-0.5">
+                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 border border-sky-200 inline-block shadow-2xs">
+                    🏋️‍♂️ หมูแม็กนั่ม
+                  </span>
+                  <div className="text-xs font-bold text-slate-700">
+                    {magnumState.title.split(' ')[0]}
+                  </div>
+                  <span className="text-[10px] font-mono text-sky-700 bg-white/80 px-2 py-0.2 rounded-md border border-sky-100">
+                    {magnumState.bodyFatLabel}
+                  </span>
+                </div>
+              </div>
+
+              {/* MANOW PIG (Right) */}
+              <div
+                onClick={handleTapManowPig}
+                className="flex flex-col items-center justify-center cursor-pointer group transition active:scale-95"
+              >
+                <div className="relative">
+                  {customManowImg ? (
+                    <img
+                      src={customManowImg}
+                      alt="Manow Custom Pig"
+                      className="w-32 h-32 sm:w-40 sm:h-40 object-contain drop-shadow-md animate-bounce-subtle"
+                    />
+                  ) : (
+                    <PigEvolutionVisual level={manowLevel} expression="happy" gender="female" />
+                  )}
+                  {/* Subtle ground shadow */}
+                  <div className="w-24 h-4 bg-pink-900/10 rounded-full mx-auto blur-[2px] mt-1" />
+                </div>
+
+                {/* Name & Evolution Badge */}
+                <div className="text-center mt-2 space-y-0.5">
+                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-pink-100 text-rose-700 border border-pink-200 inline-block shadow-2xs">
+                    🌸 หมูมะนาว
+                  </span>
+                  <div className="text-xs font-bold text-slate-700">
+                    {manowState.title.split(' ')[0]}
+                  </div>
+                  <span className="text-[10px] font-mono text-rose-700 bg-white/80 px-2 py-0.2 rounded-md border border-pink-100">
+                    {manowState.bodyFatLabel}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Room Props: Dumbbell & Yoga Mat on the sides */}
+            <div className="flex items-center justify-between text-xs text-slate-400 px-3 pt-2">
+              <span className="flex items-center gap-1 font-medium text-[11px] text-slate-500">
+                <span>🏋️ มินิยิมแม็กนั่ม</span>
+              </span>
+              <span className="flex items-center gap-1 font-medium text-[11px] text-slate-500">
+                <span>🌸 โซนปั้นหุ่นมะนาว</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Clean Side-by-Side Comparison Scoreboard */}
+      <div className="bg-white/95 rounded-3xl border border-pink-200/90 p-4 sm:p-5 shadow-xs">
+        <h4 className="text-xs sm:text-sm font-black text-slate-800 flex items-center gap-2 mb-3">
+          <Trophy size={16} className="text-amber-500" />
+          ตารางเปรียบเทียบสถิติการฝึกของทั้งคู่
+        </h4>
+
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          {/* Magnum Column */}
+          <div className="bg-sky-50/50 rounded-2xl p-3 sm:p-4 border border-sky-100 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-sky-800">แม็กนั่ม (Magnum)</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-sky-100 text-sky-700">
+                Lv.{magnumLevel}
+              </span>
+            </div>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between text-slate-600">
+                <span>ซ้อมสัปดาห์นี้:</span>
+                <strong className="font-mono text-slate-800">{magnumWeekCount} วัน</strong>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>รวมทั้งหมด:</span>
+                <strong className="font-mono text-slate-800">{magnumTotalCount} ครั้ง</strong>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>น้ำหนักตัว:</span>
+                <strong className="font-mono text-slate-800">{magnumMetric?.weight_kg || 71.9} kg</strong>
               </div>
             </div>
           </div>
 
-          {/* Bottom Stats Card */}
-          <div className="mt-3 pt-3 border-t border-pink-100 grid grid-cols-3 gap-2 text-center text-xs">
-            <div className="bg-pink-50/50 p-2 rounded-xl border border-pink-100">
-              <span className="text-[10px] text-pink-600 font-bold block">อาทิตย์นี้</span>
-              <strong className="text-base font-black text-slate-800 font-mono">
-                {manowWeekCount} <span className="text-[10px] font-normal">วัน</span>
-              </strong>
+          {/* Manow Column */}
+          <div className="bg-rose-50/50 rounded-2xl p-3 sm:p-4 border border-pink-100 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-rose-700">มะนาว (Manow)</span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-pink-100 text-rose-700">
+                Lv.{manowLevel}
+              </span>
             </div>
-            <div className="bg-pink-50/50 p-2 rounded-xl border border-pink-100">
-              <span className="text-[10px] text-pink-600 font-bold block">รวมทั้งหมด</span>
-              <strong className="text-base font-black text-slate-800 font-mono">
-                {manowTotalCount} <span className="text-[10px] font-normal">ครั้ง</span>
-              </strong>
-            </div>
-            <div className="bg-pink-50/50 p-2 rounded-xl border border-pink-100">
-              <span className="text-[10px] text-pink-600 font-bold block">ระดับความฟิต</span>
-              <strong className="text-base font-black text-rose-500 font-mono">
-                Lv.{manowLevel} <span className="text-[10px] font-normal">/ 4</span>
-              </strong>
+            <div className="space-y-1.5 text-xs">
+              <div className="flex justify-between text-slate-600">
+                <span>ซ้อมสัปดาห์นี้:</span>
+                <strong className="font-mono text-slate-800">{manowWeekCount} วัน</strong>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>รวมทั้งหมด:</span>
+                <strong className="font-mono text-slate-800">{manowTotalCount} ครั้ง</strong>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>น้ำหนักตัว:</span>
+                <strong className="font-mono text-slate-800">{manowMetric?.weight_kg || 49.0} kg</strong>
+              </div>
             </div>
           </div>
         </div>

@@ -12,6 +12,7 @@ import {
   Clock,
   Timer,
   ChevronDown,
+  ChevronRight,
   RotateCcw,
   Sparkles,
   Flame,
@@ -113,6 +114,7 @@ export const WorkoutView: React.FC = () => {
   // Stepper increment step size state
   const [weightStep, setWeightStep] = useState<number>(2.5);
   const [repsStep, setRepsStep] = useState<number>(1);
+  const [showSessionDetails, setShowSessionDetails] = useState(false);
 
   // Routine search and editing state
   const [routineSearchQuery, setRoutineSearchQuery] = useState('');
@@ -287,23 +289,35 @@ export const WorkoutView: React.FC = () => {
         />
       ) : activeWorkout ? (
         <div className="space-y-4">
-          {/* Active Workout Top Banner (Pastel Pink & Soft Cream) */}
-          <div className="relative bg-white/95 border border-pink-300 rounded-3xl p-5 shadow-sm shadow-pink-100 backdrop-blur-xl sticky top-16 z-30 overflow-hidden">
-            <div className="relative z-10 flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-rose-600">
-                    กำลังฝึกซ้อมอยู่ (Active Session)
+          {/* Active Workout Top Banner (Compact, Ergonomic, Non-cluttered) */}
+          <div className="bg-white/95 border border-pink-300/80 rounded-2xl p-3 sm:p-4 shadow-sm backdrop-blur-xl sticky top-16 z-30 overflow-hidden space-y-2">
+            {/* Top Compact Bar */}
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500 block leading-tight">
+                    กำลังฝึกซ้อม
                   </span>
+                  <h2 className="text-sm sm:text-base font-black text-slate-800 truncate leading-tight">
+                    {activeWorkout.name}
+                  </h2>
                 </div>
-                <h2 className="text-xl font-black text-slate-700 mt-1">{activeWorkout.name}</h2>
               </div>
-              <div className="flex items-center gap-2">
+
+              {/* Action Buttons & Timers Row */}
+              <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                {/* Elapsed Time Pill */}
+                <div className="bg-pink-50 px-2.5 py-1.5 rounded-xl border border-pink-200 flex items-center gap-1 text-xs font-mono font-bold text-slate-700">
+                  <Clock size={13} className="text-rose-500" />
+                  <span>{formatSeconds(activeWorkout.elapsedSeconds)}</span>
+                </div>
+
                 {/* Rest Timer Button in header */}
                 <button
+                  type="button"
                   onClick={() => setShowRestTimer((prev) => !prev)}
-                  className={`px-3 py-2 rounded-xl border flex items-center gap-1.5 text-xs font-mono font-bold transition active:scale-95 ${
+                  className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1 text-xs font-mono font-bold transition active:scale-95 cursor-pointer ${
                     restTimerSeconds !== null && restTimerSeconds > 0
                       ? 'bg-rose-50 border-rose-400 text-rose-700 ring-2 ring-rose-200'
                       : showRestTimer
@@ -313,7 +327,7 @@ export const WorkoutView: React.FC = () => {
                   title="เปิด/ปิดนาฬิกาจับเวลาพัก"
                 >
                   <Timer
-                    size={16}
+                    size={14}
                     className={
                       restTimerSeconds !== null && !restTimerPaused && restTimerSeconds > 0
                         ? 'animate-spin text-rose-500'
@@ -321,51 +335,124 @@ export const WorkoutView: React.FC = () => {
                     }
                   />
                   <span>
-                    {restTimerSeconds !== null ? formatSeconds(restTimerSeconds) : 'จับเวลาพัก'}
+                    {restTimerSeconds !== null ? formatSeconds(restTimerSeconds) : 'พัก'}
                   </span>
                 </button>
 
-                <div className="bg-pink-50 px-3 py-2 rounded-xl border border-pink-200 flex items-center gap-1.5 text-sm font-mono font-bold text-slate-700">
-                  <Clock size={16} className="text-rose-500" />
-                  {formatSeconds(activeWorkout.elapsedSeconds)}
-                </div>
+                {/* Compact Finish Workout Button */}
+                <button
+                  type="button"
+                  onClick={finishWorkout}
+                  className="py-1.5 px-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold text-xs flex items-center gap-1 shadow-xs active:scale-95 transition cursor-pointer"
+                  title="เสร็จสิ้นการฝึกและบันทึก"
+                >
+                  <CheckCircle2 size={14} className="stroke-[2.5]" />
+                  <span>เสร็จสิ้น</span>
+                </button>
+
+                {/* Cancel Button */}
+                <button
+                  type="button"
+                  onClick={cancelWorkout}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                  title="ยกเลิกเซสชัน"
+                >
+                  <X size={16} />
+                </button>
               </div>
             </div>
 
-            {/* Standard Rest Time Selector Card requested by user */}
-            <div className="mt-3.5 pt-3 border-t border-pink-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Timer size={15} className="text-rose-500" />
-                <span className="text-xs font-bold text-slate-700">
-                  เวลาพักมาตรฐาน (จะเริ่มนับถอยหลังทันทีเมื่อติ๊กเสร็จเซ็ต):
+            {/* Sub-bar: Compact Quick Note / Rest Settings Accordion Toggle */}
+            <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-pink-100/90 text-slate-500">
+              <button
+                type="button"
+                onClick={() => setShowSessionDetails((prev) => !prev)}
+                className="flex items-center gap-1.5 text-pink-600 hover:text-rose-600 font-bold transition cursor-pointer text-left"
+              >
+                <span>⚙️ พัก {standardRestSeconds}วิ</span>
+                <span>•</span>
+                <span className="truncate max-w-[170px] sm:max-w-xs font-normal">
+                  {activeWorkout.note ? `📝 ${activeWorkout.note}` : '📝 เพิ่มหมายเหตุ...'}
                 </span>
-              </div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {[
-                  { label: '45 วิ', sec: 45 },
-                  { label: '60 วิ', sec: 60 },
-                  { label: '90 วิ (แนะนำ)', sec: 90 },
-                  { label: '2 นาที', sec: 120 },
-                  { label: '3 นาที', sec: 180 },
-                ].map((p) => (
-                  <button
-                    key={p.sec}
-                    onClick={() => handleSelectStandardRest(p.sec)}
-                    className={`px-2.5 py-1 rounded-xl text-xs font-bold transition active:scale-95 ${
-                      standardRestSeconds === p.sec
-                        ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
-                        : 'bg-pink-50 hover:bg-pink-100 text-slate-600 border border-pink-200'
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
+                <ChevronRight
+                  size={12}
+                  className={`transition-transform duration-200 ${showSessionDetails ? 'rotate-90 text-rose-600' : ''}`}
+                />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowSessionDetails((prev) => !prev)}
+                className="text-[10px] text-slate-400 hover:text-pink-600 font-medium cursor-pointer"
+              >
+                {showSessionDetails ? 'ย่อ' : 'ตั้งค่า'}
+              </button>
             </div>
+
+            {/* Collapsible Session Details (Rest Selector + Note input) */}
+            {showSessionDetails && (
+              <div className="pt-2 border-t border-pink-100 space-y-2.5 animate-fadeIn">
+                {/* Standard Rest Time Selector */}
+                <div className="flex items-center justify-between gap-1 flex-wrap">
+                  <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                    <Timer size={12} className="text-rose-500" />
+                    <span>เริ่มนับพักอัตโนมัติ:</span>
+                  </span>
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {[
+                      { label: '45วิ', sec: 45 },
+                      { label: '60วิ', sec: 60 },
+                      { label: '90วิ (แนะนำ)', sec: 90 },
+                      { label: '2น.', sec: 120 },
+                      { label: '3น.', sec: 180 },
+                    ].map((p) => (
+                      <button
+                        key={p.sec}
+                        type="button"
+                        onClick={() => handleSelectStandardRest(p.sec)}
+                        className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition active:scale-95 cursor-pointer ${
+                          standardRestSeconds === p.sec
+                            ? 'bg-rose-500 text-white shadow-2xs'
+                            : 'bg-pink-50 hover:bg-pink-100 text-slate-600 border border-pink-200/80'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Session Note */}
+                <div className="space-y-1">
+                  <input
+                    type="text"
+                    value={activeWorkout.note || ''}
+                    onChange={(e) => setSessionNote(e.target.value)}
+                    placeholder="บันทึกความรู้สึกเซสชันนี้ เช่น วันนี้แรงดีมาก, เจ็บไหล่นิดหน่อย..."
+                    className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-rose-400 focus:bg-white transition"
+                  />
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {['แรงดีมาก 💪', 'เจ็บไหล่ 🤕', 'ปวดเข่าเบาๆ', 'ยกผ่านทุกเซ็ต 🔥', 'เหนื่อยแต่ฟิน'].map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => {
+                          const current = activeWorkout.note || '';
+                          setSessionNote(current ? `${current} · ${chip}` : chip);
+                        }}
+                        className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-white text-slate-600 border border-pink-200/70 hover:bg-pink-50 transition active:scale-95 cursor-pointer"
+                      >
+                        +{chip}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Rest Timer Panel (Expanded or Active) */}
             {showRestTimer && (
-              <div className="mt-4 pt-3 border-t border-pink-200 animate-fadeIn">
+              <div className="pt-2 border-t border-pink-200 animate-fadeIn">
                 <RestTimer
                   seconds={restTimerSeconds}
                   initialSeconds={restTimerInitial}
@@ -383,65 +470,6 @@ export const WorkoutView: React.FC = () => {
                 />
               </div>
             )}
-
-            {/* Overall Session Note */}
-            <div className="mt-3.5 pt-3 border-t border-pink-100/90">
-              <div className="flex items-center justify-between gap-2 mb-1.5">
-                <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                  <Edit2 size={13} className="text-rose-400" />
-                  <span>บันทึกความรู้สึก / หมายเหตุรวมของเซสชันนี้:</span>
-                </span>
-                {activeWorkout.note && (
-                  <button
-                    type="button"
-                    onClick={() => setSessionNote('')}
-                    className="text-[10px] text-slate-400 hover:text-rose-500 font-medium cursor-pointer"
-                  >
-                    ล้างข้อความ
-                  </button>
-                )}
-              </div>
-              <input
-                type="text"
-                value={activeWorkout.note || ''}
-                onChange={(e) => setSessionNote(e.target.value)}
-                placeholder="เช่น วันนี้แรงดีมาก, เจ็บไหล่นิดหน่อยตอนเล่นท่าเพรส, ฟอร์มกระชับ, เหนื่อยแต่ฟิน..."
-                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs sm:text-sm text-slate-700 placeholder-pink-300 focus:outline-none focus:border-rose-400 focus:bg-white transition"
-              />
-              {/* Quick chips for session note */}
-              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                {['แรงดีมาก 💪', 'เจ็บไหล่ 🤕', 'ปวดเข่าเบาๆ', 'ยกผ่านทุกเซ็ต 🔥', 'ปรับฟอร์มให้แน่น', 'เหนื่อยเร็วแต่ฟิน'].map(chip => (
-                  <button
-                    key={chip}
-                    type="button"
-                    onClick={() => {
-                      const current = activeWorkout.note || '';
-                      setSessionNote(current ? `${current} · ${chip}` : chip);
-                    }}
-                    className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-white text-slate-600 border border-pink-200 hover:bg-pink-100 transition active:scale-95 cursor-pointer"
-                  >
-                    +{chip}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Session Action Buttons */}
-            <div className="flex items-center gap-2 mt-4 pt-3 border-t border-pink-100">
-              <button
-                onClick={finishWorkout}
-                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-pink-400 to-rose-400 hover:opacity-95 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-sm shadow-pink-200 active:scale-[0.98] transition cursor-pointer"
-              >
-                <CheckCircle2 size={18} />
-                เสร็จสิ้นการฝึก (บันทึกลง Sheet)
-              </button>
-              <button
-                onClick={cancelWorkout}
-                className="py-3 px-3.5 rounded-xl bg-pink-50 hover:bg-rose-100 text-slate-600 hover:text-rose-600 font-bold text-xs border border-pink-200 transition cursor-pointer"
-              >
-                ยกเลิก
-              </button>
-            </div>
           </div>
 
           {/* Exercise Cards in Workout */}
@@ -846,19 +874,19 @@ export const WorkoutView: React.FC = () => {
                       })}
                     </div>
 
-                    {/* 3 Steppers: Incline (ความชัน), Speed (ความเร็ว), Duration (ระยะเวลา) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {/* 3 Steppers: Incline (ความชัน), Speed (ความเร็ว), Duration (ระยะเวลา) - Ultra Compact 3-col Grid */}
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
                       {/* Incline (ความชัน %) */}
-                      <div className="bg-pink-50/40 rounded-2xl p-2.5 border border-pink-100">
-                        <div className="flex items-center justify-between mb-1.5 px-1">
-                          <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                            <TrendingUp size={13} className="text-rose-400" /> ความชัน (Incline)
+                      <div className="bg-pink-50/50 rounded-xl p-2 border border-pink-100 flex flex-col justify-between">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] sm:text-xs font-bold text-slate-500 flex items-center gap-0.5 truncate">
+                            <TrendingUp size={11} className="text-rose-400 shrink-0" /> ชัน
                           </span>
-                          <span className="text-xs font-black text-rose-500 font-mono">
+                          <span className="text-xs font-black text-rose-600 font-mono">
                             {c.incline_pct ?? 0}%
                           </span>
                         </div>
-                        <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center justify-between gap-1">
                           <button
                             type="button"
                             onClick={() => {
@@ -868,49 +896,47 @@ export const WorkoutView: React.FC = () => {
                               );
                               updateCardioInWorkout(cIdx, { incline_pct: next });
                             }}
-                            className="w-10 h-10 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white border border-pink-200 text-slate-600 hover:bg-pink-100 flex items-center justify-center active:scale-90 transition cursor-pointer"
                             title="ลดความชัน 1%"
                           >
-                            <Minus size={16} className="stroke-[2.5]" />
+                            <Minus size={13} className="stroke-[2.5]" />
                           </button>
-                          <div className="flex-1 min-w-[60px]">
-                            <input
-                              type="number"
-                              step="0.5"
-                              min="0"
-                              max="30"
-                              value={c.incline_pct ?? 0}
-                              onChange={(e) =>
-                                updateCardioInWorkout(cIdx, {
-                                  incline_pct: parseFloat(e.target.value) || 0,
-                                })
-                              }
-                              className="w-full h-10 text-center font-black font-mono text-base text-slate-800 bg-white border border-pink-200 rounded-xl focus:outline-none focus:border-rose-400"
-                            />
-                          </div>
+                          <input
+                            type="number"
+                            step="0.5"
+                            min="0"
+                            max="30"
+                            value={c.incline_pct ?? 0}
+                            onChange={(e) =>
+                              updateCardioInWorkout(cIdx, {
+                                incline_pct: parseFloat(e.target.value) || 0,
+                              })
+                            }
+                            className="w-full min-w-0 h-7 sm:h-8 text-center font-black font-mono text-xs sm:text-sm text-slate-800 bg-white border border-pink-200 rounded-lg focus:outline-none focus:border-rose-400 p-0"
+                          />
                           <button
                             type="button"
                             onClick={() => {
                               const next = Math.round(((c.incline_pct ?? 0) + 1) * 10) / 10;
                               updateCardioInWorkout(cIdx, { incline_pct: next });
                             }}
-                            className="w-10 h-10 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white border border-pink-200 text-slate-600 hover:bg-pink-100 flex items-center justify-center active:scale-90 transition cursor-pointer"
                             title="เพิ่มความชัน 1%"
                           >
-                            <Plus size={16} className="stroke-[2.5]" />
+                            <Plus size={13} className="stroke-[2.5]" />
                           </button>
                         </div>
                         {/* Quick Incline Chips */}
-                        <div className="flex items-center justify-center gap-1 mt-2">
-                          {[0, 5, 8, 10, 12, 15].map((inc) => (
+                        <div className="flex items-center justify-center gap-1 mt-1.5 flex-wrap">
+                          {[0, 8, 12, 15].map((inc) => (
                             <button
                               key={inc}
                               type="button"
                               onClick={() => updateCardioInWorkout(cIdx, { incline_pct: inc })}
-                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg border transition active:scale-95 cursor-pointer ${
+                              className={`text-[9px] font-bold px-1 py-0.2 rounded border transition active:scale-95 cursor-pointer ${
                                 c.incline_pct === inc
                                   ? 'bg-rose-500 text-white border-rose-500'
-                                  : 'bg-white text-slate-600 border-pink-200/70 hover:bg-white/80'
+                                  : 'bg-white text-slate-600 border-pink-200/70 hover:bg-pink-50'
                               }`}
                             >
                               {inc}%
@@ -920,16 +946,16 @@ export const WorkoutView: React.FC = () => {
                       </div>
 
                       {/* Speed (ความเร็ว km/h) */}
-                      <div className="bg-pink-50/40 rounded-2xl p-2.5 border border-pink-100">
-                        <div className="flex items-center justify-between mb-1.5 px-1">
-                          <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                            <Zap size={13} className="text-rose-400" /> ความเร็ว (Speed)
+                      <div className="bg-pink-50/50 rounded-xl p-2 border border-pink-100 flex flex-col justify-between">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] sm:text-xs font-bold text-slate-500 flex items-center gap-0.5 truncate">
+                            <Zap size={11} className="text-rose-400 shrink-0" /> สปีด
                           </span>
-                          <span className="text-xs font-black text-rose-500 font-mono">
-                            {c.speed_kmh ?? 4.5} km/h
+                          <span className="text-xs font-black text-rose-600 font-mono">
+                            {c.speed_kmh ?? 4.5}
                           </span>
                         </div>
-                        <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center justify-between gap-1">
                           <button
                             type="button"
                             onClick={() => {
@@ -939,49 +965,47 @@ export const WorkoutView: React.FC = () => {
                               );
                               updateCardioInWorkout(cIdx, { speed_kmh: next });
                             }}
-                            className="w-10 h-10 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white border border-pink-200 text-slate-600 hover:bg-pink-100 flex items-center justify-center active:scale-90 transition cursor-pointer"
                             title="ลดความเร็ว 0.5 km/h"
                           >
-                            <Minus size={16} className="stroke-[2.5]" />
+                            <Minus size={13} className="stroke-[2.5]" />
                           </button>
-                          <div className="flex-1 min-w-[60px]">
-                            <input
-                              type="number"
-                              step="0.1"
-                              min="0"
-                              max="25"
-                              value={c.speed_kmh ?? 4.5}
-                              onChange={(e) =>
-                                updateCardioInWorkout(cIdx, {
-                                  speed_kmh: parseFloat(e.target.value) || 0,
-                                })
-                              }
-                              className="w-full h-10 text-center font-black font-mono text-base text-slate-800 bg-white border border-pink-200 rounded-xl focus:outline-none focus:border-rose-400"
-                            />
-                          </div>
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="25"
+                            value={c.speed_kmh ?? 4.5}
+                            onChange={(e) =>
+                              updateCardioInWorkout(cIdx, {
+                                speed_kmh: parseFloat(e.target.value) || 0,
+                              })
+                            }
+                            className="w-full min-w-0 h-7 sm:h-8 text-center font-black font-mono text-xs sm:text-sm text-slate-800 bg-white border border-pink-200 rounded-lg focus:outline-none focus:border-rose-400 p-0"
+                          />
                           <button
                             type="button"
                             onClick={() => {
                               const next = Math.round(((c.speed_kmh ?? 4.5) + 0.5) * 10) / 10;
                               updateCardioInWorkout(cIdx, { speed_kmh: next });
                             }}
-                            className="w-10 h-10 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white border border-pink-200 text-slate-600 hover:bg-pink-100 flex items-center justify-center active:scale-90 transition cursor-pointer"
                             title="เพิ่มความเร็ว 0.5 km/h"
                           >
-                            <Plus size={16} className="stroke-[2.5]" />
+                            <Plus size={13} className="stroke-[2.5]" />
                           </button>
                         </div>
                         {/* Quick Speed Chips */}
-                        <div className="flex items-center justify-center gap-1 mt-2">
-                          {[3.5, 4.0, 4.5, 5.0, 6.0, 8.0].map((spd) => (
+                        <div className="flex items-center justify-center gap-1 mt-1.5 flex-wrap">
+                          {[3.5, 4.5, 5.5, 7.0].map((spd) => (
                             <button
                               key={spd}
                               type="button"
                               onClick={() => updateCardioInWorkout(cIdx, { speed_kmh: spd })}
-                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg border transition active:scale-95 cursor-pointer ${
+                              className={`text-[9px] font-bold px-1 py-0.2 rounded border transition active:scale-95 cursor-pointer ${
                                 c.speed_kmh === spd
                                   ? 'bg-rose-500 text-white border-rose-500'
-                                  : 'bg-white text-slate-600 border-pink-200/70 hover:bg-white/80'
+                                  : 'bg-white text-slate-600 border-pink-200/70 hover:bg-pink-50'
                               }`}
                             >
                               {spd}
@@ -991,65 +1015,63 @@ export const WorkoutView: React.FC = () => {
                       </div>
 
                       {/* Duration (ระยะเวลา นาที) */}
-                      <div className="bg-pink-50/40 rounded-2xl p-2.5 border border-pink-100">
-                        <div className="flex items-center justify-between mb-1.5 px-1">
-                          <span className="text-xs font-bold text-slate-500 flex items-center gap-1">
-                            <Clock size={13} className="text-rose-400" /> เวลา (Duration)
+                      <div className="bg-pink-50/50 rounded-xl p-2 border border-pink-100 flex flex-col justify-between">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] sm:text-xs font-bold text-slate-500 flex items-center gap-0.5 truncate">
+                            <Clock size={11} className="text-rose-400 shrink-0" /> เวลา
                           </span>
-                          <span className="text-xs font-black text-rose-500 font-mono">
-                            {c.duration_minutes} นาที
+                          <span className="text-xs font-black text-rose-600 font-mono">
+                            {c.duration_minutes}น.
                           </span>
                         </div>
-                        <div className="flex items-center justify-between gap-1.5">
+                        <div className="flex items-center justify-between gap-1">
                           <button
                             type="button"
                             onClick={() => {
                               const next = Math.max(5, (c.duration_minutes || 30) - 5);
                               updateCardioInWorkout(cIdx, { duration_minutes: next });
                             }}
-                            className="w-10 h-10 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white border border-pink-200 text-slate-600 hover:bg-pink-100 flex items-center justify-center active:scale-90 transition cursor-pointer"
                             title="ลดเวลา 5 นาที"
                           >
-                            <Minus size={16} className="stroke-[2.5]" />
+                            <Minus size={13} className="stroke-[2.5]" />
                           </button>
-                          <div className="flex-1 min-w-[60px]">
-                            <input
-                              type="number"
-                              step="5"
-                              min="1"
-                              max="180"
-                              value={c.duration_minutes || 30}
-                              onChange={(e) =>
-                                updateCardioInWorkout(cIdx, {
-                                  duration_minutes: parseInt(e.target.value) || 0,
-                                })
-                              }
-                              className="w-full h-10 text-center font-black font-mono text-base text-slate-800 bg-white border border-pink-200 rounded-xl focus:outline-none focus:border-rose-400"
-                            />
-                          </div>
+                          <input
+                            type="number"
+                            step="5"
+                            min="1"
+                            max="180"
+                            value={c.duration_minutes || 30}
+                            onChange={(e) =>
+                              updateCardioInWorkout(cIdx, {
+                                duration_minutes: parseInt(e.target.value) || 0,
+                              })
+                            }
+                            className="w-full min-w-0 h-7 sm:h-8 text-center font-black font-mono text-xs sm:text-sm text-slate-800 bg-white border border-pink-200 rounded-lg focus:outline-none focus:border-rose-400 p-0"
+                          />
                           <button
                             type="button"
                             onClick={() => {
                               const next = (c.duration_minutes || 30) + 5;
                               updateCardioInWorkout(cIdx, { duration_minutes: next });
                             }}
-                            className="w-10 h-10 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white border border-pink-200 text-slate-600 hover:bg-pink-100 flex items-center justify-center active:scale-90 transition cursor-pointer"
                             title="เพิ่มเวลา 5 นาที"
                           >
-                            <Plus size={16} className="stroke-[2.5]" />
+                            <Plus size={13} className="stroke-[2.5]" />
                           </button>
                         </div>
                         {/* Quick Duration Chips */}
-                        <div className="flex items-center justify-center gap-1 mt-2">
-                          {[15, 20, 30, 45, 60].map((dur) => (
+                        <div className="flex items-center justify-center gap-1 mt-1.5 flex-wrap">
+                          {[15, 20, 30, 45].map((dur) => (
                             <button
                               key={dur}
                               type="button"
                               onClick={() => updateCardioInWorkout(cIdx, { duration_minutes: dur })}
-                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg border transition active:scale-95 cursor-pointer ${
+                              className={`text-[9px] font-bold px-1 py-0.2 rounded border transition active:scale-95 cursor-pointer ${
                                 c.duration_minutes === dur
                                   ? 'bg-rose-500 text-white border-rose-500'
-                                  : 'bg-white text-slate-600 border-pink-200/70 hover:bg-white/80'
+                                  : 'bg-white text-slate-600 border-pink-200/70 hover:bg-pink-50'
                               }`}
                             >
                               {dur}น.
@@ -1060,24 +1082,23 @@ export const WorkoutView: React.FC = () => {
                     </div>
 
                     {/* Metric Estimates & Note */}
-                    <div className="flex items-center justify-between gap-2 p-2.5 bg-pink-50/50 rounded-2xl border border-pink-100 text-xs flex-wrap">
-                      <span className="text-slate-600 font-medium">
+                    <div className="flex items-center justify-between gap-2 px-3 py-1.5 bg-pink-50/60 rounded-xl border border-pink-100 text-[11px] flex-wrap">
+                      <span className="text-slate-600">
                         🏃 ระยะทาง: <strong className="text-slate-800 font-mono">{((c.speed_kmh ?? 4.5) * (c.duration_minutes / 60)).toFixed(2)} km</strong>
                       </span>
-                      <span className="text-slate-600 font-medium">
-                        🔥 เผาผลาญ: <strong className="text-rose-500 font-mono">{Math.round((c.duration_minutes * 6.5) * (1 + (c.incline_pct ?? 0) * 0.05))} kcal</strong>
+                      <span className="text-slate-600">
+                        🔥 เผาผลาญ: <strong className="text-rose-600 font-mono">{Math.round((c.duration_minutes * 6.5) * (1 + (c.incline_pct ?? 0) * 0.05))} kcal</strong>
                       </span>
                     </div>
 
                     {/* Note Input for Cardio */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-500 shrink-0">📝 หมายเหตุ:</span>
+                    <div className="flex items-center gap-1.5">
                       <input
                         type="text"
                         value={c.note || ''}
                         onChange={(e) => updateCardioInWorkout(cIdx, { note: e.target.value })}
-                        placeholder="เช่น เดินชัน 10% สปีด 4.5 เหงื่อท่วม หัวใจเต้นโซน 2 ขาสดชื่น..."
-                        className="flex-1 bg-white border border-pink-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 placeholder-pink-300 focus:outline-none focus:border-rose-400"
+                        placeholder="📝 บันทึกคาร์ดิโอ เช่น เดินชัน 10% สปีด 4.5 เหงื่อท่วม หัวใจโซน 2..."
+                        className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-700 placeholder-pink-300 focus:outline-none focus:border-rose-400"
                       />
                     </div>
                   </div>

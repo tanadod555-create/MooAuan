@@ -167,11 +167,10 @@ export async function analyzeFoodImage({
   }
 
   const candidateModels = [
-    'gemini-3.8-flash',
-    'gemini-3.5-flash',
-    'gemini-flash-latest',
     'gemini-2.5-flash',
-    'gemini-3.5-flash-lite',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
   ];
 
   const promptText = userNotes && userNotes.trim()
@@ -302,11 +301,10 @@ export async function chatWithTrainer({
   }
 
   const candidateModels = [
-    'gemini-3.8-flash',
-    'gemini-3.5-flash',
-    'gemini-flash-latest',
     'gemini-2.5-flash',
-    'gemini-3.5-flash-lite',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-1.5-pro',
   ];
 
   // Build daily context summary
@@ -331,7 +329,7 @@ export async function chatWithTrainer({
               .map(
                 (e) =>
                   `  * ${e.name} (${e.setsCount} เซ็ต, ยกหนักสุด: ${e.topWeightKg} kg)${
-                    e.exerciseNote ? ` [หมายเหตุ: ${e.exerciseNote}]` : ''
+                    e.exerciseNote ? ` [หมายเหตุของผู้ใช้: "${e.exerciseNote}"]` : ''
                   }`
               )
               .join('\n');
@@ -342,7 +340,7 @@ export async function chatWithTrainer({
                       (c) =>
                         `  * 🏃 คาร์ดิโอ: ${c.machineName} ${c.durationMinutes} นาที (ชัน: ${
                           c.inclinePct || 0
-                        }%, สปีด: ${c.speedKmh || 0} km/h)${c.note ? ` [โน้ต: ${c.note}]` : ''}`
+                        }%, สปีด: ${c.speedKmh || 0} km/h)${c.note ? ` [โน้ต: "${c.note}"]` : ''}`
                     )
                     .join('\n')
                 : '';
@@ -353,69 +351,76 @@ export async function chatWithTrainer({
           .join('\n\n')
       : 'วันนี้ยังไม่ได้เริ่มเซสชันการฝึกซ้อม';
 
-  const systemInstruction = `คุณคือ "โค้ชหมูอ้วน AI (Coach MooAuan)" — เทรนเนอร์ฟิตเนสส่วนตัวและผู้เชี่ยวชาญโภชนาการการกีฬา (Certified Personal Trainer & Sports Nutritionist) ประจำตัวของ ${context.userName} ในเว็บ MooAuan 🐷✨💪
+  const systemInstruction = `คุณคือสุดยอด AI เทรนเนอร์อัจฉริยะ "โค้ชหมูอ้วน (Coach MooAuan)" ขับเคลื่อนด้วยขุมพลัง Google Gemini ชั้นนำ 🐷✨💪
+คุณทำหน้าที่เป็น Personal Trainer และ Sports Nutritionist ระดับมืออาชีพประจำตัวของ ${context.userName} ในเว็บ MooAuan
 
-บุคลิกและสไตล์การพูด:
-- เป็นกันเอง อบอุ่น มีพลังบวก ให้กำลังใจเก่ง สอดแทรกความน่ารักของน้องหมูอ้วน 🐽
-- ตอบเป็นภาษาไทยที่อ่านง่าย กระชับ ชัดเจน ใช้เครื่องหมายหัวข้อ Bullet points และข้อความตัวหนาเพื่อให้อ่านสบายตา
-- มีความรู้ทางวิทยาศาสตร์การกีฬาและโภชนาการที่ถูกต้องแม่นยำ (Energy Balance, Progressive Overload, Macronutrients, Fiber, Muscle Recovery)
+คุณสมบัติและสไตล์การตอบ (Gemini Persona):
+- ตอบได้อย่างฉลาด คมคาย ละเอียด ลึกซึ้ง และมีหลักการทางวิทยาศาสตร์การกีฬา (Evidence-based Fitness & Nutrition)
+- บุคลิกเป็นกันเอง อบอุ่น มีพลังบวก ให้กำลังใจเก่ง สอดแทรกความน่ารักของน้องหมูอ้วน 🐽
+- จัดฟอร์แมตคำตอบให้อ่านง่าย สบายตา ใช้ Markdown Bullet points, ตัวหนา, และตารางเมื่อเปรียบเทียบข้อมูล
+- อิงฐานข้อมูลจริงของผู้ใช้ (Real Data Grounding) ในทุกคำตอบ ห้ามตอบลอยๆ
 
-ข้อมูลสถานะของ ${context.userName} ประจำวันนี้:
-- เป้าหมาย: ${context.goal}
-- น้ำหนักปัจจุบัน: ${context.weightKg ? context.weightKg + ' kg' : 'ไม่ระบุ'}
-- แคลอรี่เป้าหมาย: ${context.kcalTarget} kcal | ทานไปแล้ว: ${context.todayKcal} kcal (${
+ฐานข้อมูลจริงของ ${context.userName} ประจำวันนี้:
+- เป้าหมายหลัก: ${context.goal}
+- น้ำหนักตัวล่าสุด: ${context.weightKg ? context.weightKg + ' kg' : 'ไม่ระบุ'}
+- แคลอรี่เป้าหมาย: ${context.kcalTarget} kcal | ทานแล้ว: ${context.todayKcal} kcal (${
     remainingKcal >= 0 ? `เหลืออีก ${remainingKcal} kcal` : `เกินเป้ามา ${Math.abs(remainingKcal)} kcal`
   })
-- โปรตีนเป้าหมาย: ${context.proteinTarget} g | ทานไปแล้ว: ${context.todayProtein} g (${
+- โปรตีนเป้าหมาย: ${context.proteinTarget} g | ทานแล้ว: ${context.todayProtein} g (${
     remainingProtein >= 0 ? `ขาดอีก ${remainingProtein} g` : `เกินเป้ามา ${Math.abs(remainingProtein)} g`
   })
-- คาร์โบไฮเดรต: ${context.todayCarb} g | ไขมัน: ${context.todayFat} g | ไฟเบอร์ (ใยอาหาร): ${context.todayFiber} g
-- รายการอาหารที่ทานวันนี้:
+- คาร์บ: ${context.todayCarb} g | ไขมัน: ${context.todayFat} g | ไฟเบอร์ (ใยอาหาร): ${context.todayFiber} g
+- ประวัติมื้ออาหารที่บันทึกวันนี้:
 ${mealsSummary}
-- การออกกำลังกายและคาร์ดิโอวันนี้:
+- ประวัติการฝึกซ้อมและคาร์ดิโอวันนี้:
 ${workoutsSummary}
 
-แนวทางการตอบ:
-1. วิเคราะห์และตอบคำถามของผู้ใช้อย่างตรงจุด เชื่อมโยงกับข้อมูลจริงข้างต้น (เช่น ถ้าโปรตีนยังไม่ถึงเป้า แนะนำเมนูอาหารไทยที่มีโปรตีนสูงและไฟเบอร์สูง พร้อมบอกตัวเลขประมาณการชัดเจน)
-2. ถ้าผู้ใช้พูดถึงอาการเจ็บกล้ามเนื้อ (เช่น "เจ็บไหล่" หรือมีในบันทึก) ให้แนะนำการปรับท่า เช่น ลดน้ำหนักลง, ปรับมุมข้อศอก, วอร์มอัพ Rotator Cuff ด้วย Face Pull, หรือพักฟื้น
-3. ถ้าถามเกี่ยวกับการคาร์ดิโอ เช่น เดินชัน ให้คำแนะนำเรื่อง Heart Rate Zone 2, การเบิร์นไขมันโดยไม่สลายกล้ามเนื้อ
-4. ลงท้ายด้วยคำแนะนำหรือประโยคให้กำลังใจสไตล์หมูอ้วนฟิตเฟิร์มเสมอ 🐷`;
+กฎเหล็กในการตอบ:
+1. หากผู้ใช้ถามเรื่องอาหารหรือโปรตีนไม่พอ: ให้คำนวณส่วนต่างตัวเลขจริงเสมอ แล้วแนะนำเมนูอาหารไทยที่หาทานง่ายพร้อมปริมาณกรัม, แคลอรี่, โปรตีน และเน้นย้ำเรื่องไฟเบอร์
+2. หากมีอาการเจ็บหรือล้า (เช่น "เจ็บไหล่" หรือมีในบันทึก): ให้แนะนำการปรับท่าทางชีวกลศาสตร์ (เช่น ลดองศากางข้อศอก, Scapular depression, หมุนข้อต่อ Rotator Cuff, หรือปรับมุมม้านั่ง)
+3. หากถามเรื่องคาร์ดิโอ: ให้คำแนะนำตามสปีดและความชันจริงที่ผู้ใช้เล่น พร้อมแนะนำ Heart Rate Zone 2 เพื่อเบิร์นไขมันสูงสุดโดยไม่สลายกล้ามเนื้อ
+4. สรุปจบด้วยประโยคหรือคำแนะนำสร้างแรงบันดาลใจสไตล์หมูอ้วนฟิตเฟิร์มเสมอ!`;
 
-  // Build contents array with conversation history
-  const contents = [
-    {
-      role: 'user',
-      parts: [{ text: `${systemInstruction}\n\n[ข้อความจากผู้ใช้]: ${userMessage}` }],
-    },
-  ];
+  // Build clean contents array
+  const contents: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
 
-  if (history.length > 0) {
-    // Add up to last 6 messages
-    const recent = history.slice(-6);
-    contents.length = 0;
-    contents.push({
-      role: 'user',
-      parts: [{ text: `${systemInstruction}\n\nสวัสดีครับโค้ชหมูอ้วน!` }],
-    });
-    contents.push({
-      role: 'model',
-      parts: [{ text: `สวัสดีครับคุณ ${context.userName}! โค้ชหมูอ้วนพร้อมช่วยวิเคราะห์การกินและการฝึกซ้อมวันนี้แล้วครับ ลุยกันเลย! 🐷💪` }],
-    });
-
-    for (const msg of recent) {
+  if (history && history.length > 0) {
+    for (const msg of history.slice(-8)) {
       contents.push({
         role: msg.role === 'user' ? 'user' : 'model',
         parts: [{ text: msg.text }],
       });
     }
-    contents.push({
-      role: 'user',
-      parts: [{ text: userMessage }],
-    });
   }
 
-  const requestBody = {
+  contents.push({
+    role: 'user',
+    parts: [{ text: userMessage }],
+  });
+
+  const requestBodyWithSystem = {
+    system_instruction: {
+      parts: [{ text: systemInstruction }],
+    },
     contents,
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 1024,
+    },
+  };
+
+  const requestBodyFallback = {
+    contents: [
+      {
+        role: 'user',
+        parts: [{ text: `[SYSTEM INSTRUCTION & USER DATABASE]\n${systemInstruction}\n\n[USER CONVERSATION START]` }],
+      },
+      {
+        role: 'model',
+        parts: [{ text: `สวัสดีครับคุณ ${context.userName}! โค้ชหมูอ้วนพร้อมช่วยวิเคราะห์จากฐานข้อมูลของคุณแล้วครับ 🐷💪` }],
+      },
+      ...contents,
+    ],
     generationConfig: {
       temperature: 0.7,
       maxOutputTokens: 1024,
@@ -428,11 +433,21 @@ ${workoutsSummary}
   for (const model of candidateModels) {
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
     try {
-      const res = await fetch(endpoint, {
+      // First attempt with top-level system_instruction
+      let res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(requestBodyWithSystem),
       });
+
+      // If system_instruction is not supported (HTTP 400), try fallback format
+      if (!res.ok && res.status === 400) {
+        res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBodyFallback),
+        });
+      }
 
       if (res.ok) {
         response = res;

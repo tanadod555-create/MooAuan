@@ -239,43 +239,36 @@ export const FoodDatabaseModal: React.FC<FoodDatabaseModalProps> = ({
               return (
                 <div
                   key={item.id}
-                  className="bg-white/95 border border-pink-200/80 hover:border-pink-300 rounded-2xl p-3 sm:p-4 shadow-xs transition hover:shadow-sm space-y-2.5"
+                  className="bg-white/95 border border-pink-200/80 hover:border-pink-300 rounded-2xl p-2.5 sm:p-3 shadow-2xs hover:shadow-xs transition space-y-1.5"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 border border-pink-200">
-                          {item.category_label_th}
-                        </span>
-                        <span className="text-xs text-slate-500 font-medium">
-                          ขนาดเสิร์ฟ: <strong>{item.serving_size}</strong>
-                        </span>
-                      </div>
-                      <h4 className="text-sm sm:text-base font-bold text-slate-800 mt-1">
+                  {/* Row 1: Name, Category, Multipliers */}
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-pink-100 text-pink-700 border border-pink-200 shrink-0">
+                        {item.category_label_th}
+                      </span>
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-800 truncate">
                         {item.name_th}
-                        <span className="text-xs text-slate-400 font-normal ml-1.5 font-mono">
+                        <span className="text-[11px] text-slate-400 font-normal ml-1 hidden sm:inline">
                           ({item.name_en})
                         </span>
                       </h4>
-                      {item.note && (
-                        <p className="text-xs text-slate-500 mt-0.5 leading-relaxed font-medium">
-                          💡 {item.note}
-                        </p>
-                      )}
+                      <span className="text-[10px] text-slate-400 shrink-0">
+                        • {item.serving_size}
+                      </span>
                     </div>
 
-                    {/* Quantity Factor Buttons */}
-                    <div className="flex items-center gap-1 self-start sm:self-center shrink-0">
-                      <span className="text-[11px] text-slate-500 font-medium mr-1">ปริมาณ:</span>
+                    {/* Multiplier Pills */}
+                    <div className="flex items-center gap-1 shrink-0 ml-auto">
                       {[0.5, 1, 1.5, 2].map((f) => (
                         <button
                           key={f}
                           type="button"
                           onClick={() => setMultiplier(item.id, f)}
-                          className={`px-2 py-0.5 rounded-lg text-xs font-mono font-bold transition active:scale-95 cursor-pointer ${
+                          className={`px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold transition active:scale-95 cursor-pointer ${
                             factor === f
-                              ? 'bg-rose-500 text-white shadow-xs'
-                              : 'bg-pink-50 text-slate-600 hover:bg-pink-100 border border-pink-200/70'
+                              ? 'bg-rose-500 text-white shadow-2xs'
+                              : 'bg-pink-50/80 text-slate-600 hover:bg-pink-100 border border-pink-200/60'
                           }`}
                         >
                           {f}x
@@ -284,59 +277,32 @@ export const FoodDatabaseModal: React.FC<FoodDatabaseModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Nutrition Badges Grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 sm:gap-2 text-center text-xs">
-                    {/* Calories */}
-                    <div className="bg-rose-50/70 p-1.5 rounded-xl border border-rose-200/70">
-                      <span className="text-[10px] text-rose-600 font-bold block flex items-center justify-center gap-0.5">
-                        <Flame size={10} /> แคลอรี่
+                  {/* Row 2: Compact Inline Macros & Add Button */}
+                  <div className="flex items-center justify-between gap-2 pt-0.5">
+                    {/* Inline Macros */}
+                    <div className="flex items-center gap-1.5 flex-wrap text-[11px] font-mono">
+                      <span className="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-600 border border-rose-200/70 font-black">
+                        🔥 {scaledKcal} <span className="text-[9px] font-normal font-sans">kcal</span>
                       </span>
-                      <strong className="text-sm font-black text-rose-600 font-mono">
-                        {scaledKcal} <span className="text-[10px] font-normal">kcal</span>
-                      </strong>
-                    </div>
-
-                    {/* Protein */}
-                    <div className="bg-sky-50/70 p-1.5 rounded-xl border border-sky-200/70">
-                      <span className="text-[10px] text-sky-600 font-bold block">โปรตีน</span>
-                      <strong className="text-sm font-black text-sky-700 font-mono">
-                        {scaledProtein}g
-                      </strong>
-                    </div>
-
-                    {/* Carbs */}
-                    <div className="bg-amber-50/70 p-1.5 rounded-xl border border-amber-200/70">
-                      <span className="text-[10px] text-amber-700 font-bold block">คาร์บ</span>
-                      <strong className="text-sm font-black text-amber-800 font-mono">
-                        {scaledCarb}g
-                      </strong>
-                    </div>
-
-                    {/* Fat */}
-                    <div className="bg-indigo-50/70 p-1.5 rounded-xl border border-indigo-200/70">
-                      <span className="text-[10px] text-indigo-600 font-bold block">ไขมัน</span>
-                      <strong className="text-sm font-black text-indigo-700 font-mono">
-                        {scaledFat}g
-                      </strong>
-                    </div>
-
-                    {/* Fiber (Highlighted) */}
-                    <div className="col-span-2 sm:col-span-1 bg-emerald-50 p-1.5 rounded-xl border border-emerald-300 shadow-2xs">
-                      <span className="text-[10px] text-emerald-700 font-black block flex items-center justify-center gap-0.5">
-                        <Leaf size={11} className="text-emerald-600" /> ไฟเบอร์
+                      <span className="px-1.5 py-0.5 rounded-lg bg-sky-50 text-sky-700 border border-sky-200/70 font-bold">
+                        P: {scaledProtein}g
                       </span>
-                      <strong className="text-sm font-black text-emerald-800 font-mono">
-                        {scaledFiber}g
-                      </strong>
+                      <span className="px-1.5 py-0.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200/70 font-medium">
+                        C: {scaledCarb}g
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-200/70 font-medium">
+                        F: {scaledFat}g
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold">
+                        🌿 ไฟเบอร์ {scaledFiber}g
+                      </span>
                     </div>
-                  </div>
 
-                  {/* Add to Meal Button */}
-                  <div className="flex items-center justify-end pt-1">
+                    {/* Add to Meal Button */}
                     <button
                       type="button"
                       onClick={() => handleAddFoodItem(item)}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-xs ${
+                      className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer shrink-0 shadow-2xs ${
                         isAdded
                           ? 'bg-emerald-500 text-white'
                           : 'bg-gradient-to-r from-pink-400 to-rose-400 hover:opacity-95 text-white'
@@ -344,12 +310,12 @@ export const FoodDatabaseModal: React.FC<FoodDatabaseModalProps> = ({
                     >
                       {isAdded ? (
                         <>
-                          <Check size={14} className="stroke-[3]" />
-                          <span>บันทึกเข้ามื้อแล้ว!</span>
+                          <Check size={13} className="stroke-[3]" />
+                          <span>บันทึกแล้ว!</span>
                         </>
                       ) : (
                         <>
-                          <Plus size={14} className="stroke-[3]" />
+                          <Plus size={13} className="stroke-[3]" />
                           <span>
                             + เพิ่มลงมื้อ{selectedMeal === 'breakfast' && 'เช้า'}
                             {selectedMeal === 'lunch' && 'กลางวัน'}
