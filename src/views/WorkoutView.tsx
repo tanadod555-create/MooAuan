@@ -210,6 +210,16 @@ export const WorkoutView: React.FC = () => {
   const [repsStep, setRepsStep] = useState<number>(1);
   const [showSessionDetails, setShowSessionDetails] = useState(false);
 
+  // Exercise card accordion collapse state
+  const [collapsedExercises, setCollapsedExercises] = useState<Record<string, boolean>>({});
+
+  const toggleExerciseCollapse = (exerciseId: string) => {
+    setCollapsedExercises((prev) => ({
+      ...prev,
+      [exerciseId]: !prev[exerciseId],
+    }));
+  };
+
   // Routine search and editing state
   const [routineSearchQuery, setRoutineSearchQuery] = useState('');
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
@@ -509,41 +519,26 @@ export const WorkoutView: React.FC = () => {
 
               {/* Action Buttons & Timers Row */}
               <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-                {/* Timer Toggle Button (Start / Pause) */}
+                {/* Interactive Workout Timer (Tap to Start / Pause) */}
                 <button
                   type="button"
                   onClick={toggleWorkoutTimer}
-                  className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-xs ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-mono font-bold transition active:scale-95 cursor-pointer shadow-xs ${
                     activeWorkout.is_timer_running
-                      ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300'
-                      : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-emerald-200'
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-emerald-400 shadow-emerald-200'
+                      : activeWorkout.elapsedSeconds > 0
+                      ? 'bg-amber-100 text-amber-900 border-amber-300'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
                   }`}
-                  title={activeWorkout.is_timer_running ? 'กดเพื่อพักการจับเวลาชั่วคราว' : 'กดเพื่อเริ่มจับเวลาการฝึก'}
+                  title={activeWorkout.is_timer_running ? 'แตะเพื่อพักการจับเวลา' : 'แตะเพื่อเริ่ม/จับเวลาต่อ'}
                 >
                   {activeWorkout.is_timer_running ? (
-                    <>
-                      <Pause size={13} className="fill-current" />
-                      <span>พักเวลา</span>
-                    </>
+                    <Pause size={13} className="fill-current text-white animate-pulse" />
                   ) : (
-                    <>
-                      <Play size={13} className="fill-current" />
-                      <span>{activeWorkout.elapsedSeconds > 0 ? 'จับต่อ' : 'เริ่มจับเวลา'}</span>
-                    </>
+                    <Play size={13} className="fill-current text-emerald-600" />
                   )}
-                </button>
-
-                {/* Elapsed Time Pill */}
-                <div
-                  className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1 text-xs font-mono font-bold ${
-                    activeWorkout.is_timer_running
-                      ? 'bg-pink-50 border-pink-200 text-slate-800'
-                      : 'bg-slate-100 border-slate-200 text-slate-500'
-                  }`}
-                >
-                  <Clock size={13} className={activeWorkout.is_timer_running ? 'text-rose-500 animate-spin-slow' : 'text-slate-400'} />
                   <span>{formatSeconds(activeWorkout.elapsedSeconds)}</span>
-                </div>
+                </button>
 
                 {/* Rest Timer Button in header */}
                 <button
@@ -701,331 +696,428 @@ export const WorkoutView: React.FC = () => {
             )}
           </div>
 
-          {/* Exercise Cards in Workout */}
+          {/* Exercise Cards in Workout (Collapsible & Horizontal Set Carousel) */}
           {activeWorkout.exercises.map((item, exIdx) => {
             const exerciseData = exercises.find((e) => e.exercise_id === item.exercise_id);
+            const isCollapsed = Boolean(collapsedExercises[item.exercise_id]);
+            const completedSetsCount = item.sets.filter((s) => s.done).length;
+            const allSetsDone = completedSetsCount === item.sets.length && item.sets.length > 0;
+            const maxWeight = Math.max(...item.sets.map((s) => s.weight_kg || 0), 0);
+
             return (
               <div
                 key={item.exercise_id}
-                className="bg-white/95 rounded-3xl border border-pink-200/90 overflow-hidden shadow-sm shadow-pink-100/50"
+                className={`bg-white/95 rounded-3xl border transition-all duration-200 overflow-hidden shadow-sm ${
+                  allSetsDone
+                    ? 'border-emerald-200/90 shadow-emerald-100/40'
+                    : 'border-pink-200/90 shadow-pink-100/50'
+                }`}
               >
-                {/* Exercise Header */}
-                <div className="p-4 bg-pink-50/70 border-b border-pink-200/80 flex items-center justify-between">
+                {/* Exercise Header (Click to Toggle Collapse / Expand) */}
+                <div className="p-3.5 sm:p-4 bg-pink-50/70 border-b border-pink-200/80 flex items-center justify-between gap-2">
                   <button
-                    onClick={() => exerciseData && setActiveExerciseModal(exerciseData)}
-                    className="text-left group"
+                    type="button"
+                    onClick={() => toggleExerciseCollapse(item.exercise_id)}
+                    className="flex-1 text-left flex items-center gap-2.5 min-w-0 cursor-pointer group"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
-                        #{exIdx + 1}
-                      </span>
-                      <h3 className="text-base font-bold text-slate-700 group-hover:text-rose-600 transition">
-                        {exerciseData?.name_en || item.exercise_id}
-                      </h3>
-                    </div>
-                    <span className="text-xs text-pink-800/70 mt-0.5 block">
-                      {exerciseData?.name_th} · <span className="capitalize">{exerciseData?.equipment}</span>
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={() => removeExerciseFromWorkout(item.exercise_id)}
-                    className="p-2 text-pink-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer active:scale-95"
-                    title="ลบท่านี้ออกจากเซสชัน"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-
-                {/* Exercise Note Input */}
-                <div className="px-3 sm:px-4 py-2.5 bg-pink-50/40 border-b border-pink-100 flex flex-col gap-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
-                      <Edit2 size={11} className="text-rose-400" />
-                      <span>หมายเหตุท่านี้:</span>
-                    </span>
-                    <input
-                      type="text"
-                      value={item.note || ''}
-                      onChange={(e) => setExerciseNote(item.exercise_id, e.target.value)}
-                      placeholder="เช่น วันนี้เจ็บไหล่, ปรับเบาะระดับ 4, โดนจุดมาก..."
-                      className="flex-1 bg-white border border-pink-200 rounded-xl px-2.5 py-1 text-xs text-slate-700 placeholder-pink-300 focus:outline-none focus:border-rose-400 shadow-2xs"
-                    />
-                    {item.note && (
-                      <button
-                        type="button"
-                        onClick={() => setExerciseNote(item.exercise_id, '')}
-                        className="text-[10px] text-slate-400 hover:text-rose-500 font-medium cursor-pointer shrink-0"
-                      >
-                        ล้าง
-                      </button>
-                    )}
-                  </div>
-                  {/* Quick Chips for Exercise Note */}
-                  <div className="flex items-center gap-1 flex-wrap pl-5 sm:pl-6">
-                    {['เจ็บไหล่', 'ปวดเข่า', 'ปรับเบาะสูงขึ้น', 'ฟอร์มดีมาก', 'ลดน้ำหนักลง', 'หมดแรง'].map(
-                      (c) => (
-                        <button
-                          key={c}
-                          type="button"
-                          onClick={() => {
-                            const current = item.note || '';
-                            setExerciseNote(item.exercise_id, current ? `${current} · ${c}` : c);
-                          }}
-                          className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white text-slate-600 border border-pink-200/70 hover:bg-pink-50 active:scale-95 transition cursor-pointer"
-                        >
-                          +{c}
-                        </button>
-                      )
-                    )}
-                  </div>
-                </div>
-
-                {/* Mobile Gym Tracker Set Cards (Touch-friendly steppers, no Excel look) */}
-                <div className="p-3 sm:p-4 space-y-3">
-                  {item.sets.map((set, setIdx) => (
                     <div
-                      key={set.set_id || setIdx}
-                      className={`p-3 sm:p-4 rounded-2xl border transition-all ${
-                        set.done
-                          ? 'bg-rose-50/60 border-rose-200 shadow-2xs'
-                          : 'bg-white border-pink-200/80 shadow-xs'
+                      className={`w-7 h-7 rounded-xl flex items-center justify-center transition-transform duration-200 shrink-0 ${
+                        isCollapsed ? 'bg-pink-100 text-slate-500' : 'bg-rose-100 text-rose-600 rotate-180'
                       }`}
+                      title={isCollapsed ? 'แตะเพื่อขยาย' : 'แตะเพื่อย่อเก็บ'}
                     >
-                      {/* Set Card Header */}
-                      <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-pink-100/80">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`px-2.5 py-1 rounded-xl text-xs font-black tracking-wide ${
-                              set.done
-                                ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-xs'
-                                : 'bg-pink-100 text-pink-700'
-                            }`}
-                          >
-                            เซ็ตที่ {setIdx + 1}
-                          </span>
-                          {set.done && (
-                            <span className="text-[11px] font-bold text-rose-500 flex items-center gap-1">
-                              <Check size={13} className="stroke-[3]" /> เล่นเสร็จแล้ว
-                            </span>
-                          )}
-                        </div>
+                      <ChevronDown size={16} className="stroke-[2.5]" />
+                    </div>
 
-                        {item.sets.length > 1 && (
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                        <span className="text-xs font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 shrink-0">
+                          #{exIdx + 1}
+                        </span>
+                        <h3 className="text-sm sm:text-base font-black text-slate-800 group-hover:text-rose-600 transition truncate">
+                          {exerciseData?.name_en || item.exercise_id}
+                        </h3>
+                        {allSetsDone && (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center gap-1 shrink-0">
+                            <Check size={11} className="stroke-[3]" /> ครบ {item.sets.length} เซ็ต
+                          </span>
+                        )}
+                        {isCollapsed && !allSetsDone && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 shrink-0">
+                            เสร็จ {completedSetsCount}/{item.sets.length} เซ็ต
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-pink-800/70 mt-0.5 block truncate">
+                        {exerciseData?.name_th} · <span className="capitalize">{exerciseData?.equipment}</span>
+                        {isCollapsed && maxWeight > 0 && ` · สูงสุด ${maxWeight} kg`}
+                      </span>
+                    </div>
+                  </button>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => exerciseData && setActiveExerciseModal(exerciseData)}
+                      className="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition cursor-pointer active:scale-95"
+                      title="ดูฟอร์มและวิธีเล่นท่านี้"
+                    >
+                      <Sparkles size={16} className="text-amber-500" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeExerciseFromWorkout(item.exercise_id)}
+                      className="p-2 text-pink-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer active:scale-95"
+                      title="ลบท่านี้ออกจากเซสชัน"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Collapsed Summary Pill Bar (When Folded) */}
+                {isCollapsed && (
+                  <div
+                    onClick={() => toggleExerciseCollapse(item.exercise_id)}
+                    className="p-2.5 bg-slate-50/70 hover:bg-pink-50/50 flex items-center justify-between text-xs text-slate-500 font-bold cursor-pointer transition px-4"
+                  >
+                    <span>
+                      {allSetsDone
+                        ? '🎉 เล่นครบทุกเซ็ตแล้ว (แตะเพื่อเปิดดูรายละเอียด)'
+                        : `⏳ ทำไปแล้ว ${completedSetsCount}/${item.sets.length} เซ็ต (แตะเพื่อเล่นต่อ)`}
+                    </span>
+                    <span className="text-rose-500 text-[11px] font-black">ขยาย ▾</span>
+                  </div>
+                )}
+
+                {/* Expanded Body: Note + Horizontal Sets Carousel */}
+                {!isCollapsed && (
+                  <div className="animate-fadeIn">
+                    {/* Exercise Note Input */}
+                    <div className="px-3 sm:px-4 py-2 bg-pink-50/40 border-b border-pink-100 flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold text-slate-500 shrink-0 flex items-center gap-1">
+                          <Edit2 size={11} className="text-rose-400" />
+                          <span>หมายเหตุ:</span>
+                        </span>
+                        <input
+                          type="text"
+                          value={item.note || ''}
+                          onChange={(e) => setExerciseNote(item.exercise_id, e.target.value)}
+                          placeholder="เช่น เจ็บไหล่, ปรับเบาะระดับ 4, โดนจุดมาก..."
+                          className="flex-1 bg-white border border-pink-200 rounded-xl px-2.5 py-1 text-xs text-slate-700 placeholder-pink-300 focus:outline-none focus:border-rose-400 shadow-2xs"
+                        />
+                        {item.note && (
                           <button
                             type="button"
-                            onClick={() => removeSetFromExercise(item.exercise_id, setIdx)}
-                            className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition active:scale-95 cursor-pointer"
-                            title="ลบเซ็ตนี้"
+                            onClick={() => setExerciseNote(item.exercise_id, '')}
+                            className="text-[10px] text-slate-400 hover:text-rose-500 font-medium cursor-pointer shrink-0"
                           >
-                            <Trash2 size={15} />
+                            ล้าง
                           </button>
                         )}
                       </div>
-
-                      {/* Weight & Reps Stepper Controllers */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">
-                        {/* Weight (kg) Stepper */}
-                        <div className="bg-pink-50/40 rounded-2xl p-3 border border-pink-100">
-                          <div className="flex items-center justify-between mb-2 px-1">
-                            <span className="text-xs font-bold text-slate-500">น้ำหนัก (Weight)</span>
-                            <span className="text-xs font-black text-rose-500 font-mono">
-                              {set.weight_kg} kg
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between gap-2">
+                      {/* Quick Chips for Exercise Note */}
+                      <div className="flex items-center gap-1 flex-wrap pl-4 sm:pl-5">
+                        {['เจ็บไหล่', 'ปวดเข่า', 'ปรับเบาะสูงขึ้น', 'ฟอร์มดีมาก', 'ลดน้ำหนักลง', 'หมดแรง'].map(
+                          (c) => (
                             <button
+                              key={c}
                               type="button"
                               onClick={() => {
-                                const next = Math.max(
-                                  0,
-                                  Math.round(((set.weight_kg || 0) - weightStep) * 100) / 100
-                                );
-                                updateSet(item.exercise_id, setIdx, { weight_kg: next });
+                                const current = item.note || '';
+                                setExerciseNote(item.exercise_id, current ? `${current} · ${c}` : c);
                               }}
-                              className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
-                              title={`ลด ${weightStep} กก.`}
+                              className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-white text-slate-600 border border-pink-200/70 hover:bg-pink-50 active:scale-95 transition cursor-pointer"
                             >
-                              <Minus size={20} className="stroke-[2.5]" />
+                              +{c}
                             </button>
-
-                            <div className="flex-1 min-w-[75px]">
-                              <input
-                                type="number"
-                                step="0.5"
-                                min="0"
-                                value={set.weight_kg === 0 ? '' : set.weight_kg}
-                                placeholder="0"
-                                onChange={(e) =>
-                                  updateSet(item.exercise_id, setIdx, {
-                                    weight_kg: parseFloat(e.target.value) || 0,
-                                  })
-                                }
-                                className="w-full h-12 text-center font-black font-mono text-xl text-slate-800 bg-white border-2 border-pink-200 rounded-2xl focus:outline-none focus:border-rose-400 shadow-inner"
-                              />
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const next = Math.round(((set.weight_kg || 0) + weightStep) * 100) / 100;
-                                updateSet(item.exercise_id, setIdx, { weight_kg: next });
-                              }}
-                              className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
-                              title={`เพิ่ม ${weightStep} กก.`}
-                            >
-                              <Plus size={20} className="stroke-[2.5]" />
-                            </button>
-                          </div>
-
-                          {/* Weight Step Size Selector */}
-                          <div className="flex items-center justify-between gap-1 mt-2.5 px-0.5">
-                            <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">ปรับทีละ:</span>
-                            <div className="flex items-center gap-1.5 overflow-x-auto">
-                              {[1, 1.25, 2.5, 5, 10].map((s) => (
-                                <button
-                                  key={s}
-                                  type="button"
-                                  onClick={() => setWeightStep(s)}
-                                  className={`text-xs font-bold px-2 py-1 rounded-xl border transition cursor-pointer active:scale-95 min-h-[28px] ${
-                                    weightStep === s
-                                      ? 'bg-rose-500 text-white border-rose-500 shadow-2xs font-extrabold'
-                                      : 'bg-white hover:bg-pink-50 text-slate-600 border-pink-200'
-                                  }`}
-                                  title={`กด +/- เพื่อปรับทีละ ${s} กก.`}
-                                >
-                                  ±{s}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Reps Stepper */}
-                        <div className="bg-pink-50/40 rounded-2xl p-3 border border-pink-100">
-                          <div className="flex items-center justify-between mb-2 px-1">
-                            <span className="text-xs font-bold text-slate-500">
-                              จำนวนครั้ง (Reps)
-                            </span>
-                            <span className="text-xs font-black text-rose-500 font-mono">
-                              {set.reps} ครั้ง
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const next = Math.max(0, (set.reps || 0) - repsStep);
-                                updateSet(item.exercise_id, setIdx, { reps: next });
-                              }}
-                              className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
-                              title={`ลด ${repsStep} ครั้ง`}
-                            >
-                              <Minus size={20} className="stroke-[2.5]" />
-                            </button>
-
-                            <div className="flex-1 min-w-[75px]">
-                              <input
-                                type="number"
-                                step="1"
-                                min="0"
-                                value={set.reps === 0 ? '' : set.reps}
-                                placeholder="0"
-                                onChange={(e) =>
-                                  updateSet(item.exercise_id, setIdx, {
-                                    reps: parseInt(e.target.value) || 0,
-                                  })
-                                }
-                                className="w-full h-12 text-center font-black font-mono text-xl text-slate-800 bg-white border-2 border-pink-200 rounded-2xl focus:outline-none focus:border-rose-400 shadow-inner"
-                              />
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const next = (set.reps || 0) + repsStep;
-                                updateSet(item.exercise_id, setIdx, { reps: next });
-                              }}
-                              className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
-                              title={`เพิ่ม ${repsStep} ครั้ง`}
-                            >
-                              <Plus size={20} className="stroke-[2.5]" />
-                            </button>
-                          </div>
-
-                          {/* Reps Step Size Selector */}
-                          <div className="flex items-center justify-between gap-1 mt-2.5 px-0.5">
-                            <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">ปรับทีละ:</span>
-                            <div className="flex items-center gap-1.5 overflow-x-auto">
-                              {[1, 2, 5].map((s) => (
-                                <button
-                                  key={s}
-                                  type="button"
-                                  onClick={() => setRepsStep(s)}
-                                  className={`text-xs font-bold px-2.5 py-1 rounded-xl border transition cursor-pointer active:scale-95 min-h-[28px] ${
-                                    repsStep === s
-                                      ? 'bg-rose-500 text-white border-rose-500 shadow-2xs font-extrabold'
-                                      : 'bg-white hover:bg-pink-50 text-slate-600 border-pink-200'
-                                  }`}
-                                  title={`กด +/- เพื่อปรับทีละ ${s} ครั้ง`}
-                                >
-                                  ±{s}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
+                          )
+                        )}
                       </div>
+                    </div>
 
-                      {/* Prominent Tactile Finish Set Button (Triggers Rest Timer) */}
+                    {/* Set Navigation & Indicator Header */}
+                    <div className="px-3 sm:px-4 pt-2.5 pb-1 flex items-center justify-between text-xs text-slate-500">
+                      <span className="font-bold flex items-center gap-1.5">
+                        <span>รายการเซ็ต ({completedSetsCount}/{item.sets.length})</span>
+                        <span className="text-[10px] font-normal text-pink-700/80">👈 ปัดซ้าย-ขวาได้ 👉</span>
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {item.sets.map((s, sIdx) => (
+                          <span
+                            key={sIdx}
+                            className={`w-2.5 h-2.5 rounded-full transition-all ${
+                              s.done ? 'bg-emerald-500 ring-2 ring-emerald-200' : 'bg-pink-200'
+                            }`}
+                            title={`เซ็ต ${sIdx + 1}: ${s.done ? 'เสร็จแล้ว' : 'ยังไม่เสร็จ'}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Horizontal Sets Carousel (Scroll Left-Right) */}
+                    <div className="p-3 sm:p-4 pt-1 flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin scroll-smooth">
+                      {item.sets.map((set, setIdx) => (
+                        <div
+                          key={set.set_id || setIdx}
+                          className={`w-[85vw] max-w-[340px] sm:w-[320px] shrink-0 snap-start p-3 sm:p-4 rounded-2xl border transition-all ${
+                            set.done
+                              ? 'bg-rose-50/60 border-rose-200 shadow-2xs'
+                              : 'bg-white border-pink-200/80 shadow-xs'
+                          }`}
+                        >
+                          {/* Set Card Header */}
+                          <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-pink-100/80">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-2.5 py-1 rounded-xl text-xs font-black tracking-wide ${
+                                  set.done
+                                    ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-xs'
+                                    : 'bg-pink-100 text-pink-700'
+                                }`}
+                              >
+                                เซ็ตที่ {setIdx + 1}
+                              </span>
+                              {set.done && (
+                                <span className="text-[11px] font-bold text-rose-500 flex items-center gap-1">
+                                  <Check size={13} className="stroke-[3]" /> เล่นเสร็จแล้ว
+                                </span>
+                              )}
+                            </div>
+
+                            {item.sets.length > 1 && (
+                              <button
+                                type="button"
+                                onClick={() => removeSetFromExercise(item.exercise_id, setIdx)}
+                                className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition active:scale-95 cursor-pointer"
+                                title="ลบเซ็ตนี้"
+                              >
+                                <Trash2 size={15} />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Weight & Reps Stepper Controllers */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">
+                            {/* Weight (kg) Stepper */}
+                            <div className="bg-pink-50/40 rounded-2xl p-3 border border-pink-100">
+                              <div className="flex items-center justify-between mb-2 px-1">
+                                <span className="text-xs font-bold text-slate-500">น้ำหนัก (Weight)</span>
+                                <span className="text-xs font-black text-rose-500 font-mono">
+                                  {set.weight_kg} kg
+                                </span>
+                              </div>
+
+                              <div className="flex items-center justify-between gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = Math.max(
+                                      0,
+                                      Math.round(((set.weight_kg || 0) - weightStep) * 100) / 100
+                                    );
+                                    updateSet(item.exercise_id, setIdx, { weight_kg: next });
+                                  }}
+                                  className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
+                                  title={`ลด ${weightStep} กก.`}
+                                >
+                                  <Minus size={20} className="stroke-[2.5]" />
+                                </button>
+
+                                <div className="flex-1 min-w-[75px]">
+                                  <input
+                                    type="number"
+                                    step="0.5"
+                                    min="0"
+                                    value={set.weight_kg === 0 ? '' : set.weight_kg}
+                                    placeholder="0"
+                                    onChange={(e) =>
+                                      updateSet(item.exercise_id, setIdx, {
+                                        weight_kg: parseFloat(e.target.value) || 0,
+                                      })
+                                    }
+                                    className="w-full h-12 text-center font-black font-mono text-xl text-slate-800 bg-white border-2 border-pink-200 rounded-2xl focus:outline-none focus:border-rose-400 shadow-inner"
+                                  />
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = Math.round(((set.weight_kg || 0) + weightStep) * 100) / 100;
+                                    updateSet(item.exercise_id, setIdx, { weight_kg: next });
+                                  }}
+                                  className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
+                                  title={`เพิ่ม ${weightStep} กก.`}
+                                >
+                                  <Plus size={20} className="stroke-[2.5]" />
+                                </button>
+                              </div>
+
+                              {/* Weight Step Size Selector */}
+                              <div className="flex items-center justify-between gap-1 mt-2.5 px-0.5">
+                                <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">ปรับทีละ:</span>
+                                <div className="flex items-center gap-1.5 overflow-x-auto">
+                                  {[1, 1.25, 2.5, 5, 10].map((s) => (
+                                    <button
+                                      key={s}
+                                      type="button"
+                                      onClick={() => setWeightStep(s)}
+                                      className={`text-xs font-bold px-2 py-1 rounded-xl border transition cursor-pointer active:scale-95 min-h-[28px] ${
+                                        weightStep === s
+                                          ? 'bg-rose-500 text-white border-rose-500 shadow-2xs font-extrabold'
+                                          : 'bg-white hover:bg-pink-50 text-slate-600 border-pink-200'
+                                      }`}
+                                      title={`กด +/- เพื่อปรับทีละ ${s} กก.`}
+                                    >
+                                      ±{s}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Reps Stepper */}
+                            <div className="bg-pink-50/40 rounded-2xl p-3 border border-pink-100">
+                              <div className="flex items-center justify-between mb-2 px-1">
+                                <span className="text-xs font-bold text-slate-500">
+                                  จำนวนครั้ง (Reps)
+                                </span>
+                                <span className="text-xs font-black text-rose-500 font-mono">
+                                  {set.reps} ครั้ง
+                                </span>
+                              </div>
+
+                              <div className="flex items-center justify-between gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = Math.max(0, (set.reps || 0) - repsStep);
+                                    updateSet(item.exercise_id, setIdx, { reps: next });
+                                  }}
+                                  className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
+                                  title={`ลด ${repsStep} ครั้ง`}
+                                >
+                                  <Minus size={20} className="stroke-[2.5]" />
+                                </button>
+
+                                <div className="flex-1 min-w-[75px]">
+                                  <input
+                                    type="number"
+                                    step="1"
+                                    min="0"
+                                    value={set.reps === 0 ? '' : set.reps}
+                                    placeholder="0"
+                                    onChange={(e) =>
+                                      updateSet(item.exercise_id, setIdx, {
+                                        reps: parseInt(e.target.value) || 0,
+                                      })
+                                    }
+                                    className="w-full h-12 text-center font-black font-mono text-xl text-slate-800 bg-white border-2 border-pink-200 rounded-2xl focus:outline-none focus:border-rose-400 shadow-inner"
+                                  />
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const next = (set.reps || 0) + repsStep;
+                                    updateSet(item.exercise_id, setIdx, { reps: next });
+                                  }}
+                                  className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
+                                  title={`เพิ่ม ${repsStep} ครั้ง`}
+                                >
+                                  <Plus size={20} className="stroke-[2.5]" />
+                                </button>
+                              </div>
+
+                              {/* Reps Step Size Selector */}
+                              <div className="flex items-center justify-between gap-1 mt-2.5 px-0.5">
+                                <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">ปรับทีละ:</span>
+                                <div className="flex items-center gap-1.5 overflow-x-auto">
+                                  {[1, 2, 5].map((s) => (
+                                    <button
+                                      key={s}
+                                      type="button"
+                                      onClick={() => setRepsStep(s)}
+                                      className={`text-xs font-bold px-2.5 py-1 rounded-xl border transition cursor-pointer active:scale-95 min-h-[28px] ${
+                                        repsStep === s
+                                          ? 'bg-rose-500 text-white border-rose-500 shadow-2xs font-extrabold'
+                                          : 'bg-white hover:bg-pink-50 text-slate-600 border-pink-200'
+                                      }`}
+                                      title={`กด +/- เพื่อปรับทีละ ${s} ครั้ง`}
+                                    >
+                                      ±{s}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Prominent Tactile Finish Set Button (Triggers Rest Timer) */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newDone = !set.done;
+                              updateSet(item.exercise_id, setIdx, { done: newDone });
+                              if (newDone) {
+                                startRestTimer(standardRestSeconds);
+                              }
+                            }}
+                            className={`w-full py-4 px-4 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer shadow-md min-h-[52px] ${
+                              set.done
+                                ? 'bg-rose-100/80 hover:bg-rose-100 text-rose-800 border-2 border-rose-300'
+                                : 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-pink-200'
+                            }`}
+                          >
+                            {set.done ? (
+                              <>
+                                <Check size={18} className="stroke-[3] text-rose-600" />
+                                <span>
+                                  เซ็ต {setIdx + 1} เรียบร้อย ({set.weight_kg} kg × {set.reps} ครั้ง) · แตะเพื่อแก้ไข
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-mono font-bold">
+                                  {setIdx + 1}
+                                </span>
+                                <span>
+                                  เสร็จเซ็ตที่ {setIdx + 1} แล้ว (กดเริ่มพัก {standardRestSeconds}s ⏱️)
+                                </span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Add Next Set Horizontal Card */}
                       <button
                         type="button"
-                        onClick={() => {
-                          const newDone = !set.done;
-                          updateSet(item.exercise_id, setIdx, { done: newDone });
-                          if (newDone) {
-                            startRestTimer(standardRestSeconds);
-                          }
-                        }}
-                        className={`w-full py-4 px-4 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer shadow-md min-h-[52px] ${
-                          set.done
-                            ? 'bg-rose-100/80 hover:bg-rose-100 text-rose-800 border-2 border-rose-300'
-                            : 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-pink-200'
-                        }`}
+                        onClick={() => addSetToExercise(item.exercise_id)}
+                        className="w-32 sm:w-36 shrink-0 snap-start rounded-2xl bg-pink-50/60 hover:bg-pink-100/80 text-rose-600 font-bold text-xs sm:text-sm flex flex-col items-center justify-center gap-2 border-2 border-dashed border-pink-300 transition active:scale-95 cursor-pointer p-4 min-h-[200px]"
                       >
-                        {set.done ? (
-                          <>
-                            <Check size={18} className="stroke-[3] text-rose-600" />
-                            <span>
-                              เซ็ต {setIdx + 1} เรียบร้อย ({set.weight_kg} kg × {set.reps} ครั้ง) · แตะเพื่อแก้ไข
-                            </span>
-                          </>
-                        ) : (
-                          <>
-                            <span className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-mono font-bold">
-                              {setIdx + 1}
-                            </span>
-                            <span>
-                              เสร็จเซ็ตที่ {setIdx + 1} แล้ว (กดเริ่มพัก {standardRestSeconds}s ⏱️)
-                            </span>
-                          </>
-                        )}
+                        <div className="w-10 h-10 rounded-2xl bg-white border border-pink-200 text-rose-500 flex items-center justify-center shadow-xs">
+                          <Plus size={20} className="stroke-[2.5]" />
+                        </div>
+                        <span className="font-black text-slate-700 text-center">เพิ่มเซ็ต {item.sets.length + 1}</span>
+                        <span className="text-[10px] text-pink-400 font-normal">แตะเพื่อเพิ่ม</span>
                       </button>
                     </div>
-                  ))}
 
-                  {/* Add Next Set Button */}
-                  <button
-                    type="button"
-                    onClick={() => addSetToExercise(item.exercise_id)}
-                    className="w-full py-3.5 rounded-2xl bg-pink-50 hover:bg-pink-100 text-rose-600 font-bold text-sm flex items-center justify-center gap-2 border border-pink-200 transition active:scale-98 cursor-pointer mt-1 min-h-[48px]"
-                  >
-                    <Plus size={18} />
-                    <span>เพิ่มเซ็ตถัดไป (เซ็ตที่ {item.sets.length + 1})</span>
-                  </button>
-                </div>
+                    {/* Quick Button to Collapse after finishing */}
+                    <div className="px-4 pb-3 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => toggleExerciseCollapse(item.exercise_id)}
+                        className="text-xs font-bold text-slate-400 hover:text-rose-600 flex items-center gap-1 cursor-pointer transition"
+                      >
+                        <span>ย่อเก็บท่านี้</span>
+                        <ChevronDown size={14} className="rotate-180" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
