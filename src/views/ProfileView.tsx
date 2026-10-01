@@ -460,105 +460,142 @@ export const ProfileView: React.FC = () => {
         </button>
       </div>
 
-      {/* Sub-tab navigation: Apple Segmented Pill */}
-      <div className="flex items-center p-1 bg-zinc-200/60 backdrop-blur-md rounded-full shadow-inner border border-black/[0.04] max-w-xl mx-auto">
+      {/* Sub-tab navigation: Kawaii Game Segmented Pill */}
+      <div className="flex items-center p-1.5 bg-white border-2 border-slate-200/90 rounded-full shadow-[0_4px_0_#e2e8f0] max-w-xl mx-auto gap-1">
         <button
           onClick={() => setActiveTab('stats')}
-          className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 py-2 px-3 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
             activeTab === 'stats'
-              ? 'bg-white text-zinc-900 shadow-sm'
-              : 'text-zinc-600 hover:text-zinc-900'
+              ? activeProfileKey === 'partner'
+                ? 'bg-pink-400 text-white shadow-md shadow-pink-300/50'
+                : 'bg-sky-400 text-white shadow-md shadow-sky-300/50'
+              : 'text-slate-500 hover:text-slate-800'
           }`}
         >
           <TrendingUp size={15} />
-          <span>สถิติ & กราฟ</span>
+          <span>สถิติ & กราฟ ⭐</span>
         </button>
         <button
           onClick={() => setActiveTab('profile')}
-          className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 py-2 px-3 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
             activeTab === 'profile'
-              ? 'bg-white text-zinc-900 shadow-sm'
-              : 'text-zinc-600 hover:text-zinc-900'
+              ? activeProfileKey === 'partner'
+                ? 'bg-pink-400 text-white shadow-md shadow-pink-300/50'
+                : 'bg-sky-400 text-white shadow-md shadow-sky-300/50'
+              : 'text-slate-500 hover:text-slate-800'
           }`}
         >
           <User size={15} />
-          <span>ข้อมูลส่วนตัว</span>
+          <span>ข้อมูลโปรไฟล์ 👤</span>
         </button>
         <button
           onClick={() => setActiveTab('settings')}
-          className={`flex-1 py-2 px-3 rounded-full text-xs font-bold transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
+          className={`flex-1 py-2 px-3 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
             activeTab === 'settings'
-              ? 'bg-white text-zinc-900 shadow-sm'
-              : 'text-zinc-600 hover:text-zinc-900'
+              ? activeProfileKey === 'partner'
+                ? 'bg-pink-400 text-white shadow-md shadow-pink-300/50'
+                : 'bg-sky-400 text-white shadow-md shadow-sky-300/50'
+              : 'text-slate-500 hover:text-slate-800'
           }`}
         >
           <SettingsIcon size={15} />
-          <span>ตั้งค่า Cloud & AI</span>
+          <span>ตั้งค่า Cloud & AI ⚙️</span>
         </button>
       </div>
 
       {/* TAB 1: STATS & PROGRESS */}
       {activeTab === 'stats' && (
         <div className="space-y-4">
-          {/* Smart Goal & Sports Nutrition Calculator Banner */}
-          {/* Smart Goal & Sports Nutrition Calculator Banner (Apple Pro Card) */}
-          <div className="p-5 sm:p-6 rounded-[24px] bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-900 text-white shadow-lg shadow-black/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-white/10">
+          {/* Smart Goal & Sports Nutrition Calculator Banner (Kawaii Game Quest) */}
+          <div
+            className={`p-5 sm:p-6 rounded-[28px] border-2 text-white shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
+              activeProfileKey === 'partner'
+                ? 'bg-gradient-to-r from-pink-400 via-rose-400 to-amber-300 border-pink-200 shadow-[0_6px_0_#f43f5e]'
+                : 'bg-gradient-to-r from-sky-400 via-blue-400 to-indigo-400 border-sky-200 shadow-[0_6px_0_#0284c7]'
+            }`}
+          >
             <div className="flex items-center gap-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center text-xl shadow-inner shrink-0 border border-white/10">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shadow-inner shrink-0 animate-bounce-gentle">
                 🎯
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold tracking-tight text-white">คำนวณเป้าหมาย & สารอาหาร</h3>
-                  <span className="text-[10px] bg-white/15 px-2 py-0.5 rounded-full font-semibold text-zinc-200">Smart Goal</span>
+                  <h3 className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-1.5">
+                    คำนวณเป้าหมาย & สารอาหารอัจฉริยะ <span className="animate-sparkle text-sm">✨</span>
+                  </h3>
+                  <span className="text-[10px] bg-white/25 px-2 py-0.5 rounded-full font-black text-white">Smart Goal</span>
                 </div>
-                <p className="text-xs text-zinc-300 mt-0.5 leading-relaxed">
-                  Bulk, Cut, Recomp คำนวณแคลอรี่ โปรตีน คาร์บ ไขมัน อัตโนมัติ
+                <p className="text-xs text-white/90 mt-0.5 font-medium leading-relaxed">
+                  Bulk, Cut, Recomp คำนวณแคลอรี่ โปรตีน คาร์บ ไขมัน อัตโนมัติตามหลักวิทย์
                 </p>
               </div>
             </div>
             <button
               type="button"
               onClick={() => setShowGoalModal(true)}
-              className="px-4 py-2.5 rounded-full bg-white text-zinc-900 hover:bg-zinc-100 font-bold text-xs shadow-sm flex items-center justify-center gap-1.5 active:scale-95 transition cursor-pointer whitespace-nowrap shrink-0"
+              className="btn-candy-yellow px-5 py-2.5 text-xs flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0"
             >
-              <Sparkles size={14} className="text-blue-500" />
-              <span>คำนวณเป้าหมาย</span>
+              <Sparkles size={14} className="animate-sparkle text-amber-800" />
+              <span>คำนวณเป้าหมายตอนนี้ 🚀</span>
             </button>
           </div>
 
-          {/* Quick Metrics Cards (Apple Health / Samsung Health Style) */}
+          {/* Quick Metrics Cards (Kawaii Game 3D Panels) */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="card-apple p-4">
-              <span className="text-xs text-zinc-500 flex items-center gap-1 font-medium">
-                <Scale size={14} className="text-zinc-400" /> น้ำหนักล่าสุด
+            <div
+              className={`p-4 rounded-[24px] bg-white border-2 transition-all ${
+                activeProfileKey === 'partner'
+                  ? 'border-pink-200 shadow-[0_5px_0_#fecdd3]'
+                  : 'border-sky-200 shadow-[0_5px_0_#bae6fd]'
+              }`}
+            >
+              <span className="text-xs text-slate-500 flex items-center gap-1 font-bold">
+                <Scale size={14} className="text-amber-500" /> น้ำหนักล่าสุด ⚖️
               </span>
-              <p className="text-2xl font-extrabold text-zinc-900 mt-1 tracking-tight">
-                {currentWeightKg} <span className="text-xs text-zinc-400 font-normal">kg</span>
+              <p className="text-2xl font-black text-slate-800 mt-1 font-mono tracking-tight">
+                {currentWeightKg} <span className="text-xs text-slate-400 font-bold">kg</span>
               </p>
             </div>
 
-            <div className="card-apple p-4">
-              <span className="text-xs text-zinc-500 flex items-center gap-1 font-medium">
-                <Sparkles size={14} className="text-zinc-400" /> Body Fat %
+            <div
+              className={`p-4 rounded-[24px] bg-white border-2 transition-all ${
+                activeProfileKey === 'partner'
+                  ? 'border-pink-200 shadow-[0_5px_0_#fecdd3]'
+                  : 'border-sky-200 shadow-[0_5px_0_#bae6fd]'
+              }`}
+            >
+              <span className="text-xs text-slate-500 flex items-center gap-1 font-bold">
+                <Sparkles size={14} className="text-rose-400 animate-sparkle" /> Body Fat % ✨
               </span>
-              <p className="text-2xl font-extrabold text-zinc-900 mt-1 tracking-tight">
+              <p className="text-2xl font-black text-slate-800 mt-1 font-mono tracking-tight">
                 {latestMetric?.body_fat_pct ? `${latestMetric.body_fat_pct}%` : '–'}
               </p>
             </div>
 
-            <div className="card-apple p-4">
-              <span className="text-xs text-zinc-500 font-medium">ค่า BMI</span>
-              <p className="text-2xl font-extrabold text-zinc-900 mt-1 tracking-tight">
-                {bmi} <span className="text-xs text-emerald-600 font-semibold ml-1">ปกติ</span>
+            <div
+              className={`p-4 rounded-[24px] bg-white border-2 transition-all ${
+                activeProfileKey === 'partner'
+                  ? 'border-pink-200 shadow-[0_5px_0_#fecdd3]'
+                  : 'border-sky-200 shadow-[0_5px_0_#bae6fd]'
+              }`}
+            >
+              <span className="text-xs text-slate-500 font-bold">ค่า BMI 📊</span>
+              <p className="text-2xl font-black text-slate-800 mt-1 font-mono tracking-tight">
+                {bmi} <span className="text-xs text-emerald-600 font-black px-1.5 py-0.2 rounded-full bg-emerald-100">ปกติ</span>
               </p>
             </div>
 
-            <div className="card-apple p-4">
-              <span className="text-xs text-zinc-500 font-medium">Volume รวม</span>
-              <p className="text-2xl font-extrabold text-zinc-900 mt-1 font-mono tracking-tight">
+            <div
+              className={`p-4 rounded-[24px] bg-white border-2 transition-all ${
+                activeProfileKey === 'partner'
+                  ? 'border-pink-200 shadow-[0_5px_0_#fecdd3]'
+                  : 'border-sky-200 shadow-[0_5px_0_#bae6fd]'
+              }`}
+            >
+              <span className="text-xs text-slate-500 font-bold">Volume สะสม 🏋️</span>
+              <p className="text-2xl font-black text-slate-800 mt-1 font-mono tracking-tight">
                 <NumberTicker value={totalVolumeAllTime} />{' '}
-                <span className="text-xs text-zinc-400 font-normal">kg</span>
+                <span className="text-xs text-slate-400 font-bold">kg</span>
               </p>
             </div>
           </div>

@@ -24,71 +24,88 @@ export const Header: React.FC<HeaderProps> = ({
   const otherName = isMagnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️';
 
   return (
-    <header className="sticky top-0 z-40 glass-apple-header px-4 py-2.5 transition-all duration-300">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b-2 border-pink-100/90 shadow-xs px-3.5 sm:px-6 py-2.5 transition-all duration-300">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
-        {/* Brand & Mascot */}
+        {/* Brand Mascot with Cute Bouncy Wiggle */}
         <div className="flex items-center gap-3">
           <button
             onClick={onOpenProfileModal}
-            className="relative flex items-center justify-center p-1 rounded-2xl bg-zinc-100 border border-black/[0.06] hover:scale-105 active:scale-95 transition shadow-2xs cursor-pointer"
-            title="กดเพื่อเลือกโปรไฟล์"
+            className={`relative flex items-center justify-center p-1.5 rounded-2xl border-2 transition-transform duration-200 hover:scale-110 active:scale-95 cursor-pointer shadow-xs ${
+              isMagnum
+                ? 'bg-sky-100/80 border-sky-300'
+                : 'bg-pink-100/80 border-pink-300'
+            }`}
+            title="แตะเพื่อเลือกโปรไฟล์หรือเปลี่ยนตัวละคร"
           >
-            <PigMascot
-              size="sm"
-              expression={isMagnum ? 'workout' : 'happy'}
-              className="drop-shadow-xs"
-            />
+            <div className="animate-wiggle">
+              <PigMascot
+                size="sm"
+                expression={isMagnum ? 'workout' : 'cheer'}
+                className="drop-shadow-xs"
+              />
+            </div>
+            <span className="absolute -top-1 -right-1 text-xs animate-sparkle">✨</span>
           </button>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-extrabold text-sm sm:text-base text-zinc-900 tracking-tight flex items-center gap-1.5">
-                หมูอ้วน
-                <span className="text-[11px] font-medium text-zinc-400 font-mono">MooAuan</span>
+            <div className="flex items-center gap-1.5">
+              <h1 className="font-extrabold text-base sm:text-lg text-slate-800 tracking-tight flex items-center gap-1">
+                หมูอ้วน 🐷
+                <span
+                  className={`text-xs font-bold font-mono px-1.5 py-0.2 rounded-md ${
+                    isMagnum ? 'bg-sky-100 text-sky-700' : 'bg-pink-100 text-pink-700'
+                  }`}
+                >
+                  {isMagnum ? 'Gym Hero' : 'Cozy Fit'}
+                </span>
               </h1>
               {/* Cloud Sync Status Indicator */}
               <span
-                className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-colors ${
+                className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border shadow-2xs ${
                   isFirebaseConnected
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80'
-                    : 'bg-zinc-100 text-zinc-500 border-zinc-200'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                    : 'bg-amber-50 text-amber-700 border-amber-300'
                 }`}
-                title={isFirebaseConnected ? 'ซิงค์ข้อมูล Real-time สำเร็จ' : 'โหมด Offline'}
+                title={isFirebaseConnected ? 'ซิงค์ข้อมูลสด Real-time สำเร็จ' : 'โหมด Offline'}
               >
-                {isFirebaseConnected ? <Wifi size={10} className="text-emerald-500" /> : <WifiOff size={10} />}
-                <span className="hidden sm:inline">{isFirebaseConnected ? 'Cloud Live' : 'Offline'}</span>
+                {isFirebaseConnected ? <Wifi size={11} className="text-emerald-500 animate-pulse" /> : <WifiOff size={11} />}
+                <span className="hidden sm:inline">{isFirebaseConnected ? 'Live Sync' : 'Offline'}</span>
               </span>
             </div>
-            <p className="text-[11px] text-zinc-500 font-medium">
-              กำลังดูแล: <strong className={isMagnum ? 'text-blue-600 font-bold' : 'text-rose-600 font-bold'}>{currentProfile.name}</strong>
+            <p className="text-xs text-slate-500 font-semibold flex items-center gap-1 mt-0.5">
+              <span>กำลังเล่น:</span>
+              <strong className={isMagnum ? 'text-sky-600' : 'text-pink-600'}>
+                {currentProfile.name}
+              </strong>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 text-slate-600 font-bold">
+                {isMagnum ? 'P1 🎮' : 'P2 🌸'}
+              </span>
             </p>
           </div>
         </div>
 
-        {/* Right Action Controls */}
+        {/* Right Action Controls: 3D Candy AI Button & Character Switcher */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* AI Trainer Button */}
+          {/* AI Trainer Button with Candy Star */}
           {onOpenAiTrainer && (
             <button
               onClick={onOpenAiTrainer}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all active:scale-95 cursor-pointer shadow-2xs ${
-                isMagnum
-                  ? 'bg-blue-50 hover:bg-blue-100/80 border-blue-200 text-blue-700'
-                  : 'bg-rose-50 hover:bg-rose-100/80 border-rose-200 text-rose-700'
-              }`}
+              className="btn-candy-yellow px-3.5 py-1.5 text-xs flex items-center gap-1.5 cursor-pointer"
               title="เปิดคุยกับโค้ชหมูอ้วน AI"
             >
-              <Sparkles size={13} className={isMagnum ? 'text-blue-500' : 'text-rose-500'} />
-              <span>โค้ช AI</span>
+              <Sparkles size={13} className="animate-sparkle" />
+              <span>โค้ช AI 💬</span>
             </button>
           )}
 
-          {/* Apple-style Profile Switcher Segmented Pill */}
+          {/* 3D Character Switcher Button */}
           <button
             onClick={() => setActiveProfileKey(isMagnum ? 'partner' : 'primary')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium transition-all active:scale-95 shadow-sm cursor-pointer"
-            title={`คลิกเพื่อสลับโปรไฟล์เป็น ${otherName}`}
+            className={`px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer ${
+              isMagnum ? 'btn-candy-pink' : 'btn-candy-blue'
+            }`}
+            title={`คลิกเพื่อสลับตัวละครเป็น ${otherName}`}
           >
-            <Users size={13} className="text-zinc-400" />
+            <Users size={13} />
             <span className="hidden sm:inline">สลับเป็น</span>
             <span>{otherName}</span>
           </button>

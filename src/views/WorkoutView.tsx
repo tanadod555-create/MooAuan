@@ -1196,79 +1196,110 @@ export const WorkoutView: React.FC = () => {
       ) : (
         /* If No Active Workout: Show Quick Start & Routine Programs */
         <div className="space-y-6">
-          {/* Cute Pig Mascot Welcome Banner */}
-          <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-pink-100/90 via-pink-50/80 to-rose-100/90 border border-pink-200/90 shadow-sm shadow-pink-200/40 flex items-center gap-3.5">
-            <PigMascot size="lg" expression="workout" className="shrink-0 drop-shadow-sm" />
+          {/* Cute Pig Mascot Interactive Speech Bubble (Kawaii Game Dialogue) */}
+          <div
+            className={`relative p-4 sm:p-5 rounded-[28px] bg-white border-2 flex items-center gap-4 transition-all duration-300 ${
+              activeProfileKey === 'partner'
+                ? 'border-pink-200 shadow-[0_6px_0_#fecdd3]'
+                : 'border-sky-200 shadow-[0_6px_0_#bae6fd]'
+            }`}
+          >
+            {/* Mascot with Wiggle Animation */}
+            <div className="relative shrink-0">
+              <div className="animate-wiggle cursor-pointer">
+                <PigMascot size="lg" expression="workout" className="drop-shadow-xs" />
+              </div>
+              <span className="absolute -top-1 -right-1 text-sm animate-sparkle">✨</span>
+            </div>
+
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs">
-                  หมูอ้วนฟิตเนส 🐷
+              <div className="flex items-center gap-2 flex-wrap">
+                <span
+                  className={`text-xs font-black px-3 py-1 rounded-full text-white shadow-2xs ${
+                    activeProfileKey === 'partner'
+                      ? 'bg-pink-400'
+                      : 'bg-sky-400'
+                  }`}
+                >
+                  โค้ชหมูอ้วน 🐷
                 </span>
-                <span className="text-xs text-rose-500 font-bold">
-                  สวัสดีคุณ {activeProfileKey === 'partner' ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}
+                <span className="text-xs font-bold text-slate-500">
+                  สวัสดี {activeProfileKey === 'partner' ? 'คุณมะนาว 🌸' : 'คุณแม็กนั่ม 🏋️‍♂️'}!
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-slate-700 font-bold mt-1 leading-snug">
-                "หมูอ้วนอย่างเราก็ฟิตเฟิร์มได้! วันนี้พร้อมเบิร์นหรือยัง ลุยไปด้วยกันนะ 🐽✨"
+              <p className="text-xs sm:text-sm text-slate-700 font-bold mt-1.5 leading-relaxed">
+                "หมูอ้วนอย่างเราก็ฟิตเฟิร์มได้! วันนี้พร้อมเบิร์นหรือยัง ลุยเควสต์ไปด้วยกันนะ 🐽💫"
               </p>
             </div>
           </div>
 
-          {/* Quick Start Card with MagicCard */}
-          <MagicCard spotlightColor="rgba(244, 63, 94, 0.15)" className="p-7 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-              <Flame size={140} className="text-rose-400" />
+          {/* Quick Start Quest Board */}
+          <div
+            className={`p-6 sm:p-7 rounded-[32px] bg-white border-2 relative overflow-hidden transition-all duration-300 ${
+              activeProfileKey === 'partner'
+                ? 'border-pink-200 shadow-[0_8px_0_#fecdd3]'
+                : 'border-sky-200 shadow-[0_8px_0_#bae6fd]'
+            }`}
+          >
+            <div className="absolute top-2 right-3 p-4 opacity-20 pointer-events-none animate-bounce-gentle">
+              <Flame size={110} className={activeProfileKey === 'partner' ? 'text-pink-400' : 'text-sky-400'} />
             </div>
+
             <div className="relative z-10 max-w-md">
-              <span className="text-xs font-bold text-rose-500 bg-rose-50 px-3 py-1 rounded-full border border-rose-200">
-                พร้อมฝึกซ้อมหรือยัง?
-              </span>
-              <h2 className="text-2xl font-black text-slate-700 mt-2">
-                เริ่มเซสชันการฝึกซ้อม
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-black text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-200 flex items-center gap-1">
+                  <Sparkles size={12} className="animate-sparkle" /> เควสต์ฝึกซ้อมประจำวัน
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-800 mt-2 tracking-tight">
+                เริ่มเซสชันการฝึกซ้อม 🎮
               </h2>
-              <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-medium">
-                เลือกรูปแบบการฝึกที่ต้องการ เริ่มยกเวทแบบยืดหยุ่น หรือเริ่มเซสชันคาร์ดิโอ/เดินชัน บันทึกเรียลไทม์
+              <p className="text-xs sm:text-sm text-slate-600 mt-1.5 leading-relaxed font-medium">
+                เลือกโปรแกรมฝึกด้านล่าง หรือเริ่มยกเวทอิสระ / เดินชันคาร์ดิโอบันทึกสดเรียลไทม์
               </p>
-              <div className="mt-5 flex items-center gap-3 flex-wrap">
+
+              <div className="mt-6 flex items-center gap-3 flex-wrap">
                 <button
                   onClick={() => startWorkout('การฝึกวันนี้')}
-                  className="py-3 px-5 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-400 hover:opacity-95 text-white font-bold text-sm flex items-center gap-2 shadow-md shadow-pink-200 active:scale-95 transition cursor-pointer"
+                  className={`py-3 px-6 text-sm flex items-center gap-2 cursor-pointer ${
+                    activeProfileKey === 'partner' ? 'btn-candy-pink' : 'btn-candy-blue'
+                  }`}
                 >
                   <Play size={16} fill="currentColor" />
                   <span>เริ่มยกเวท (Empty Workout)</span>
                 </button>
                 <button
                   onClick={() => startCardioSession('เดินชัน / คาร์ดิโอ')}
-                  className="py-3 px-5 rounded-2xl bg-white hover:bg-pink-50 text-rose-600 font-bold text-sm flex items-center gap-2 border-2 border-pink-200 hover:border-pink-300 shadow-sm active:scale-95 transition cursor-pointer"
+                  className="btn-candy-white py-3 px-5 text-sm flex items-center gap-2 cursor-pointer shadow-xs"
                 >
-                  <Footprints size={16} className="text-rose-500" />
+                  <Footprints size={16} className={activeProfileKey === 'partner' ? 'text-pink-500' : 'text-sky-500'} />
                   <span>เริ่มคาร์ดิโอ / เดินชัน 🏃</span>
                 </button>
               </div>
             </div>
-          </MagicCard>
+          </div>
 
           {/* Routine Programs (Push / Pull / Legs / Glutes) */}
           <div className="space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-bold text-slate-700 flex items-center gap-2">
-                    <Dumbbell size={18} className="text-rose-400" />
-                    โปรแกรมการฝึกประจำสัปดาห์ (Routines)
+                  <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                    <Dumbbell size={20} className={activeProfileKey === 'partner' ? 'text-pink-400' : 'text-sky-400'} />
+                    โปรแกรมการฝึกประจำสัปดาห์ (Routines) 📖
                   </h3>
                   <span
-                    className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold border ${
+                    className={`text-xs px-2.5 py-0.5 rounded-full font-black border ${
                       activeProfileKey === 'partner'
-                        ? 'bg-rose-100 text-rose-700 border-rose-200'
-                        : 'bg-pink-100 text-pink-800 border border-pink-200'
+                        ? 'bg-pink-100 text-pink-700 border-pink-200'
+                        : 'bg-sky-100 text-sky-700 border-sky-200'
                     }`}
                   >
                     {activeProfileKey === 'partner' ? '🌸 ของมะนาว' : '🏋️‍♂️ ของแม็กนั่ม'}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  ตารางฝึกที่ตั้งค่าเฉพาะของแต่ละคน สามารถค้นหา ปรับเซ็ต/ครั้ง และแก้ไขท่าฝึกได้อิสระ
+                <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                  ตารางฝึกเฉพาะตัว สามารถกดเริ่มเล่น ปรับเซ็ต/ครั้ง หรือแก้ไขท่าฝึกได้อิสระ
                 </p>
               </div>
 
@@ -1284,11 +1315,11 @@ export const WorkoutView: React.FC = () => {
                       resetProgramsToDefault();
                     }
                   }}
-                  className="px-3 py-2 rounded-xl bg-pink-50 hover:bg-pink-100 text-rose-600 font-bold text-xs flex items-center justify-center gap-1.5 border border-pink-200 shadow-xs transition active:scale-95 shrink-0 cursor-pointer"
+                  className="btn-candy-white px-3 py-1.5 text-xs flex items-center justify-center gap-1.5 cursor-pointer"
                   title="รีเซ็ตโปรแกรมกลับสู่ตารางฝึกมาตรฐานของโค้ช Magnum / Manow"
                 >
                   <RotateCcw size={13} />
-                  <span>โหลดตารางแนะนำตามโค้ช</span>
+                  <span>โหลดตารางแนะนำ</span>
                 </button>
 
                 <button
@@ -1296,10 +1327,12 @@ export const WorkoutView: React.FC = () => {
                     setEditingProgram(null);
                     setShowRoutineModal(true);
                   }}
-                  className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:opacity-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-pink-200 transition active:scale-95 shrink-0 cursor-pointer"
+                  className={`px-3.5 py-1.5 text-xs flex items-center justify-center gap-1.5 cursor-pointer ${
+                    activeProfileKey === 'partner' ? 'btn-candy-pink' : 'btn-candy-blue'
+                  }`}
                 >
                   <Plus size={15} />
-                  + สร้าง Routine ใหม่
+                  <span>+ สร้าง Routine</span>
                 </button>
               </div>
             </div>
@@ -1308,19 +1341,19 @@ export const WorkoutView: React.FC = () => {
             <div className="relative">
               <Search
                 size={16}
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-pink-400 pointer-events-none"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
               />
               <input
                 type="text"
                 value={routineSearchQuery}
                 onChange={(e) => setRoutineSearchQuery(e.target.value)}
                 placeholder="ค้นหาโปรแกรม Routine (เช่น Push, Glute, ก้น, ขา, อก, Hip Thrust)..."
-                className="w-full bg-white border border-pink-200 rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm text-slate-700 placeholder-pink-400 focus:outline-none focus:border-rose-400 transition shadow-xs"
+                className="w-full bg-white border-2 border-slate-200 rounded-2xl pl-10 pr-9 py-2.5 text-xs sm:text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:border-pink-400 transition shadow-2xs"
               />
               {routineSearchQuery && (
                 <button
                   onClick={() => setRoutineSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-pink-400 hover:text-pink-700"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
                 >
                   <X size={15} />
                 </button>
@@ -1328,14 +1361,14 @@ export const WorkoutView: React.FC = () => {
             </div>
 
             {filteredPrograms.length === 0 ? (
-              <div className="p-8 text-center bg-white/95 rounded-3xl border border-pink-200 space-y-2 shadow-xs">
-                <Dumbbell size={28} className="mx-auto text-pink-300" />
+              <div className="p-8 text-center bg-white rounded-3xl border-2 border-slate-200 space-y-2 shadow-xs">
+                <Dumbbell size={28} className="mx-auto text-slate-300" />
                 <p className="text-sm text-slate-700 font-bold">
                   ไม่พบโปรแกรม Routine ที่ตรงกับ "{routineSearchQuery}"
                 </p>
                 <button
                   onClick={() => setRoutineSearchQuery('')}
-                  className="px-3 py-1 bg-pink-50 text-xs text-rose-600 rounded-lg hover:bg-pink-100 font-bold"
+                  className="px-3 py-1 bg-slate-100 text-xs text-slate-600 rounded-lg hover:bg-slate-200 font-bold"
                 >
                   ล้างการค้นหา
                 </button>
@@ -1343,60 +1376,81 @@ export const WorkoutView: React.FC = () => {
             ) : (
               <BentoGrid>
                 {filteredPrograms.map((prog) => (
-                  <BentoCard
+                  <div
                     key={prog.program_id}
-                    title={prog.name}
-                    subtitle={prog.note}
-                    badge={prog.day_of_week || 'ตาราง'}
-                    icon={<Dumbbell size={16} />}
+                    className={`rounded-[28px] p-5 border-2 bg-white flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 ${
+                      activeProfileKey === 'partner'
+                        ? 'border-pink-200 shadow-[0_5px_0_#fecdd3]'
+                        : 'border-sky-200 shadow-[0_5px_0_#bae6fd]'
+                    }`}
                   >
-                    <div className="space-y-3 mt-1">
+                    <div>
+                      {/* Card Header */}
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-sm">
+                            ⭐
+                          </span>
+                          <div>
+                            <h4 className="text-sm font-black text-slate-800 tracking-tight">{prog.name}</h4>
+                            {prog.note && <p className="text-[11px] text-slate-500 font-medium truncate max-w-[140px]">{prog.note}</p>}
+                          </div>
+                        </div>
+                        {prog.day_of_week && (
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                            {prog.day_of_week}
+                          </span>
+                        )}
+                      </div>
+
                       {/* Preview exercises in routine */}
-                      <div className="space-y-1 bg-pink-50/60 p-2.5 rounded-2xl border border-pink-200/80">
+                      <div className="space-y-1.5 bg-slate-50/80 p-3 rounded-2xl border border-slate-200/80 mb-4">
                         {prog.items?.slice(0, 3).map((item, idx) => {
                           const ex = exercises.find((e) => e.exercise_id === item.exercise_id);
                           return (
                             <div
                               key={idx}
-                              className="text-xs text-slate-700 flex items-center gap-1.5 truncate font-medium"
+                              className="text-xs text-slate-700 flex items-center gap-1.5 truncate font-semibold"
                             >
-                              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                               <span className="truncate">{ex?.name_th || item.exercise_id}</span>
-                              <span className="text-pink-700/60 font-mono font-bold">
+                              <span className="text-slate-400 font-mono font-bold text-[11px]">
                                 ({item.target_sets}x{item.target_reps})
                               </span>
                             </div>
                           );
                         })}
                         {prog.items && prog.items.length > 3 && (
-                          <span className="text-[11px] text-pink-700/60 block pl-3 font-medium">
+                          <span className="text-[11px] text-slate-400 block pl-3 font-semibold">
                             +{prog.items.length - 3} ท่าเพิ่มเติม
                           </span>
                         )}
                       </div>
-
-                      <div className="flex items-center gap-2 pt-1">
-                        <button
-                          onClick={() => handleStartProgram(prog.program_id)}
-                          className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:opacity-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 shadow-xs cursor-pointer"
-                        >
-                          <Play size={13} fill="currentColor" />
-                          เริ่มเล่น
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingProgram(prog);
-                            setShowRoutineModal(true);
-                          }}
-                          className="py-2 px-3 rounded-xl bg-pink-50 hover:bg-pink-100 text-slate-600 border border-pink-200 font-bold text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer"
-                          title="แก้ไขโปรแกรมนี้"
-                        >
-                          <Edit2 size={13} />
-                          <span>แก้ไข</span>
-                        </button>
-                      </div>
                     </div>
-                  </BentoCard>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => handleStartProgram(prog.program_id)}
+                        className={`flex-1 py-2 px-3 text-xs flex items-center justify-center gap-1.5 cursor-pointer ${
+                          activeProfileKey === 'partner' ? 'btn-candy-pink' : 'btn-candy-blue'
+                        }`}
+                      >
+                        <Play size={13} fill="currentColor" />
+                        <span>เริ่มเล่น 🎮</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingProgram(prog);
+                          setShowRoutineModal(true);
+                        }}
+                        className="btn-candy-white py-2 px-3 text-xs flex items-center gap-1 cursor-pointer"
+                        title="แก้ไขโปรแกรมนี้"
+                      >
+                        <Edit2 size={13} />
+                        <span>แก้ไข</span>
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </BentoGrid>
             )}

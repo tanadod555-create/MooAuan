@@ -4,199 +4,323 @@
 
 :root {
   color-scheme: light;
-  --apple-bg: #f5f5f7;
-  --apple-card: rgba(255, 255, 255, 0.85);
-  --apple-border: rgba(0, 0, 0, 0.06);
-  --apple-text-primary: #1d1d1f;
-  --apple-text-secondary: #86868b;
-  --apple-text-tertiary: #a1a1a6;
-  --apple-blue: #0071e3;
-  --apple-blue-hover: #0077ed;
-  --apple-rose: #e11d48;
 }
 
 /* ========================================================
-   APPLE / SAMSUNG MINIMALIST DESIGN SYSTEM
+   KAWAII COZY GAME UI DESIGN SYSTEM (หมูอ้วน MooAuan Game)
    ======================================================== */
 
 body {
   margin: 0;
   padding: 0;
-  background-color: var(--apple-bg);
-  color: var(--apple-text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Prompt", "Inter", "Segoe UI", Roboto, sans-serif;
+  font-family: 'Fredoka', 'Prompt', 'Itim', 'Nunito', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   user-select: none;
-  letter-spacing: -0.012em;
+  letter-spacing: -0.01em;
 }
 
-/* Apple-style Minimal Scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
+/* ========================================================
+   KAWAII GAME ANIMATIONS (ขยับดุกดิก นุ่มนิ่ม น่ารัก)
+   ======================================================== */
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.28);
-}
-
-/* Smooth Subtle Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.99) translateY(4px);
+/* Cute Wiggle (ขยับดุกดิก ซ้ายขวา) */
+@keyframes cute-wiggle {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
   }
-  to {
+  25% {
+    transform: rotate(-5deg) scale(1.04);
+  }
+  75% {
+    transform: rotate(5deg) scale(1.04);
+  }
+}
+
+.animate-wiggle {
+  animation: cute-wiggle 1.8s ease-in-out infinite;
+  transform-origin: center bottom;
+}
+
+.hover-wiggle:hover {
+  animation: cute-wiggle 0.6s ease-in-out infinite;
+}
+
+/* Cute Jiggle / Squish (นุ่มนิ่ม ยืดหดเหมือนเยลลี่) */
+@keyframes cute-jiggle {
+  0%, 100% {
+    transform: scale(1, 1);
+  }
+  30% {
+    transform: scale(1.08, 0.92);
+  }
+  60% {
+    transform: scale(0.94, 1.06);
+  }
+  80% {
+    transform: scale(1.02, 0.98);
+  }
+}
+
+.animate-jiggle {
+  animation: cute-jiggle 2.5s ease-in-out infinite;
+}
+
+.hover-jiggle:hover {
+  animation: cute-jiggle 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Cute Gentle Bounce / Float (ลอยดุ๊กดิ๊ก) */
+@keyframes cute-bounce-gentle {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(1.5deg);
+  }
+}
+
+.animate-bounce-gentle {
+  animation: cute-bounce-gentle 2.4s ease-in-out infinite;
+}
+
+/* Sparkle Twinkle (ประกายวิ้งๆ ✨) */
+@keyframes cute-sparkle {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.25) rotate(15deg);
+    opacity: 0.85;
+    filter: drop-shadow(0 0 6px rgba(251, 191, 36, 0.8));
+  }
+}
+
+.animate-sparkle {
+  animation: cute-sparkle 1.6s ease-in-out infinite;
+}
+
+/* Pop in animation for cards */
+@keyframes candy-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(8px);
+  }
+  70% {
+    transform: scale(1.02) translateY(-2px);
+  }
+  100% {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.animate-candy-pop {
+  animation: candy-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-@keyframes float-subtle {
+/* Mascot idle breathing */
+@keyframes mascot-breath {
   0%, 100% {
-    transform: translateY(0px);
+    transform: scale(1);
   }
   50% {
-    transform: translateY(-3px);
+    transform: scale(1.04, 0.97);
   }
 }
 
-.animate-float {
-  animation: float-subtle 4s ease-in-out infinite;
+.animate-mascot {
+  animation: mascot-breath 2.2s ease-in-out infinite;
 }
 
-/* Safe areas for mobile */
+/* ========================================================
+   TACTILE 3D GAME BUTTONS (ปุ่มนูน 3D กดแล้วยุบแบบเกม)
+   ======================================================== */
+
+/* Pink Candy Button */
+.btn-candy-pink {
+  background-color: #ff6584;
+  border-bottom: 4px solid #d93d62;
+  border-radius: 9999px;
+  color: #ffffff;
+  font-weight: 800;
+  transition: all 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 12px rgba(255, 101, 132, 0.3);
+}
+
+.btn-candy-pink:hover {
+  background-color: #ff7593;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(255, 101, 132, 0.4);
+}
+
+.btn-candy-pink:active {
+  transform: translateY(3px);
+  border-bottom-width: 1px;
+  box-shadow: 0 1px 4px rgba(255, 101, 132, 0.2);
+}
+
+/* Blue Soda Button (Magnum) */
+.btn-candy-blue {
+  background-color: #38bdf8;
+  border-bottom: 4px solid #0284c7;
+  border-radius: 9999px;
+  color: #ffffff;
+  font-weight: 800;
+  transition: all 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.35);
+}
+
+.btn-candy-blue:hover {
+  background-color: #60a5fa;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(56, 189, 248, 0.45);
+}
+
+.btn-candy-blue:active {
+  transform: translateY(3px);
+  border-bottom-width: 1px;
+  box-shadow: 0 1px 4px rgba(56, 189, 248, 0.2);
+}
+
+/* Yellow Star / Reward Button */
+.btn-candy-yellow {
+  background-color: #fbbf24;
+  border-bottom: 4px solid #d97706;
+  border-radius: 9999px;
+  color: #78350f;
+  font-weight: 800;
+  transition: all 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.35);
+}
+
+.btn-candy-yellow:active {
+  transform: translateY(3px);
+  border-bottom-width: 1px;
+}
+
+/* White Candy Button */
+.btn-candy-white {
+  background-color: #ffffff;
+  border: 2px solid #fce7f3;
+  border-bottom: 4px solid #fbcfe8;
+  border-radius: 9999px;
+  color: #4a152e;
+  font-weight: 700;
+  transition: all 0.12s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.btn-candy-white:hover {
+  background-color: #fff5f8;
+  transform: translateY(-1px);
+}
+
+.btn-candy-white:active {
+  transform: translateY(3px);
+  border-bottom-width: 2px;
+}
+
+/* ========================================================
+   KAWAII GAME CARDS & PANELS
+   ======================================================== */
+
+.card-kawaii-pink {
+  background: #ffffff;
+  border: 2.5px solid #fed7e2;
+  border-radius: 28px;
+  box-shadow: 0 6px 0 #fecdd3, 0 10px 24px -4px rgba(244, 114, 182, 0.15);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card-kawaii-pink:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 9px 0 #fecdd3, 0 16px 28px -4px rgba(244, 114, 182, 0.22);
+}
+
+.card-kawaii-blue {
+  background: #ffffff;
+  border: 2.5px solid #bae6fd;
+  border-radius: 28px;
+  box-shadow: 0 6px 0 #bae6fd, 0 10px 24px -4px rgba(56, 189, 248, 0.15);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.card-kawaii-blue:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 9px 0 #bae6fd, 0 16px 28px -4px rgba(56, 189, 248, 0.22);
+}
+
+/* ========================================================
+   THEME STYLING: MANOW 🌸 (Strawberry Milkshake Mochi)
+   ======================================================== */
+.theme-manow,
+body.theme-manow {
+  background-color: #fff5f8;
+  background-image: 
+    radial-gradient(#fecdd3 1px, transparent 1px),
+    radial-gradient(#fbcfe8 1px, #fff5f8 1px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+  color: #4a152e;
+}
+
+.theme-manow ::selection {
+  background-color: #ffccd5;
+  color: #9f1239;
+}
+
+/* ========================================================
+   THEME STYLING: MAGNUM 🏋️‍♂️ (Soda Pop Arcade Gym Game)
+   ======================================================== */
+.theme-magnum,
+body.theme-magnum {
+  background-color: #f0f8ff;
+  background-image: 
+    radial-gradient(#bae6fd 1.2px, transparent 1.2px),
+    radial-gradient(#e0f2fe 1.2px, #f0f8ff 1.2px);
+  background-size: 32px 32px;
+  background-position: 0 0, 16px 16px;
+  color: #0f172a;
+}
+
+.theme-magnum ::selection {
+  background-color: #bae6fd;
+  color: #0369a1;
+}
+
+/* Custom Cute Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fdf2f8;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #f472b6;
+  border-radius: 9999px;
+  border: 2px solid #fff5f8;
+}
+
+body.theme-magnum ::-webkit-scrollbar-track {
+  background: #f0f8ff;
+}
+
+body.theme-magnum ::-webkit-scrollbar-thumb {
+  background: #38bdf8;
+  border-radius: 9999px;
+  border: 2px solid #f0f8ff;
+}
+
+/* Safe areas */
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 1rem);
 }
 
 .pt-safe {
   padding-top: env(safe-area-inset-top, 1rem);
-}
-
-/* Apple Frosted Glass Utilities */
-.glass-apple {
-  background-color: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.glass-apple-header {
-  background-color: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.glass-apple-nav {
-  background-color: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(28px) saturate(190%);
-  -webkit-backdrop-filter: blur(28px) saturate(190%);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04);
-}
-
-.card-apple {
-  background-color: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 24px;
-  box-shadow: 0 2px 12px -4px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.card-apple:hover {
-  border-color: rgba(0, 0, 0, 0.1);
-  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.06);
-}
-
-/* Muscle Anatomy Paths */
-.muscle-path {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  cursor: pointer;
-}
-
-.muscle-path:hover {
-  fill: #38bdf8 !important;
-  filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.5));
-}
-
-.muscle-path.active {
-  fill: #0071e3 !important;
-  filter: drop-shadow(0 0 10px rgba(0, 113, 227, 0.6));
-}
-
-/* ========================================================
-   THEME SPECIFICS: MAGNUM (Minimal Oceanic / Apple Space Blue)
-   ======================================================== */
-.theme-magnum,
-body.theme-magnum {
-  background-color: #f5f6f9;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(224, 242, 254, 0.35) 0px, transparent 45%),
-    radial-gradient(at 100% 0%, rgba(238, 242, 255, 0.35) 0px, transparent 45%),
-    radial-gradient(at 50% 100%, rgba(240, 249, 255, 0.35) 0px, transparent 45%);
-  color: #1d1d1f;
-}
-
-.theme-magnum ::selection {
-  background-color: rgba(0, 113, 227, 0.15);
-  color: #0071e3;
-}
-
-.theme-magnum input:focus,
-.theme-magnum select:focus,
-.theme-magnum textarea:focus {
-  border-color: #0071e3 !important;
-  box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.15) !important;
-}
-
-/* ========================================================
-   THEME SPECIFICS: MANOW (Minimal Quartz / Apple Rose)
-   ======================================================== */
-.theme-manow,
-body.theme-manow {
-  background-color: #f7f5f6;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(254, 242, 242, 0.4) 0px, transparent 45%),
-    radial-gradient(at 100% 0%, rgba(253, 242, 248, 0.4) 0px, transparent 45%),
-    radial-gradient(at 50% 100%, rgba(255, 241, 242, 0.35) 0px, transparent 45%);
-  color: #1d1d1f;
-}
-
-.theme-manow ::selection {
-  background-color: rgba(225, 29, 72, 0.15);
-  color: #e11d48;
-}
-
-.theme-manow input:focus,
-.theme-manow select:focus,
-.theme-manow textarea:focus {
-  border-color: #e11d48 !important;
-  box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.15) !important;
-}
-
-.theme-manow .muscle-path:hover {
-  fill: #fb7185 !important;
-  filter: drop-shadow(0 0 6px rgba(251, 113, 133, 0.5));
-}
-
-.theme-manow .muscle-path.active {
-  fill: #e11d48 !important;
-  filter: drop-shadow(0 0 10px rgba(225, 29, 72, 0.6));
 }

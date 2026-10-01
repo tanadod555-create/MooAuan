@@ -64,22 +64,32 @@ export const MainContent: React.FC = () => {
         {activeTab === 'stats' && <ProfileView />}
       </main>
 
-      {/* Floating Interactive AI Trainer Mascot Bubble (Apple-style frosted chip) */}
+      {/* Floating Interactive AI Trainer Mascot Bubble (Kawaii Game Animated Button) */}
       <div className="fixed bottom-24 right-4 sm:right-7 z-30">
         <button
           onClick={() => setShowAiTrainer(true)}
-          className="group relative flex items-center gap-2 pl-2 pr-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-xl border border-black/[0.08] shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_36px_rgba(0,0,0,0.12)] active:scale-95 transition-all duration-200 cursor-pointer"
+          className={`group relative flex items-center gap-2.5 pl-2 pr-4 py-2 rounded-full border-2 transition-all active:translate-y-1 active:shadow-xs cursor-pointer shadow-lg ${
+            isMagnum
+              ? 'bg-white border-sky-300 text-slate-800 shadow-sky-200/60 hover:border-sky-400'
+              : 'bg-white border-pink-300 text-slate-800 shadow-pink-200/60 hover:border-pink-400'
+          }`}
           title="แตะเพื่อคุยกับโค้ชหมูอ้วน AI"
         >
-          <div className="relative">
-            <PigMascot size="sm" expression={isMagnum ? 'workout' : 'cheer'} className="drop-shadow-2xs" />
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 ring-2 ring-white rounded-full animate-ping" />
-            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 ring-2 ring-white rounded-full" />
+          <div className="relative animate-wiggle">
+            <PigMascot size="sm" expression={isMagnum ? 'workout' : 'cheer'} className="drop-shadow-xs" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 ring-2 ring-white rounded-full animate-ping" />
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 ring-2 ring-white rounded-full" />
           </div>
           <div className="text-left">
-            <span className="block text-[11px] font-bold text-zinc-900 leading-tight">โค้ช AI</span>
-            <span className={`block text-[9px] font-medium leading-tight ${isMagnum ? 'text-blue-600' : 'text-rose-600'}`}>
-              {isMagnum ? 'สายเวท' : 'เทรนเนอร์'}
+            <span className="block text-xs font-black text-slate-800 leading-tight flex items-center gap-1">
+              โค้ช AI <span className="animate-sparkle text-xs">✨</span>
+            </span>
+            <span
+              className={`block text-[10px] font-bold leading-tight ${
+                isMagnum ? 'text-sky-600' : 'text-pink-600'
+              }`}
+            >
+              {isMagnum ? 'หมูอ้วนสายเวท 🏋️‍♂️' : 'หมูอ้วนเทรนเนอร์ 🌸'}
             </span>
           </div>
         </button>

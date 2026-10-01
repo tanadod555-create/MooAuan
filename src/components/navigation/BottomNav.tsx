@@ -14,18 +14,24 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
   const isMagnum = activeProfileKey === 'primary';
 
   const navItems = [
-    { key: 'workout' as TabKey, label: 'ฝึกซ้อม', icon: Dumbbell, hasBadge: !!activeWorkout },
-    { key: 'mascot' as TabKey, label: 'หมูอ้วน', icon: Trophy, hasBadge: false },
-    { key: 'food' as TabKey, label: 'อาหาร', icon: UtensilsCrossed },
-    { key: 'exercises' as TabKey, label: 'คลังท่า', icon: BookOpen },
-    { key: 'anatomy' as TabKey, label: 'กายวิภาค', icon: Activity },
-    { key: 'stats' as TabKey, label: 'โปรไฟล์', icon: BarChart3 },
+    { key: 'workout' as TabKey, label: 'ฝึกซ้อม', icon: Dumbbell, hasBadge: !!activeWorkout, emoji: '🏋️' },
+    { key: 'mascot' as TabKey, label: 'หมูอ้วน', icon: Trophy, hasBadge: false, emoji: '🐷' },
+    { key: 'food' as TabKey, label: 'อาหาร', icon: UtensilsCrossed, emoji: '🍱' },
+    { key: 'exercises' as TabKey, label: 'คลังท่า', icon: BookOpen, emoji: '📖' },
+    { key: 'anatomy' as TabKey, label: 'กายวิภาค', icon: Activity, emoji: '✨' },
+    { key: 'stats' as TabKey, label: 'โปรไฟล์', icon: BarChart3, emoji: '⭐' },
   ];
 
   return (
     <div className="fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 w-[calc(100%-1.25rem)] max-w-md z-40 pb-safe pointer-events-none">
-      <nav className="glass-apple-nav rounded-full p-1.5 shadow-[0_12px_36px_-4px_rgba(0,0,0,0.12)] border border-black/[0.08] pointer-events-auto">
-        <div className="grid grid-cols-6 items-center">
+      <nav
+        className={`rounded-3xl p-1.5 shadow-xl border-2 pointer-events-auto backdrop-blur-2xl transition-all duration-300 ${
+          isMagnum
+            ? 'bg-white/95 border-sky-300 shadow-sky-200/50'
+            : 'bg-white/95 border-pink-300 shadow-pink-200/50'
+        }`}
+      >
+        <div className="grid grid-cols-6 items-center gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.key;
@@ -33,28 +39,28 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
               <button
                 key={item.key}
                 onClick={() => onTabChange(item.key)}
-                className={`relative flex flex-col items-center justify-center py-1.5 px-1 rounded-full transition-all duration-200 cursor-pointer select-none active:scale-90 ${
+                className={`group relative flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-200 cursor-pointer select-none active:scale-90 ${
                   isActive
                     ? isMagnum
-                      ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/30'
-                      : 'bg-rose-500 text-white shadow-sm shadow-rose-500/30'
-                    : 'text-zinc-500 hover:text-zinc-900 hover:bg-black/[0.04]'
+                      ? 'bg-sky-400 text-white shadow-md shadow-sky-300/60 font-black scale-105'
+                      : 'bg-pink-400 text-white shadow-md shadow-pink-300/60 font-black scale-105'
+                    : isMagnum
+                    ? 'text-slate-500 hover:text-sky-600 hover:bg-sky-50'
+                    : 'text-slate-500 hover:text-pink-600 hover:bg-pink-50'
                 }`}
               >
                 <div className="relative flex items-center justify-center">
                   <Icon
-                    size={18}
-                    className={`transition-transform duration-200 ${isActive ? 'scale-110 stroke-[2.4]' : 'stroke-[1.8]'}`}
+                    size={20}
+                    className={`transition-transform duration-200 ${
+                      isActive ? 'scale-110 stroke-[2.6] animate-wiggle' : 'stroke-[2] group-hover:scale-110'
+                    }`}
                   />
                   {item.hasBadge && (
-                    <span
-                      className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full ring-2 ring-white ${
-                        isMagnum ? 'bg-sky-400' : 'bg-rose-400'
-                      }`}
-                    />
+                    <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white animate-ping" />
                   )}
                 </div>
-                <span className={`text-[10px] leading-tight tracking-tight mt-0.5 font-medium ${isActive ? 'font-bold' : ''}`}>
+                <span className={`text-[10px] leading-tight tracking-tight mt-0.5 ${isActive ? 'font-black' : 'font-semibold'}`}>
                   {item.label}
                 </span>
               </button>
