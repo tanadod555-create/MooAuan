@@ -115,6 +115,21 @@ export const FoodView: React.FC = () => {
   const totalSodium = todayLogs.reduce((sum, l) => sum + (l.sodium_mg || 0), 0);
   const totalFiber = todayLogs.reduce((sum, l) => sum + (l.fiber_g || 0), 0);
   const totalSugar = todayLogs.reduce((sum, l) => sum + (l.sugar_g || 0), 0);
+  const totalVitC = todayLogs.reduce((sum, l) => sum + (l.micros?.vitC_mg || 0), 0);
+  const totalIron = todayLogs.reduce((sum, l) => sum + (l.micros?.iron_mg || 0), 0);
+  const totalCalcium = todayLogs.reduce((sum, l) => sum + (l.micros?.calcium_mg || 0), 0);
+  const totalPotassium = todayLogs.reduce((sum, l) => sum + (l.micros?.potassium_mg || 0), 0);
+
+  // Thai DRI (Dietary Reference Intake for Thais 2020) Reference Standards
+  const THAI_DRI = {
+    fiber_g: 25,
+    sodium_mg: 2000,
+    sugar_g: 24,
+    vitC_mg: 100,
+    calcium_mg: 1000,
+    iron_mg: selectedUserKey === 'partner' ? 15 : 12,
+    potassium_mg: 3000,
+  };
 
   // Targets strictly for selected user
   const targetKcal = activeTargetProfile.kcal_target || (selectedUserKey === 'primary' ? 2400 : 1750);
@@ -784,27 +799,219 @@ export const FoodView: React.FC = () => {
           </div>
         </div>
 
-        {/* Micronutrients Summary Bar if present */}
-        {(totalSodium > 0 || totalFiber > 0 || totalSugar > 0) && (
-          <div className="mt-4 pt-3 border-t border-pink-100 flex items-center gap-2 flex-wrap text-xs font-semibold text-slate-600">
-            <span className="text-[11px] text-pink-600 font-bold">สารอาหารรอง (Micros):</span>
-            {totalSodium > 0 && (
-              <span className="px-2 py-0.5 rounded-lg bg-amber-50 text-amber-700 border border-amber-200/60">
-                โซเดียม: {Math.round(totalSodium)} mg
+        {/* Thai DRI Micronutrients Dashboard */}
+        <div className="mt-5 pt-4 border-t border-pink-100/90 space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-slate-700 flex items-center gap-1.5">
+                <Leaf size={14} className="text-emerald-500" />
+                <span>สารอาหารรอง & วิตามิน แร่ธาตุ</span>
               </span>
-            )}
-            {totalFiber > 0 && (
-              <span className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/60">
-                ใยอาหาร: {Math.round(totalFiber)} g
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100/80 text-emerald-800 border border-emerald-200/60">
+                🇹🇭 เกณฑ์ Thai DRI 2020
               </span>
-            )}
-            {totalSugar > 0 && (
-              <span className="px-2 py-0.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200/60">
-                น้ำตาล: {Math.round(totalSugar)} g
-              </span>
-            )}
+            </div>
+            <span className="text-[11px] text-slate-400 font-medium">
+              (คำนวณตาม Dietary Reference Intake สำหรับคนไทย)
+            </span>
           </div>
-        )}
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+            {/* Sodium (Limit 2000mg) */}
+            <div className={`p-2.5 rounded-2xl border transition-all ${
+              totalSodium > THAI_DRI.sodium_mg
+                ? 'bg-rose-50/80 border-rose-200 shadow-2xs'
+                : totalSodium > 1500
+                ? 'bg-amber-50/80 border-amber-200'
+                : 'bg-slate-50/70 border-slate-200/80'
+            }`}>
+              <div className="flex items-center justify-between text-[11px] mb-1">
+                <span className="font-bold text-slate-700 flex items-center gap-1">
+                  🧂 โซเดียม
+                </span>
+                <span className={`font-mono font-black ${
+                  totalSodium > THAI_DRI.sodium_mg ? 'text-rose-600' : 'text-slate-600'
+                }`}>
+                  {Math.round(totalSodium)} / {THAI_DRI.sodium_mg} mg
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-slate-200/70 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    totalSodium > THAI_DRI.sodium_mg
+                      ? 'bg-rose-500'
+                      : totalSodium > 1500
+                      ? 'bg-amber-400'
+                      : 'bg-sky-400'
+                  }`}
+                  style={{ width: `${Math.min(100, (totalSodium / THAI_DRI.sodium_mg) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[9px] mt-1">
+                <span className="text-slate-400">
+                  {totalSodium > THAI_DRI.sodium_mg ? '⚠️ เกินเกณฑ์แนะนำ' : 'เกณฑ์: ไม่เกิน 2,000mg'}
+                </span>
+                <span className="font-bold text-slate-500 font-mono">
+                  {Math.round((totalSodium / THAI_DRI.sodium_mg) * 100)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Fiber (Target 25g) */}
+            <div className="p-2.5 rounded-2xl bg-slate-50/70 border border-slate-200/80">
+              <div className="flex items-center justify-between text-[11px] mb-1">
+                <span className="font-bold text-slate-700 flex items-center gap-1">
+                  🌿 ใยอาหาร
+                </span>
+                <span className="font-mono font-black text-emerald-600">
+                  {Math.round(totalFiber * 10) / 10} / {THAI_DRI.fiber_g} g
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-slate-200/70 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-400 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, (totalFiber / THAI_DRI.fiber_g) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[9px] mt-1">
+                <span className="text-slate-400">เป้าหมาย Thai DRI: 25g</span>
+                <span className="font-bold text-emerald-700 font-mono">
+                  {Math.round((totalFiber / THAI_DRI.fiber_g) * 100)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Sugar (Limit 24g / 6 tsp) */}
+            <div className={`p-2.5 rounded-2xl border transition-all ${
+              totalSugar > THAI_DRI.sugar_g
+                ? 'bg-rose-50/80 border-rose-200 shadow-2xs'
+                : 'bg-slate-50/70 border-slate-200/80'
+            }`}>
+              <div className="flex items-center justify-between text-[11px] mb-1">
+                <span className="font-bold text-slate-700 flex items-center gap-1">
+                  🍯 น้ำตาล
+                </span>
+                <span className={`font-mono font-black ${
+                  totalSugar > THAI_DRI.sugar_g ? 'text-rose-600' : 'text-slate-600'
+                }`}>
+                  {Math.round(totalSugar * 10) / 10} / {THAI_DRI.sugar_g} g
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-slate-200/70 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    totalSugar > THAI_DRI.sugar_g ? 'bg-rose-500' : 'bg-amber-400'
+                  }`}
+                  style={{ width: `${Math.min(100, (totalSugar / THAI_DRI.sugar_g) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[9px] mt-1">
+                <span className="text-slate-400">
+                  {totalSugar > THAI_DRI.sugar_g ? '⚠️ เกิน 6 ช้อนชา' : 'เกณฑ์: ไม่เกิน 24g'}
+                </span>
+                <span className="font-bold text-slate-500 font-mono">
+                  {Math.round((totalSugar / THAI_DRI.sugar_g) * 100)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Vitamin C (Target 100mg) */}
+            <div className="p-2.5 rounded-2xl bg-slate-50/70 border border-slate-200/80">
+              <div className="flex items-center justify-between text-[11px] mb-1">
+                <span className="font-bold text-slate-700 flex items-center gap-1">
+                  🍊 วิตามินซี
+                </span>
+                <span className="font-mono font-black text-amber-600">
+                  {Math.round(totalVitC)} / {THAI_DRI.vitC_mg} mg
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-slate-200/70 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-amber-400 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, (totalVitC / THAI_DRI.vitC_mg) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[9px] mt-1">
+                <span className="text-slate-400">เป้าหมาย Thai DRI: 100mg</span>
+                <span className="font-bold text-slate-500 font-mono">
+                  {Math.round((totalVitC / THAI_DRI.vitC_mg) * 100)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Calcium (Target 1000mg) */}
+            <div className="p-2.5 rounded-2xl bg-slate-50/70 border border-slate-200/80">
+              <div className="flex items-center justify-between text-[11px] mb-1">
+                <span className="font-bold text-slate-700 flex items-center gap-1">
+                  🥛 แคลเซียม
+                </span>
+                <span className="font-mono font-black text-sky-600">
+                  {Math.round(totalCalcium)} / {THAI_DRI.calcium_mg} mg
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-slate-200/70 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-sky-400 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, (totalCalcium / THAI_DRI.calcium_mg) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[9px] mt-1">
+                <span className="text-slate-400">เป้าหมาย: 1,000mg</span>
+                <span className="font-bold text-slate-500 font-mono">
+                  {Math.round((totalCalcium / THAI_DRI.calcium_mg) * 100)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Iron (Target 12mg / 15mg) */}
+            <div className="p-2.5 rounded-2xl bg-slate-50/70 border border-slate-200/80">
+              <div className="flex items-center justify-between text-[11px] mb-1">
+                <span className="font-bold text-slate-700 flex items-center gap-1">
+                  🥩 ธาตุเหล็ก
+                </span>
+                <span className="font-mono font-black text-rose-600">
+                  {Math.round(totalIron * 10) / 10} / {THAI_DRI.iron_mg} mg
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-slate-200/70 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-rose-400 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, (totalIron / THAI_DRI.iron_mg) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[9px] mt-1">
+                <span className="text-slate-400">เป้าหมาย: {THAI_DRI.iron_mg}mg</span>
+                <span className="font-bold text-slate-500 font-mono">
+                  {Math.round((totalIron / THAI_DRI.iron_mg) * 100)}%
+                </span>
+              </div>
+            </div>
+
+            {/* Potassium (Target 3000mg) */}
+            <div className="p-2.5 rounded-2xl bg-slate-50/70 border border-slate-200/80">
+              <div className="flex items-center justify-between text-[11px] mb-1">
+                <span className="font-bold text-slate-700 flex items-center gap-1">
+                  🍌 โพแทสเซียม
+                </span>
+                <span className="font-mono font-black text-purple-600">
+                  {Math.round(totalPotassium)} / {THAI_DRI.potassium_mg} mg
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-slate-200/70 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-purple-400 rounded-full transition-all"
+                  style={{ width: `${Math.min(100, (totalPotassium / THAI_DRI.potassium_mg) * 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[9px] mt-1">
+                <span className="text-slate-400">เป้าหมาย: 3,000mg</span>
+                <span className="font-bold text-slate-500 font-mono">
+                  {Math.round((totalPotassium / THAI_DRI.potassium_mg) * 100)}%
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       </MagicCard>
 
       {/* Gemini AI API Connection Status Banner */}

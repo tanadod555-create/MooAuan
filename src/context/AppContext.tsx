@@ -569,6 +569,116 @@ const DEFAULT_WORKOUT_HISTORY: WorkoutSession[] = [
   }
 ];
 
+const DEFAULT_TODAY_FOOD_LOGS: FoodLog[] = [
+  {
+    log_id: 'log_1790839407501_71y1',
+    user_id: 'primary',
+    user_name: 'แม็กนั่ม (Magnum)',
+    date: '2026-10-01',
+    time: '14:23',
+    meal: 'lunch',
+    name: 'ไข่ต้ม (เบอร์ 2)',
+    grams: 50,
+    kcal: 75,
+    protein_g: 6.5,
+    carb_g: 0.6,
+    fat_g: 5,
+    fiber_g: 0,
+    sugar_g: 0,
+    sodium_mg: 0,
+    source: 'manual',
+    confidence: 1.0,
+  },
+  {
+    log_id: 'log_1790839408673_td4r',
+    user_id: 'primary',
+    user_name: 'แม็กนั่ม (Magnum)',
+    date: '2026-10-01',
+    time: '14:23',
+    meal: 'lunch',
+    name: 'ไข่ต้ม (เบอร์ 2)',
+    grams: 50,
+    kcal: 75,
+    protein_g: 6.5,
+    carb_g: 0.6,
+    fat_g: 5,
+    fiber_g: 0,
+    sugar_g: 0,
+    sodium_mg: 0,
+    source: 'manual',
+    confidence: 1.0,
+  },
+  {
+    log_id: 'log_1790839409855_2duq',
+    user_id: 'primary',
+    user_name: 'แม็กนั่ม (Magnum)',
+    date: '2026-10-01',
+    time: '14:23',
+    meal: 'lunch',
+    name: 'ไข่ต้ม (เบอร์ 2)',
+    grams: 50,
+    kcal: 75,
+    protein_g: 6.5,
+    carb_g: 0.6,
+    fat_g: 5,
+    fiber_g: 0,
+    sugar_g: 0,
+    sodium_mg: 0,
+    source: 'manual',
+    confidence: 1.0,
+  },
+  {
+    log_id: 'log_1790840595574_tuxs',
+    user_id: 'primary',
+    user_name: 'แม็กนั่ม (Magnum)',
+    date: '2026-10-01',
+    time: '14:43',
+    meal: 'lunch',
+    name: 'บะหมี่หมูตุ๋น',
+    grams: 520,
+    kcal: 425,
+    protein_g: 22,
+    carb_g: 50,
+    fat_g: 14,
+    fiber_g: 2.5,
+    sugar_g: 6,
+    sodium_mg: 1450,
+    micros: {
+      vitC_mg: 5,
+      iron_mg: 2.5,
+      calcium_mg: 40,
+      potassium_mg: 350,
+    },
+    source: 'ai',
+    confidence: 0.9,
+  },
+  {
+    log_id: 'log_1790840905402_1q37',
+    user_id: 'primary',
+    user_name: 'แม็กนั่ม (Magnum)',
+    date: '2026-10-01',
+    time: '14:48',
+    meal: 'lunch',
+    name: 'ชามะนาว / น้ำมะนาว (Lemon Bar)',
+    grams: 200,
+    kcal: 85,
+    protein_g: 0.2,
+    carb_g: 22,
+    fat_g: 0,
+    fiber_g: 0.2,
+    sugar_g: 20,
+    sodium_mg: 20,
+    micros: {
+      vitC_mg: 12,
+      iron_mg: 0.1,
+      calcium_mg: 8,
+      potassium_mg: 45,
+    },
+    source: 'ai',
+    confidence: 0.8,
+  },
+];
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -656,20 +766,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return activeProfileKey === 'partner' ? DEFAULT_PARTNER_PROGRAMS : DEFAULT_PROGRAMS;
   });
 
-  // Unified Food Logs (Combined for Magnum & Manow)
+  // Unified Food Logs (Combined for Magnum & Manow + Seeded with user's today logs)
   const [allFoodLogs, setAllFoodLogs] = useState<FoodLog[]>(() => {
+    let list: FoodLog[] = [];
     const savedUnified = localStorage.getItem('ft_food_logs_unified');
     if (savedUnified) {
-      try { return JSON.parse(savedUnified); } catch {}
+      try {
+        list = JSON.parse(savedUnified);
+      } catch {}
+    } else {
+      const primarySaved = localStorage.getItem('ft_food_logs_primary');
+      const partnerSaved = localStorage.getItem('ft_food_logs_partner');
+      const primaryLogs: FoodLog[] = primarySaved ? JSON.parse(primarySaved) : [];
+      const partnerLogs: FoodLog[] = partnerSaved ? JSON.parse(partnerSaved) : [];
+      list = [
+        ...primaryLogs.map(l => ({ ...l, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' })),
+        ...partnerLogs.map(l => ({ ...l, user_id: 'partner', user_name: 'มะนาว (Manow)' }))
+      ];
     }
-    const primarySaved = localStorage.getItem('ft_food_logs_primary');
-    const partnerSaved = localStorage.getItem('ft_food_logs_partner');
-    const primaryLogs: FoodLog[] = primarySaved ? JSON.parse(primarySaved) : [];
-    const partnerLogs: FoodLog[] = partnerSaved ? JSON.parse(partnerSaved) : [];
-    return [
-      ...primaryLogs.map(l => ({ ...l, user_id: 'primary', user_name: 'แม็กนั่ม (Magnum)' })),
-      ...partnerLogs.map(l => ({ ...l, user_id: 'partner', user_name: 'มะนาว (Manow)' }))
-    ];
+
+    // Merge default today food logs from Google Sheet if not already present
+    const existingIds = new Set(list.map(l => l.log_id));
+    DEFAULT_TODAY_FOOD_LOGS.forEach(defLog => {
+      if (!existingIds.has(defLog.log_id)) {
+        list.push(defLog);
+        existingIds.add(defLog.log_id);
+      }
+    });
+
+    return list;
   });
 
   const foodLogs = allFoodLogs.filter(l => (l.user_id || 'primary') === activeProfileKey);
