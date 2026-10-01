@@ -22,7 +22,6 @@ import {
   X,
   Search,
   Edit2,
-  FileSpreadsheet,
   ExternalLink,
   Footprints,
   TrendingUp,
@@ -81,7 +80,6 @@ export const WorkoutView: React.FC = () => {
     allWorkoutHistory,
     activeProfileKey,
     currentProfile,
-    openUnifiedSpreadsheet,
   } = useApp();
 
   const [workoutTab, setWorkoutTab] = useState<'workout' | 'history'>('workout');

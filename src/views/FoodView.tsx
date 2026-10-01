@@ -25,7 +25,6 @@ import {
   ChevronLeft,
   Calendar,
   Search,
-  FileSpreadsheet,
   ExternalLink,
   Target,
   BookOpen,
@@ -54,8 +53,6 @@ export const FoodView: React.FC = () => {
     deleteFoodLog,
     settings,
     updateSettings,
-    openUnifiedSpreadsheet,
-    syncFoodDatabaseToSheets,
   } = useApp();
 
   // Quick Food Reference & AI Trainer Modal state
@@ -1063,32 +1060,6 @@ export const FoodView: React.FC = () => {
         )}
       </div>
 
-      {/* Unified Google Sheet Direct Access Card */}
-      <div className="p-4 rounded-3xl bg-white/90 border border-pink-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0">
-            <FileSpreadsheet size={20} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-bold text-slate-700">Google Sheets รวมศูนย์</h3>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-pink-100 text-pink-700 border border-pink-200/60 font-bold">
-                แม็กนั่ม & มะนาว
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              ข้อมูลแยกแถวและระบุชื่อคนกำกับชัดเจน บันทึกอัตโนมัติ
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={openUnifiedSpreadsheet}
-          className="px-4 py-2 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-700 font-bold text-xs shrink-0 flex items-center justify-center gap-1.5 border border-pink-200/70 active:scale-95 transition"
-        >
-          <span>📊 เปิด Sheet รวม</span>
-          <ExternalLink size={13} />
-        </button>
-      </div>
 
       {/* Photo Preview & Note Modal (Appears immediately AFTER taking or uploading a photo) */}
       {showPhotoNoteModal && pendingPhoto && (
@@ -1985,9 +1956,6 @@ export const FoodView: React.FC = () => {
         isOpen={showFoodDbModal}
         onClose={() => setShowFoodDbModal(false)}
         onAddFood={addFoodLog}
-        onSyncDatabaseToSheets={async (foods) => {
-          await syncFoodDatabaseToSheets(foods);
-        }}
         selectedUserKey={selectedUserKey}
         targetDate={selectedDate}
       />

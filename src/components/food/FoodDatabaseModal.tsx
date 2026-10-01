@@ -9,7 +9,6 @@ import {
   Sparkles,
   Flame,
   Leaf,
-  FileSpreadsheet,
   ChevronRight,
   TrendingUp,
 } from 'lucide-react';
@@ -19,7 +18,6 @@ interface FoodDatabaseModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddFood: (foodLog: Omit<FoodLog, 'log_id'>) => void;
-  onSyncDatabaseToSheets?: (foods: PredefinedFood[]) => Promise<void>;
   selectedUserKey: 'primary' | 'partner';
   targetDate: string;
 }
@@ -28,7 +26,6 @@ export const FoodDatabaseModal: React.FC<FoodDatabaseModalProps> = ({
   isOpen,
   onClose,
   onAddFood,
-  onSyncDatabaseToSheets,
   selectedUserKey,
   targetDate,
 }) => {
@@ -37,8 +34,6 @@ export const FoodDatabaseModal: React.FC<FoodDatabaseModalProps> = ({
   const [selectedMeal, setSelectedMeal] = useState<MealType>('lunch');
   const [multipliers, setMultipliers] = useState<Record<string, number>>({});
   const [addedFoodIds, setAddedFoodIds] = useState<Record<string, boolean>>({});
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncSuccess, setSyncSuccess] = useState(false);
 
   // Filtered foods
   const filteredFoods = useMemo(() => {
@@ -95,20 +90,6 @@ export const FoodDatabaseModal: React.FC<FoodDatabaseModalProps> = ({
     setTimeout(() => {
       setAddedFoodIds((prev) => ({ ...prev, [item.id]: false }));
     }, 1500);
-  };
-
-  const handleSyncToSheets = async () => {
-    if (!onSyncDatabaseToSheets) return;
-    try {
-      setIsSyncing(true);
-      await onSyncDatabaseToSheets(PREDEFINED_FOODS);
-      setSyncSuccess(true);
-      setTimeout(() => setSyncSuccess(false), 3000);
-    } catch (e: any) {
-      alert(`ไม่สามารถซิงค์ได้: ${e.message}`);
-    } finally {
-      setIsSyncing(false);
-    }
   };
 
   return (
@@ -332,35 +313,21 @@ export const FoodDatabaseModal: React.FC<FoodDatabaseModalProps> = ({
           )}
         </div>
 
-        {/* Footer Actions: Sync to Google Sheet */}
+        {/* Footer info */}
         <div className="p-3.5 border-t border-pink-100 bg-pink-50/40 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
             <span>รายการอาหารทั้งหมด {PREDEFINED_FOODS.length} เมนู</span>
             <span>•</span>
             <span className="text-emerald-600 font-bold flex items-center gap-1">
-              <Leaf size={12} /> มีข้อมูลไฟเบอร์ครบถ้วน
+              <Leaf size={12} /> มีข้อมูลไฟเบอร์และสารอาหารครบถ้วน
             </span>
           </div>
-
           <button
             type="button"
-            onClick={handleSyncToSheets}
-            disabled={isSyncing}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition active:scale-95 cursor-pointer ${
-              syncSuccess
-                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                : 'bg-white hover:bg-emerald-50 text-emerald-700 border-emerald-300 shadow-2xs'
-            }`}
-            title="บันทึกตารางรายการอาหารทั้งหมดนี้ไปยัง Google Sheet ในแท็บ food_database"
+            onClick={onClose}
+            className="px-4 py-1.5 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-700 font-bold text-xs border border-pink-200 transition"
           >
-            <FileSpreadsheet size={15} className="text-emerald-600" />
-            <span>
-              {isSyncing
-                ? 'กำลังซิงค์ลง Google Sheet...'
-                : syncSuccess
-                ? '✓ ซิงค์ลง Sheet สำเร็จแล้ว!'
-                : '📥 ซิงค์ตารางอาหารลง Google Sheet'}
-            </span>
+            ปิดหน้าต่าง
           </button>
         </div>
       </div>

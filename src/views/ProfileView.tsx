@@ -20,7 +20,6 @@ import {
   ChevronRight,
   ExternalLink,
   ShieldAlert,
-  FileSpreadsheet,
   Ruler,
   Target,
   Flame,
@@ -56,21 +55,39 @@ export const ProfileView: React.FC = () => {
     updateSettings,
     workoutHistory,
     foodLogs,
-    syncAllToGoogleSheets,
-    isSyncing,
-    openUnifiedSpreadsheet,
-    unifiedSpreadsheetUrl,
     isFirebaseConnected,
     firebaseError,
     migrateLocalDataToFirebase,
     testFirebaseConnection,
   } = useApp();
 
-
   const [activeTab, setActiveTab] = useState<'stats' | 'profile' | 'settings'>('stats');
+
+  // Circumference Unit System: 'cm' | 'inch'
+  const [circumferenceUnit, setCircumferenceUnit] = useState<'cm' | 'inch'>(() => {
+    return (localStorage.getItem('ft_circumference_unit') as 'cm' | 'inch') || 'cm';
+  });
+
+  const toggleCircumferenceUnit = (newUnit: 'cm' | 'inch') => {
+    setCircumferenceUnit(newUnit);
+    localStorage.setItem('ft_circumference_unit', newUnit);
+  };
+
+  // Helper conversion functions
+  const cmToInch = (val?: number) => (val !== undefined && val !== null ? +(val / 2.54).toFixed(1) : undefined);
+  const inchToCm = (val?: number) => (val !== undefined && val !== null ? +(val * 2.54).toFixed(1) : undefined);
+
+  const formatCircum = (cmVal?: number, targetUnit: 'cm' | 'inch' = circumferenceUnit) => {
+    if (cmVal === undefined || cmVal === null) return '–';
+    if (targetUnit === 'inch') {
+      return `${(cmVal / 2.54).toFixed(1)} in`;
+    }
+    return `${cmVal} cm`;
+  };
 
   // Goal Setup Modal
   const [showGoalModal, setShowGoalModal] = useState(false);
+
 
   // Chart Metric Toggle
   type ChartMetricType =
@@ -104,6 +121,7 @@ export const ProfileView: React.FC = () => {
   const [newMetricNote, setNewMetricNote] = useState('');
 
   // Editable Profile States
+  const [profileUnit, setProfileUnit] = useState<'cm' | 'inch'>('cm');
   const [editName, setEditName] = useState(currentProfile.name);
   const [editHeight, setEditHeight] = useState(currentProfile.height_cm);
   const [editGoal, setEditGoal] = useState(currentProfile.goal);
@@ -120,7 +138,7 @@ export const ProfileView: React.FC = () => {
   const [editCalf, setEditCalf] = useState<number | undefined>(currentProfile.calf_cm);
   const [editNeck, setEditNeck] = useState<number | undefined>(currentProfile.neck_cm);
 
-  // Sync profile edit states whenever active profile changes
+  // Sync profile edit states whenever active profile or unit changes
   useEffect(() => {
     setEditName(currentProfile.name);
     setEditHeight(currentProfile.height_cm);
@@ -129,24 +147,22 @@ export const ProfileView: React.FC = () => {
     setEditProtein(currentProfile.protein_target_g);
     setEditCarb(currentProfile.carb_target_g || 200);
     setEditFat(currentProfile.fat_target_g || 60);
-    setEditWaist(currentProfile.waist_cm);
-    setEditChest(currentProfile.chest_cm);
-    setEditShoulders(currentProfile.shoulders_cm);
-    setEditThigh(currentProfile.thigh_cm);
-    setEditHips(currentProfile.hips_cm);
-    setEditArm(currentProfile.arm_cm);
-    setEditCalf(currentProfile.calf_cm);
-    setEditNeck(currentProfile.neck_cm);
-  }, [currentProfile, activeProfileKey]);
+    setEditWaist(profileUnit === 'inch' ? cmToInch(currentProfile.waist_cm) : currentProfile.waist_cm);
+    setEditChest(profileUnit === 'inch' ? cmToInch(currentProfile.chest_cm) : currentProfile.chest_cm);
+    setEditShoulders(profileUnit === 'inch' ? cmToInch(currentProfile.shoulders_cm) : currentProfile.shoulders_cm);
+    setEditThigh(profileUnit === 'inch' ? cmToInch(currentProfile.thigh_cm) : currentProfile.thigh_cm);
+    setEditHips(profileUnit === 'inch' ? cmToInch(currentProfile.hips_cm) : currentProfile.hips_cm);
+    setEditArm(profileUnit === 'inch' ? cmToInch(currentProfile.arm_cm) : currentProfile.arm_cm);
+    setEditCalf(profileUnit === 'inch' ? cmToInch(currentProfile.calf_cm) : currentProfile.calf_cm);
+    setEditNeck(profileUnit === 'inch' ? cmToInch(currentProfile.neck_cm) : currentProfile.neck_cm);
+  }, [currentProfile, activeProfileKey, profileUnit]);
+
+  // Modal Unit State
+  const [modalUnit, setModalUnit] = useState<'cm' | 'inch'>('cm');
 
   // Settings inputs
-  const [clientId, setClientId] = useState(settings.googleClientId || '');
-  const [spreadsheetId, setSpreadsheetId] = useState(
-    activeProfileKey === 'primary' ? settings.primarySpreadsheetId || '' : settings.partnerSpreadsheetId || ''
-  );
   const [geminiKey, setGeminiKey] = useState(settings.geminiApiKey || getDefaultGeminiApiKey());
   const [geminiProxy, setGeminiProxy] = useState(settings.geminiProxyUrl || '');
-  const [appsScriptUrl, setAppsScriptUrl] = useState(settings.appsScriptUrl || '');
   const [useProxy, setUseProxy] = useState(settings.useProxy || false);
 
   // Firebase Cloud Database States
@@ -162,7 +178,6 @@ export const ProfileView: React.FC = () => {
   const [isMigratingFb, setIsMigratingFb] = useState(false);
   const [migrationStatusMsg, setMigrationStatusMsg] = useState('');
 
-
   // Sorted metrics
   const sortedMetrics = [...bodyMetrics].sort((a, b) => a.date.localeCompare(b.date));
   const latestMetric = sortedMetrics[sortedMetrics.length - 1];
@@ -170,18 +185,29 @@ export const ProfileView: React.FC = () => {
 
   // Open Metric Modal with smart prefill from latest metric or profile
   const openMetricModal = () => {
+    setModalUnit(circumferenceUnit);
     setNewMetricDate(new Date().toISOString().split('T')[0]);
     setNewMetricWeight(latestMetric ? latestMetric.weight_kg : 70.0);
     setNewMetricHeight(latestMetric?.height_cm ?? currentProfile.height_cm ?? 170);
     setNewMetricFat(latestMetric?.body_fat_pct);
-    setNewMetricWaist(latestMetric?.waist_cm ?? currentProfile.waist_cm);
-    setNewMetricChest(latestMetric?.chest_cm ?? currentProfile.chest_cm);
-    setNewMetricShoulders(latestMetric?.shoulders_cm ?? currentProfile.shoulders_cm);
-    setNewMetricThigh(latestMetric?.thigh_cm ?? currentProfile.thigh_cm);
-    setNewMetricHips(latestMetric?.hips_cm ?? currentProfile.hips_cm);
-    setNewMetricArm(latestMetric?.arm_cm ?? currentProfile.arm_cm);
-    setNewMetricCalf(latestMetric?.calf_cm ?? currentProfile.calf_cm);
-    setNewMetricNeck(latestMetric?.neck_cm ?? currentProfile.neck_cm);
+
+    const rawWaist = latestMetric?.waist_cm ?? currentProfile.waist_cm;
+    const rawChest = latestMetric?.chest_cm ?? currentProfile.chest_cm;
+    const rawShoulders = latestMetric?.shoulders_cm ?? currentProfile.shoulders_cm;
+    const rawThigh = latestMetric?.thigh_cm ?? currentProfile.thigh_cm;
+    const rawHips = latestMetric?.hips_cm ?? currentProfile.hips_cm;
+    const rawArm = latestMetric?.arm_cm ?? currentProfile.arm_cm;
+    const rawCalf = latestMetric?.calf_cm ?? currentProfile.calf_cm;
+    const rawNeck = latestMetric?.neck_cm ?? currentProfile.neck_cm;
+
+    setNewMetricWaist(circumferenceUnit === 'inch' ? cmToInch(rawWaist) : rawWaist);
+    setNewMetricChest(circumferenceUnit === 'inch' ? cmToInch(rawChest) : rawChest);
+    setNewMetricShoulders(circumferenceUnit === 'inch' ? cmToInch(rawShoulders) : rawShoulders);
+    setNewMetricThigh(circumferenceUnit === 'inch' ? cmToInch(rawThigh) : rawThigh);
+    setNewMetricHips(circumferenceUnit === 'inch' ? cmToInch(rawHips) : rawHips);
+    setNewMetricArm(circumferenceUnit === 'inch' ? cmToInch(rawArm) : rawArm);
+    setNewMetricCalf(circumferenceUnit === 'inch' ? cmToInch(rawCalf) : rawCalf);
+    setNewMetricNeck(circumferenceUnit === 'inch' ? cmToInch(rawNeck) : rawNeck);
     setNewMetricNote('');
     setShowMetricModal(true);
   };
@@ -199,24 +225,33 @@ export const ProfileView: React.FC = () => {
 
   const handleSaveMetric = async (e: React.FormEvent) => {
     e.preventDefault();
+    const finalWaist = modalUnit === 'inch' ? inchToCm(newMetricWaist) : newMetricWaist;
+    const finalChest = modalUnit === 'inch' ? inchToCm(newMetricChest) : newMetricChest;
+    const finalShoulders = modalUnit === 'inch' ? inchToCm(newMetricShoulders) : newMetricShoulders;
+    const finalThigh = modalUnit === 'inch' ? inchToCm(newMetricThigh) : newMetricThigh;
+    const finalHips = modalUnit === 'inch' ? inchToCm(newMetricHips) : newMetricHips;
+    const finalArm = modalUnit === 'inch' ? inchToCm(newMetricArm) : newMetricArm;
+    const finalCalf = modalUnit === 'inch' ? inchToCm(newMetricCalf) : newMetricCalf;
+    const finalNeck = modalUnit === 'inch' ? inchToCm(newMetricNeck) : newMetricNeck;
+    const finalHeight = newMetricHeight;
+
     await addBodyMetric({
       date: newMetricDate,
       weight_kg: newMetricWeight,
-      height_cm: newMetricHeight,
+      height_cm: finalHeight,
       body_fat_pct: newMetricFat,
-      waist_cm: newMetricWaist,
-      chest_cm: newMetricChest,
-      shoulders_cm: newMetricShoulders,
-      thigh_cm: newMetricThigh,
-      hips_cm: newMetricHips,
-      arm_cm: newMetricArm,
-      calf_cm: newMetricCalf,
-      neck_cm: newMetricNeck,
+      waist_cm: finalWaist,
+      chest_cm: finalChest,
+      shoulders_cm: finalShoulders,
+      thigh_cm: finalThigh,
+      hips_cm: finalHips,
+      arm_cm: finalArm,
+      calf_cm: finalCalf,
+      neck_cm: finalNeck,
       note: newMetricNote.trim() || undefined,
     });
-    // Also sync height back to current profile if updated
-    if (newMetricHeight && newMetricHeight !== currentProfile.height_cm) {
-      updateProfile({ height_cm: newMetricHeight });
+    if (finalHeight && finalHeight !== currentProfile.height_cm) {
+      updateProfile({ height_cm: finalHeight });
     }
     setShowMetricModal(false);
     setNewMetricNote('');
@@ -224,6 +259,15 @@ export const ProfileView: React.FC = () => {
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
+    const finalWaist = profileUnit === 'inch' ? inchToCm(editWaist) : editWaist;
+    const finalChest = profileUnit === 'inch' ? inchToCm(editChest) : editChest;
+    const finalShoulders = profileUnit === 'inch' ? inchToCm(editShoulders) : editShoulders;
+    const finalThigh = profileUnit === 'inch' ? inchToCm(editThigh) : editThigh;
+    const finalHips = profileUnit === 'inch' ? inchToCm(editHips) : editHips;
+    const finalArm = profileUnit === 'inch' ? inchToCm(editArm) : editArm;
+    const finalCalf = profileUnit === 'inch' ? inchToCm(editCalf) : editCalf;
+    const finalNeck = profileUnit === 'inch' ? inchToCm(editNeck) : editNeck;
+
     updateProfile({
       name: editName,
       height_cm: editHeight,
@@ -232,23 +276,20 @@ export const ProfileView: React.FC = () => {
       protein_target_g: editProtein,
       carb_target_g: editCarb,
       fat_target_g: editFat,
-      waist_cm: editWaist,
-      chest_cm: editChest,
-      shoulders_cm: editShoulders,
-      thigh_cm: editThigh,
-      hips_cm: editHips,
-      arm_cm: editArm,
-      calf_cm: editCalf,
-      neck_cm: editNeck,
+      waist_cm: finalWaist,
+      chest_cm: finalChest,
+      shoulders_cm: finalShoulders,
+      thigh_cm: finalThigh,
+      hips_cm: finalHips,
+      arm_cm: finalArm,
+      calf_cm: finalCalf,
+      neck_cm: finalNeck,
     });
     alert('บันทึกการแก้ไขโปรไฟล์และสัดส่วนสำเร็จแล้ว!');
   };
 
   const handleSaveSettings = () => {
     updateSettings({
-      googleClientId: clientId,
-      [activeProfileKey === 'primary' ? 'primarySpreadsheetId' : 'partnerSpreadsheetId']: spreadsheetId,
-      appsScriptUrl,
       geminiApiKey: geminiKey,
       geminiProxyUrl: geminiProxy,
       useProxy,
@@ -270,12 +311,10 @@ export const ProfileView: React.FC = () => {
     if (!snippet.trim()) return;
 
     try {
-      // 1. Try direct JSON parse
       let parsedObj: any = null;
       try {
         parsedObj = JSON.parse(snippet.trim());
       } catch {
-        // 2. Regex extraction for JS object literal
         const extractKey = (key: string) => {
           const match = snippet.match(new RegExp(`${key}\\s*:\\s*["']([^"']+)["']`));
           return match ? match[1] : '';
@@ -367,39 +406,6 @@ export const ProfileView: React.FC = () => {
   };
 
 
-  // Google OAuth Login trigger via GIS token client
-  const handleGoogleLogin = () => {
-    if (!settings.googleClientId && !clientId) {
-      alert('กรุณากรอก Google Client ID ในช่องด้านล่างก่อนเริ่มการเชื่อมต่อ');
-      return;
-    }
-
-    try {
-      // @ts-ignore
-      if (typeof window !== 'undefined' && window.google?.accounts?.oauth2) {
-        // @ts-ignore
-        const tokenClient = window.google.accounts.oauth2.initTokenClient({
-          client_id: clientId || settings.googleClientId,
-          scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.file',
-          callback: (tokenResponse: any) => {
-            if (tokenResponse && tokenResponse.access_token) {
-              updateSettings({
-                googleAccessToken: tokenResponse.access_token,
-                autoSyncGoogleSheets: true,
-              });
-              alert('เข้าสู่ระบบด้วย Google สำเร็จแล้ว! พร้อมสร้างหรือเชื่อมต่อ Google Sheet');
-            }
-          },
-        });
-        tokenClient.requestAccessToken();
-      } else {
-        alert('Google Identity Services SDK กำลังโหลด กรุณารอสักครู่แล้วลองอีกครั้ง');
-      }
-    } catch (err: any) {
-      alert('เกิดข้อผิดพลาดในการเข้าสู่ระบบ Google: ' + err.message);
-    }
-  };
-
   // Export JSON backup
   const handleExportData = () => {
     const backupData = {
@@ -486,7 +492,7 @@ export const ProfileView: React.FC = () => {
           }`}
         >
           <SettingsIcon size={16} />
-          Google & API
+          ตั้งค่า Cloud & AI
         </button>
       </div>
 
@@ -557,7 +563,7 @@ export const ProfileView: React.FC = () => {
 
           {/* Body Circumferences Highlights (สัดส่วนร่างกายล่าสุด) */}
           <div className="bg-white/95 p-5 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
                   <Ruler size={18} className="text-rose-500" />
@@ -565,13 +571,42 @@ export const ProfileView: React.FC = () => {
                 </h3>
                 <p className="text-xs text-pink-800/70">รอบอก ไหล่ เอว สะโพก ต้นขา แขน น่อง คอ</p>
               </div>
-              <button
-                onClick={openMetricModal}
-                className="px-3 py-1.5 rounded-xl bg-pink-100 hover:bg-pink-200 text-rose-700 border border-pink-200 text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow-xs"
-              >
-                <Plus size={14} />
-                <span>บันทึกสัดส่วน</span>
-              </button>
+
+              <div className="flex items-center gap-2">
+                {/* Unit Switcher: cm vs inch */}
+                <div className="flex items-center p-1 bg-pink-100/70 rounded-xl border border-pink-200 text-xs font-bold">
+                  <button
+                    type="button"
+                    onClick={() => toggleCircumferenceUnit('cm')}
+                    className={`px-2.5 py-1 rounded-lg transition ${
+                      circumferenceUnit === 'cm'
+                        ? 'bg-rose-500 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-rose-600'
+                    }`}
+                  >
+                    ซม. (cm)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleCircumferenceUnit('inch')}
+                    className={`px-2.5 py-1 rounded-lg transition ${
+                      circumferenceUnit === 'inch'
+                        ? 'bg-rose-500 text-white shadow-xs'
+                        : 'text-slate-600 hover:text-rose-600'
+                    }`}
+                  >
+                    นิ้ว (in)
+                  </button>
+                </div>
+
+                <button
+                  onClick={openMetricModal}
+                  className="px-3 py-1.5 rounded-xl bg-pink-100 hover:bg-pink-200 text-rose-700 border border-pink-200 text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow-xs"
+                >
+                  <Plus size={14} />
+                  <span>บันทึกสัดส่วน</span>
+                </button>
+              </div>
             </div>
 
             {/* Circumferences Grid */}
@@ -646,7 +681,19 @@ export const ProfileView: React.FC = () => {
               return (
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   {circumItems.map((item) => {
-                    const diff = item.first && item.current ? item.current - item.first : undefined;
+                    const displayCurrent =
+                      circumferenceUnit === 'inch'
+                        ? cmToInch(item.current)
+                        : item.current;
+                    const displayFirst =
+                      circumferenceUnit === 'inch'
+                        ? cmToInch(item.first)
+                        : item.first;
+                    const diff =
+                      displayFirst !== undefined && displayCurrent !== undefined
+                        ? displayCurrent - displayFirst
+                        : undefined;
+
                     return (
                       <div
                         key={item.key}
@@ -667,8 +714,10 @@ export const ProfileView: React.FC = () => {
                         </div>
                         <div className="flex items-baseline justify-between mt-2">
                           <span className="text-lg font-black text-slate-700">
-                            {item.current ? `${item.current}` : '–'}{' '}
-                            <span className="text-[11px] font-normal text-pink-700">cm</span>
+                            {displayCurrent !== undefined ? `${displayCurrent}` : '–'}{' '}
+                            <span className="text-[11px] font-normal text-pink-700">
+                              {circumferenceUnit === 'inch' ? 'นิ้ว (in)' : 'cm'}
+                            </span>
                           </span>
                           {diff !== undefined && diff !== 0 && (
                             <span
@@ -689,6 +738,7 @@ export const ProfileView: React.FC = () => {
               );
             })()}
           </div>
+
 
           {/* Interactive Progress Trend Chart (SVG Line Graph with Metric Switcher) */}
           <div className="bg-white/95 p-5 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-4">
@@ -1065,95 +1115,158 @@ export const ProfileView: React.FC = () => {
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                 <Ruler size={15} className="text-rose-500" />
-                สัดส่วนร่างกายมาตรฐาน / ปัจจุบัน (ซม. - cm)
+                สัดส่วนร่างกาย ({profileUnit === 'inch' ? 'นิ้ว - in' : 'ซม. - cm'})
               </span>
-              <span className="text-[11px] text-pink-700">กรอกเพื่อบันทึกลงโปรไฟล์</span>
+              <div className="flex items-center gap-1 bg-pink-100/70 p-0.5 rounded-lg border border-pink-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (profileUnit !== 'cm') {
+                      setProfileUnit('cm');
+                      setEditChest(inchToCm(editChest));
+                      setEditShoulders(inchToCm(editShoulders));
+                      setEditWaist(inchToCm(editWaist));
+                      setEditHips(inchToCm(editHips));
+                      setEditThigh(inchToCm(editThigh));
+                      setEditArm(inchToCm(editArm));
+                      setEditCalf(inchToCm(editCalf));
+                      setEditNeck(inchToCm(editNeck));
+                    }
+                  }}
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
+                    profileUnit === 'cm'
+                      ? 'bg-rose-500 text-white shadow-xs'
+                      : 'text-pink-700 hover:text-slate-800'
+                  }`}
+                >
+                  ซม. (cm)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (profileUnit !== 'inch') {
+                      setProfileUnit('inch');
+                      setEditChest(cmToInch(editChest));
+                      setEditShoulders(cmToInch(editShoulders));
+                      setEditWaist(cmToInch(editWaist));
+                      setEditHips(cmToInch(editHips));
+                      setEditThigh(cmToInch(editThigh));
+                      setEditArm(cmToInch(editArm));
+                      setEditCalf(cmToInch(editCalf));
+                      setEditNeck(cmToInch(editNeck));
+                    }
+                  }}
+                  className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
+                    profileUnit === 'inch'
+                      ? 'bg-rose-500 text-white shadow-xs'
+                      : 'text-pink-700 hover:text-slate-800'
+                  }`}
+                >
+                  นิ้ว (in)
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
               <div>
-                <label className="block text-pink-900 font-semibold mb-1">👕 รอบอก (Chest)</label>
+                <label className="block text-pink-900 font-semibold mb-1">
+                  👕 รอบอก {profileUnit === 'inch' ? '(in)' : '(cm)'}
+                </label>
                 <input
                   type="number"
-                  step="0.5"
-                  placeholder="เช่น 102"
+                  step={profileUnit === 'inch' ? '0.1' : '0.5'}
+                  placeholder={profileUnit === 'inch' ? 'เช่น 40.0' : 'เช่น 102'}
                   value={editChest ?? ''}
                   onChange={(e) => setEditChest(e.target.value ? parseFloat(e.target.value) : undefined)}
                   className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
-                <label className="block text-pink-900 font-semibold mb-1">🥋 รอบไหล่ (Shoulders)</label>
+                <label className="block text-pink-900 font-semibold mb-1">
+                  🥋 รอบไหล่ {profileUnit === 'inch' ? '(in)' : '(cm)'}
+                </label>
                 <input
                   type="number"
-                  step="0.5"
-                  placeholder="เช่น 118"
+                  step={profileUnit === 'inch' ? '0.1' : '0.5'}
+                  placeholder={profileUnit === 'inch' ? 'เช่น 46.5' : 'เช่น 118'}
                   value={editShoulders ?? ''}
                   onChange={(e) => setEditShoulders(e.target.value ? parseFloat(e.target.value) : undefined)}
                   className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
-                <label className="block text-pink-900 font-semibold mb-1">⏳ รอบเอว (Waist)</label>
+                <label className="block text-pink-900 font-semibold mb-1">
+                  ⏳ รอบเอว {profileUnit === 'inch' ? '(in)' : '(cm)'}
+                </label>
                 <input
                   type="number"
-                  step="0.5"
-                  placeholder="เช่น 79"
+                  step={profileUnit === 'inch' ? '0.1' : '0.5'}
+                  placeholder={profileUnit === 'inch' ? 'เช่น 31.0' : 'เช่น 79'}
                   value={editWaist ?? ''}
                   onChange={(e) => setEditWaist(e.target.value ? parseFloat(e.target.value) : undefined)}
                   className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
-                <label className="block text-pink-900 font-semibold mb-1">🍑 รอบสะโพก (Hips)</label>
+                <label className="block text-pink-900 font-semibold mb-1">
+                  🍑 รอบสะโพก {profileUnit === 'inch' ? '(in)' : '(cm)'}
+                </label>
                 <input
                   type="number"
-                  step="0.5"
-                  placeholder="เช่น 94"
+                  step={profileUnit === 'inch' ? '0.1' : '0.5'}
+                  placeholder={profileUnit === 'inch' ? 'เช่น 37.0' : 'เช่น 94'}
                   value={editHips ?? ''}
                   onChange={(e) => setEditHips(e.target.value ? parseFloat(e.target.value) : undefined)}
                   className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
-                <label className="block text-pink-900 font-semibold mb-1">🦵 รอบต้นขา (Thighs)</label>
+                <label className="block text-pink-900 font-semibold mb-1">
+                  🦵 รอบต้นขา {profileUnit === 'inch' ? '(in)' : '(cm)'}
+                </label>
                 <input
                   type="number"
-                  step="0.5"
-                  placeholder="เช่น 58"
+                  step={profileUnit === 'inch' ? '0.1' : '0.5'}
+                  placeholder={profileUnit === 'inch' ? 'เช่น 22.8' : 'เช่น 58'}
                   value={editThigh ?? ''}
                   onChange={(e) => setEditThigh(e.target.value ? parseFloat(e.target.value) : undefined)}
                   className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
-                <label className="block text-pink-900 font-semibold mb-1">💪 รอบต้นแขน (Arms)</label>
+                <label className="block text-pink-900 font-semibold mb-1">
+                  💪 รอบต้นแขน {profileUnit === 'inch' ? '(in)' : '(cm)'}
+                </label>
                 <input
                   type="number"
-                  step="0.5"
-                  placeholder="เช่น 36"
+                  step={profileUnit === 'inch' ? '0.1' : '0.5'}
+                  placeholder={profileUnit === 'inch' ? 'เช่น 14.2' : 'เช่น 36'}
                   value={editArm ?? ''}
                   onChange={(e) => setEditArm(e.target.value ? parseFloat(e.target.value) : undefined)}
                   className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
-                <label className="block text-pink-900 font-semibold mb-1">🦶 รอบน่อง (Calves)</label>
+                <label className="block text-pink-900 font-semibold mb-1">
+                  🦶 รอบน่อง {profileUnit === 'inch' ? '(in)' : '(cm)'}
+                </label>
                 <input
                   type="number"
-                  step="0.5"
-                  placeholder="เช่น 37"
+                  step={profileUnit === 'inch' ? '0.1' : '0.5'}
+                  placeholder={profileUnit === 'inch' ? 'เช่น 14.5' : 'เช่น 37'}
                   value={editCalf ?? ''}
                   onChange={(e) => setEditCalf(e.target.value ? parseFloat(e.target.value) : undefined)}
                   className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
                 />
               </div>
               <div>
-                <label className="block text-pink-900 font-semibold mb-1">👔 รอบคอ (Neck)</label>
+                <label className="block text-pink-900 font-semibold mb-1">
+                  👔 รอบคอ {profileUnit === 'inch' ? '(in)' : '(cm)'}
+                </label>
                 <input
                   type="number"
-                  step="0.5"
-                  placeholder="เช่น 38"
+                  step={profileUnit === 'inch' ? '0.1' : '0.5'}
+                  placeholder={profileUnit === 'inch' ? 'เช่น 15.0' : 'เช่น 38'}
                   value={editNeck ?? ''}
                   onChange={(e) => setEditNeck(e.target.value ? parseFloat(e.target.value) : undefined)}
                   className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
@@ -1348,134 +1461,6 @@ export const ProfileView: React.FC = () => {
             </details>
           </div>
 
-          {/* Google Sheets Integration Card */}
-          <div className="bg-white/95 p-6 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
-                <Database size={18} className="text-rose-500" />
-                เชื่อมต่อ Google Sheets API v4 (ทางเลือกสำรอง)
-              </h3>
-
-              {settings.googleAccessToken ? (
-                <span className="text-xs text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1 font-bold">
-                  <CheckCircle2 size={13} /> เชื่อมต่อแล้ว
-                </span>
-              ) : (
-                <span className="text-xs text-pink-700 bg-pink-100 px-2 py-0.5 rounded font-bold">
-                  ยังไม่ได้เชื่อมต่อ
-                </span>
-              )}
-            </div>
-
-            <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <p className="text-xs text-slate-700 font-bold flex items-center gap-1.5">
-                  <FileSpreadsheet size={16} className="text-rose-500" />
-                  Google Spreadsheet รวมศูนย์ (แม็กนั่ม & มะนาว)
-                </p>
-                <p className="text-[11px] text-pink-800/70 mt-0.5">
-                  บันทึกข้อมูลทุกอย่างของทั้งสองคนลงในไฟล์เดียวกัน พร้อมคอลัมน์ระบุชื่อคนกำกับทุกแถวอย่างชัดเจน
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={openUnifiedSpreadsheet}
-                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm shadow-rose-200 shrink-0 active:scale-95 transition"
-              >
-                <span>เปิด Sheet รวม</span>
-                <ExternalLink size={13} />
-              </button>
-            </div>
-
-            {/* Google Login Button */}
-            <div className="p-4 rounded-2xl bg-pink-50/50 border border-pink-200 space-y-3">
-              <div>
-                <label className="block text-xs font-bold text-pink-900 mb-1">
-                  Google OAuth Client ID (Web Application):
-                </label>
-                <input
-                  type="text"
-                  placeholder="เช่น 123456789-xxxx.apps.googleusercontent.com"
-                  value={clientId}
-                  onChange={(e) => setClientId(e.target.value)}
-                  className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-rose-400 font-mono"
-                />
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleGoogleLogin}
-                  className="py-2.5 px-4 rounded-xl bg-white hover:bg-pink-50 text-slate-700 font-bold text-xs flex items-center gap-2 border border-pink-200 shadow-sm transition active:scale-95"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24">
-                    <path
-                      fill="#4285F4"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="#34A853"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="#FBBC05"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                    />
-                    <path
-                      fill="#EA4335"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                    />
-                  </svg>
-                  ลงชื่อเข้าใช้ด้วย Google (Sign in)
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const res = await syncAllToGoogleSheets();
-                    alert(res.message);
-                  }}
-                  disabled={isSyncing}
-                  className="py-2.5 px-4 rounded-xl bg-pink-100 hover:bg-pink-200 text-rose-700 font-bold text-xs flex items-center gap-1.5 border border-pink-200 transition"
-                >
-                  <Cloud size={15} />
-                  {isSyncing ? 'กำลังซิงค์...' : 'สร้าง Sheet อัตโนมัติ / ซิงค์เดี๋ยวนี้'}
-                </button>
-              </div>
-            </div>
-
-            {/* Spreadsheet ID for unified spreadsheet */}
-            <div>
-              <label className="block text-xs font-bold text-pink-900 mb-1">
-                Google Spreadsheet ID รวม (ทั้งแม็กนั่ม & มะนาว):
-              </label>
-              <input
-                type="text"
-                placeholder="เช่น 1cBYIM2WiqqGHIJi8t_JiUF4py30g3CGgQhGWwKWH2_A"
-                value={spreadsheetId}
-                onChange={(e) => setSpreadsheetId(e.target.value)}
-                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-rose-400 font-mono"
-              />
-            </div>
-
-            {/* Apps Script Web App URL */}
-            <div>
-              <label className="block text-xs font-bold text-rose-600 mb-1">
-                Apps Script Web App URL (ทางเลือก: ซิงค์ลง Sheet โดยไม่ต้องขอ OAuth):
-              </label>
-              <input
-                type="text"
-                placeholder="https://script.google.com/macros/s/AKfycb.../exec"
-                value={appsScriptUrl}
-                onChange={(e) => setAppsScriptUrl(e.target.value)}
-                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-rose-400 font-mono"
-              />
-              <span className="text-[11px] text-pink-700/70 mt-1 block">
-                คัดลอกจาก Apps Script Project (ID: 1AzjOzJKjgrFqUehHtzhojd-_Im7mN3_sXHHKtosOmlJMsRs24Bl8_l0e) หลังกด Deploy
-              </span>
-            </div>
-          </div>
-
           {/* Gemini AI Configuration Card */}
           <div className="bg-white/95 p-6 rounded-3xl border border-pink-200/90 shadow-md shadow-pink-100/50 space-y-4">
             <h3 className="text-base font-bold text-slate-700 flex items-center gap-2">
@@ -1656,18 +1641,67 @@ export const ProfileView: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 font-bold text-slate-700">
                     <Ruler size={14} className="text-rose-500" />
-                    <span>รอบสัดส่วนร่างกาย (ซม. - cm)</span>
+                    <span>รอบสัดส่วนร่างกาย ({modalUnit === 'inch' ? 'นิ้ว - in' : 'ซม. - cm'})</span>
                   </span>
-                  <span className="text-[10px] text-pink-700">* กรอกเฉพาะส่วนที่วัดได้</span>
+                  <div className="flex items-center gap-1 bg-pink-100/70 p-0.5 rounded-lg border border-pink-200">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (modalUnit !== 'cm') {
+                          setModalUnit('cm');
+                          setNewMetricChest(inchToCm(newMetricChest));
+                          setNewMetricShoulders(inchToCm(newMetricShoulders));
+                          setNewMetricWaist(inchToCm(newMetricWaist));
+                          setNewMetricHips(inchToCm(newMetricHips));
+                          setNewMetricThigh(inchToCm(newMetricThigh));
+                          setNewMetricArm(inchToCm(newMetricArm));
+                          setNewMetricCalf(inchToCm(newMetricCalf));
+                          setNewMetricNeck(inchToCm(newMetricNeck));
+                        }
+                      }}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
+                        modalUnit === 'cm'
+                          ? 'bg-rose-500 text-white shadow-xs'
+                          : 'text-pink-700 hover:text-slate-800'
+                      }`}
+                    >
+                      ซม. (cm)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (modalUnit !== 'inch') {
+                          setModalUnit('inch');
+                          setNewMetricChest(cmToInch(newMetricChest));
+                          setNewMetricShoulders(cmToInch(newMetricShoulders));
+                          setNewMetricWaist(cmToInch(newMetricWaist));
+                          setNewMetricHips(cmToInch(newMetricHips));
+                          setNewMetricThigh(cmToInch(newMetricThigh));
+                          setNewMetricArm(cmToInch(newMetricArm));
+                          setNewMetricCalf(cmToInch(newMetricCalf));
+                          setNewMetricNeck(cmToInch(newMetricNeck));
+                        }
+                      }}
+                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold transition ${
+                        modalUnit === 'inch'
+                          ? 'bg-rose-500 text-white shadow-xs'
+                          : 'text-pink-700 hover:text-slate-800'
+                      }`}
+                    >
+                      นิ้ว (in)
+                    </button>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                   <div>
-                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">👕 รอบอก</label>
+                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">
+                      👕 รอบอก {modalUnit === 'inch' ? '(in)' : '(cm)'}
+                    </label>
                     <input
                       type="number"
-                      step="0.5"
-                      placeholder="เช่น 102"
+                      step={modalUnit === 'inch' ? '0.1' : '0.5'}
+                      placeholder={modalUnit === 'inch' ? 'เช่น 40.0' : 'เช่น 102'}
                       value={newMetricChest ?? ''}
                       onChange={(e) => setNewMetricChest(e.target.value ? parseFloat(e.target.value) : undefined)}
                       className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
@@ -1675,11 +1709,13 @@ export const ProfileView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">🥋 รอบไหล่</label>
+                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">
+                      🥋 รอบไหล่ {modalUnit === 'inch' ? '(in)' : '(cm)'}
+                    </label>
                     <input
                       type="number"
-                      step="0.5"
-                      placeholder="เช่น 118"
+                      step={modalUnit === 'inch' ? '0.1' : '0.5'}
+                      placeholder={modalUnit === 'inch' ? 'เช่น 46.5' : 'เช่น 118'}
                       value={newMetricShoulders ?? ''}
                       onChange={(e) => setNewMetricShoulders(e.target.value ? parseFloat(e.target.value) : undefined)}
                       className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
@@ -1687,11 +1723,13 @@ export const ProfileView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">⏳ รอบเอว</label>
+                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">
+                      ⏳ รอบเอว {modalUnit === 'inch' ? '(in)' : '(cm)'}
+                    </label>
                     <input
                       type="number"
-                      step="0.5"
-                      placeholder="เช่น 79"
+                      step={modalUnit === 'inch' ? '0.1' : '0.5'}
+                      placeholder={modalUnit === 'inch' ? 'เช่น 31.0' : 'เช่น 79'}
                       value={newMetricWaist ?? ''}
                       onChange={(e) => setNewMetricWaist(e.target.value ? parseFloat(e.target.value) : undefined)}
                       className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
@@ -1699,11 +1737,13 @@ export const ProfileView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">🍑 รอบสะโพก</label>
+                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">
+                      🍑 รอบสะโพก {modalUnit === 'inch' ? '(in)' : '(cm)'}
+                    </label>
                     <input
                       type="number"
-                      step="0.5"
-                      placeholder="เช่น 94"
+                      step={modalUnit === 'inch' ? '0.1' : '0.5'}
+                      placeholder={modalUnit === 'inch' ? 'เช่น 37.0' : 'เช่น 94'}
                       value={newMetricHips ?? ''}
                       onChange={(e) => setNewMetricHips(e.target.value ? parseFloat(e.target.value) : undefined)}
                       className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
@@ -1711,11 +1751,13 @@ export const ProfileView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">🦵 รอบต้นขา</label>
+                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">
+                      🦵 รอบต้นขา {modalUnit === 'inch' ? '(in)' : '(cm)'}
+                    </label>
                     <input
                       type="number"
-                      step="0.5"
-                      placeholder="เช่น 58"
+                      step={modalUnit === 'inch' ? '0.1' : '0.5'}
+                      placeholder={modalUnit === 'inch' ? 'เช่น 22.8' : 'เช่น 58'}
                       value={newMetricThigh ?? ''}
                       onChange={(e) => setNewMetricThigh(e.target.value ? parseFloat(e.target.value) : undefined)}
                       className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
@@ -1723,11 +1765,13 @@ export const ProfileView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">💪 รอบต้นแขน</label>
+                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">
+                      💪 รอบต้นแขน {modalUnit === 'inch' ? '(in)' : '(cm)'}
+                    </label>
                     <input
                       type="number"
-                      step="0.5"
-                      placeholder="เช่น 36"
+                      step={modalUnit === 'inch' ? '0.1' : '0.5'}
+                      placeholder={modalUnit === 'inch' ? 'เช่น 14.2' : 'เช่น 36'}
                       value={newMetricArm ?? ''}
                       onChange={(e) => setNewMetricArm(e.target.value ? parseFloat(e.target.value) : undefined)}
                       className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
@@ -1735,11 +1779,13 @@ export const ProfileView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">🦶 รอบน่อง</label>
+                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">
+                      🦶 รอบน่อง {modalUnit === 'inch' ? '(in)' : '(cm)'}
+                    </label>
                     <input
                       type="number"
-                      step="0.5"
-                      placeholder="เช่น 37"
+                      step={modalUnit === 'inch' ? '0.1' : '0.5'}
+                      placeholder={modalUnit === 'inch' ? 'เช่น 14.5' : 'เช่น 37'}
                       value={newMetricCalf ?? ''}
                       onChange={(e) => setNewMetricCalf(e.target.value ? parseFloat(e.target.value) : undefined)}
                       className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
@@ -1747,11 +1793,13 @@ export const ProfileView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">👔 รอบคอ</label>
+                    <label className="block text-pink-900 font-semibold text-[11px] mb-1">
+                      👔 รอบคอ {modalUnit === 'inch' ? '(in)' : '(cm)'}
+                    </label>
                     <input
                       type="number"
-                      step="0.5"
-                      placeholder="เช่น 38"
+                      step={modalUnit === 'inch' ? '0.1' : '0.5'}
+                      placeholder={modalUnit === 'inch' ? 'เช่น 15.0' : 'เช่น 38'}
                       value={newMetricNeck ?? ''}
                       onChange={(e) => setNewMetricNeck(e.target.value ? parseFloat(e.target.value) : undefined)}
                       className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 focus:outline-none focus:border-rose-400"
