@@ -217,11 +217,8 @@ export const ProfileView: React.FC = () => {
   const currentWeightKg = latestMetric ? latestMetric.weight_kg : 70;
   const bmi = (currentWeightKg / (heightM * heightM)).toFixed(1);
 
-  // Calculate weekly workout volume
-  const totalVolumeAllTime = workoutHistory.reduce((sum, sess) => {
-    const completedSets = sess.sets?.filter((s) => s.done) || [];
-    return sum + completedSets.reduce((sSum, s) => sSum + s.weight_kg * s.reps, 0);
-  }, 0);
+  // Calculate total workout sessions completed
+  const totalSessionsCount = workoutHistory.length;
 
   const handleSaveMetric = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -592,10 +589,10 @@ export const ProfileView: React.FC = () => {
                   : 'border-sky-200 shadow-[0_5px_0_#bae6fd]'
               }`}
             >
-              <span className="text-xs text-slate-500 font-bold">Volume สะสม 🏋️</span>
+              <span className="text-xs text-slate-500 font-bold">เซสชันฝึกซ้อมทั้งหมด 🏋️</span>
               <p className="text-2xl font-black text-slate-800 mt-1 font-mono tracking-tight">
-                <NumberTicker value={totalVolumeAllTime} />{' '}
-                <span className="text-xs text-slate-400 font-bold">kg</span>
+                <NumberTicker value={totalSessionsCount} />{' '}
+                <span className="text-xs text-slate-400 font-bold">เซสชัน</span>
               </p>
             </div>
           </div>
