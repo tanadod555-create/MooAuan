@@ -62,6 +62,7 @@ export const ProfileView: React.FC = () => {
   // Chart Metric Toggle
   type ChartMetricType =
     | 'weight_kg'
+    | 'height_cm'
     | 'waist_cm'
     | 'chest_cm'
     | 'shoulders_cm'
@@ -73,10 +74,11 @@ export const ProfileView: React.FC = () => {
     | 'body_fat_pct';
   const [chartMetric, setChartMetric] = useState<ChartMetricType>('weight_kg');
 
-  // New Metric Modal States (All Circumferences)
+  // New Metric Modal States (All Circumferences & Height)
   const [showMetricModal, setShowMetricModal] = useState(false);
   const [newMetricDate, setNewMetricDate] = useState(new Date().toISOString().split('T')[0]);
   const [newMetricWeight, setNewMetricWeight] = useState(72.0);
+  const [newMetricHeight, setNewMetricHeight] = useState<number | undefined>(currentProfile.height_cm || 170);
   const [newMetricFat, setNewMetricFat] = useState<number | undefined>(16.0);
   const [newMetricWaist, setNewMetricWaist] = useState<number | undefined>(80);
   const [newMetricChest, setNewMetricChest] = useState<number | undefined>(undefined);
@@ -143,6 +145,7 @@ export const ProfileView: React.FC = () => {
   const openMetricModal = () => {
     setNewMetricDate(new Date().toISOString().split('T')[0]);
     setNewMetricWeight(latestMetric ? latestMetric.weight_kg : 70.0);
+    setNewMetricHeight(latestMetric?.height_cm ?? currentProfile.height_cm ?? 170);
     setNewMetricFat(latestMetric?.body_fat_pct);
     setNewMetricWaist(latestMetric?.waist_cm ?? currentProfile.waist_cm);
     setNewMetricChest(latestMetric?.chest_cm ?? currentProfile.chest_cm);
@@ -157,7 +160,7 @@ export const ProfileView: React.FC = () => {
   };
 
   // Calculate BMI
-  const heightM = (currentProfile.height_cm || 170) / 100;
+  const heightM = (latestMetric?.height_cm || currentProfile.height_cm || 170) / 100;
   const currentWeightKg = latestMetric ? latestMetric.weight_kg : 70;
   const bmi = (currentWeightKg / (heightM * heightM)).toFixed(1);
 
@@ -172,6 +175,7 @@ export const ProfileView: React.FC = () => {
     await addBodyMetric({
       date: newMetricDate,
       weight_kg: newMetricWeight,
+      height_cm: newMetricHeight,
       body_fat_pct: newMetricFat,
       waist_cm: newMetricWaist,
       chest_cm: newMetricChest,
@@ -183,6 +187,10 @@ export const ProfileView: React.FC = () => {
       neck_cm: newMetricNeck,
       note: newMetricNote.trim() || undefined,
     });
+    // Also sync height back to current profile if updated
+    if (newMetricHeight && newMetricHeight !== currentProfile.height_cm) {
+      updateProfile({ height_cm: newMetricHeight });
+    }
     setShowMetricModal(false);
     setNewMetricNote('');
   };
@@ -568,6 +576,7 @@ export const ProfileView: React.FC = () => {
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
               {[
                 { key: 'weight_kg' as const, label: '⚖️ น้ำหนัก (kg)' },
+                { key: 'height_cm' as const, label: '📏 ส่วนสูง (cm)' },
                 { key: 'waist_cm' as const, label: '⏳ รอบเอว' },
                 { key: 'chest_cm' as const, label: '👕 รอบอก' },
                 { key: 'shoulders_cm' as const, label: '🥋 ไหล่' },
@@ -723,10 +732,25 @@ export const ProfileView: React.FC = () => {
                         <span className="text-pink-800/70 flex items-center gap-1.5 font-bold">
                           <Calendar size={13} className="text-rose-500" /> {m.date}
                         </span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-bold text-slate-700 bg-white border border-pink-200 px-2 py-0.5 rounded-lg shadow-2xs">
                             {m.weight_kg} kg
                           </span>
+                          {(m.height_cm || currentProfile.height_cm) && (
+                            <span className="text-pink-900 bg-pink-50 border border-pink-200 px-1.5 py-0.5 rounded-lg font-bold">
+                              📏 {m.height_cm || currentProfile.height_cm} cm
+                            </span>
+                          )}
+                          {(() => {
+                            const h = m.height_cm || currentProfile.height_cm;
+                            if (!h) return null;
+                            const bmiVal = (m.weight_kg / Math.pow(h / 100, 2)).toFixed(1);
+                            return (
+                              <span className="text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-lg font-bold">
+                                BMI {bmiVal}
+                              </span>
+                            );
+                          })()}
                           {m.body_fat_pct && (
                             <span className="text-sky-700 bg-sky-50 border border-sky-200 px-1.5 py-0.5 rounded-lg font-bold">
                               {m.body_fat_pct}% fat
@@ -1266,7 +1290,7 @@ export const ProfileView: React.FC = () => {
                   <span>ข้อมูลพื้นฐานการชั่ง</span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div>
                     <label className="block text-pink-900 font-bold mb-1">วันที่ชั่ง</label>
                     <input
@@ -1274,7 +1298,19 @@ export const ProfileView: React.FC = () => {
                       required
                       value={newMetricDate}
                       onChange={(e) => setNewMetricDate(e.target.value)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400 font-medium"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-2 text-slate-700 focus:outline-none focus:border-rose-400 font-medium text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-pink-900 font-bold mb-1">📏 ส่วนสูง (cm)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      placeholder="เช่น 175"
+                      value={newMetricHeight ?? ''}
+                      onChange={(e) => setNewMetricHeight(e.target.value ? parseFloat(e.target.value) : undefined)}
+                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-2 text-slate-700 font-bold text-xs focus:outline-none focus:border-rose-400"
                     />
                   </div>
 
@@ -1286,7 +1322,7 @@ export const ProfileView: React.FC = () => {
                       required
                       value={newMetricWeight}
                       onChange={(e) => setNewMetricWeight(parseFloat(e.target.value) || 0)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 font-bold text-sm focus:outline-none focus:border-rose-400"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-2 text-slate-700 font-bold text-xs focus:outline-none focus:border-rose-400"
                     />
                   </div>
 
@@ -1298,7 +1334,7 @@ export const ProfileView: React.FC = () => {
                       placeholder="เช่น 16.5"
                       value={newMetricFat ?? ''}
                       onChange={(e) => setNewMetricFat(e.target.value ? parseFloat(e.target.value) : undefined)}
-                      className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-rose-400"
+                      className="w-full bg-white border border-pink-200 rounded-xl px-2.5 py-2 text-slate-700 focus:outline-none focus:border-rose-400 text-xs"
                     />
                   </div>
                 </div>

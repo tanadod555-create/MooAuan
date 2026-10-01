@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Exercise, MovementPattern } from '../../types';
-import { Play, Pause, Video, Sparkles, X, Check, ExternalLink, RefreshCw, Eye, Film } from 'lucide-react';
-import { getExerciseVideo, extractYoutubeId, ExerciseVideoInfo } from '../../data/exerciseVideos';
+import { Exercise } from '../../types';
+import { Play, Pause, Video, ExternalLink, Search } from 'lucide-react';
+import { getExerciseVideo, ExerciseVideoInfo } from '../../data/exerciseVideos';
 
 interface StickmanProps {
   exercise: Exercise;
@@ -70,8 +70,9 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
   };
 
   // Determine exercise archetype for stickman biomechanics
-  const name = exercise.name_en.toLowerCase();
+  const name = (exercise.name_en + ' ' + (exercise.name_th || '')).toLowerCase();
   const pattern = exercise.pattern;
+  const id = exercise.exercise_id;
 
   let archetype:
     | 'bench_press'
@@ -85,31 +86,34 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
     | 'lateral_raise'
     | 'crunch'
     | 'calf_raise'
-    | 'hip_thrust' = 'squat';
+    | 'hip_thrust'
+    | 'stretch' = 'squat';
 
-  if (name.includes('bench') || name.includes('push-up') || name.includes('chest press') || name.includes('dip')) {
+  if (id.includes('stretch') || id.includes('pose') || name.includes('stretch') || name.includes('pose') || name.includes('ยืด') || name.includes('cat_cow')) {
+    archetype = 'stretch';
+  } else if (id.includes('bench_press') || id.includes('chest_press') || id.includes('push_up') || id.includes('cable_fly') || id.includes('dips') || name.includes('bench') || name.includes('push-up') || name.includes('fly') || name.includes('chest press') || name.includes('dip')) {
     archetype = 'bench_press';
-  } else if (name.includes('deadlift') || name.includes('rdl') || name.includes('good morning')) {
-    archetype = 'deadlift';
-  } else if (name.includes('hip thrust') || name.includes('glute bridge')) {
+  } else if (id.includes('hip_thrust') || id.includes('glute_bridge') || id.includes('kickback') || id.includes('abduction') || name.includes('hip thrust') || name.includes('kickback') || name.includes('abduction')) {
     archetype = 'hip_thrust';
-  } else if (name.includes('pulldown') || name.includes('pull-up') || name.includes('chin-up')) {
+  } else if (id.includes('deadlift') || id.includes('rdl') || id.includes('good_morning') || id.includes('rack_pull') || id.includes('back_extension') || name.includes('deadlift') || name.includes('rdl') || name.includes('good morning') || name.includes('hyperextension')) {
+    archetype = 'deadlift';
+  } else if (id.includes('lat_pulldown') || id.includes('pull_up') || name.includes('pulldown') || name.includes('pull-up') || name.includes('chin-up')) {
     archetype = 'lat_pulldown';
-  } else if (name.includes('row')) {
+  } else if (id.includes('row') || id.includes('face_pull') || id.includes('rear_delt') || name.includes('row') || name.includes('face pull') || name.includes('rear delt')) {
     archetype = 'row';
-  } else if (name.includes('overhead') || name.includes('shoulder press') || name.includes('military') || name.includes('arnold')) {
+  } else if (id.includes('overhead_press') || id.includes('shoulder_press') || name.includes('overhead') || name.includes('shoulder press') || name.includes('military') || name.includes('arnold')) {
     archetype = 'overhead_press';
-  } else if (name.includes('lateral raise') || name.includes('side raise')) {
+  } else if (id.includes('lateral_raise') || id.includes('shrug') || id.includes('jumping_jack') || id.includes('arm_circle') || name.includes('lateral raise') || name.includes('shrug') || name.includes('jumping')) {
     archetype = 'lateral_raise';
-  } else if (name.includes('curl') || pattern === 'curl') {
-    archetype = 'bicep_curl';
-  } else if (name.includes('tricep') || name.includes('pushdown') || name.includes('skullcrusher') || name.includes('kickback')) {
+  } else if (id.includes('tricep') || id.includes('skull_crusher') || name.includes('tricep') || name.includes('pushdown') || name.includes('skull')) {
     archetype = 'tricep_extension';
-  } else if (name.includes('crunch') || name.includes('plank') || name.includes('leg raise') || name.includes('ab') || pattern === 'core') {
+  } else if (id.includes('curl') || id.includes('wrist') || name.includes('curl') || pattern === 'curl') {
+    archetype = 'bicep_curl';
+  } else if (id.includes('crunch') || id.includes('plank') || id.includes('leg_raise') || id.includes('farmers_walk') || name.includes('crunch') || name.includes('plank') || name.includes('leg raise') || pattern === 'core') {
     archetype = 'crunch';
-  } else if (name.includes('calf') || pattern === 'calf') {
+  } else if (id.includes('calf') || name.includes('calf') || pattern === 'calf') {
     archetype = 'calf_raise';
-  } else if (name.includes('squat') || name.includes('lunge') || name.includes('leg press') || pattern === 'squat') {
+  } else if (id.includes('squat') || id.includes('leg_press') || id.includes('leg_extension') || id.includes('lunge') || name.includes('squat') || name.includes('leg press') || name.includes('leg extension') || pattern === 'squat') {
     archetype = 'squat';
   } else if (pattern === 'press') {
     archetype = 'bench_press';
@@ -129,6 +133,10 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
       activeMediaUrl.includes('streamable.com') ||
       activeMediaUrl.includes('blob:'));
 
+  const youtubeSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(
+    exercise.name_en + ' exercise tutorial shorts form'
+  )}`;
+
   return (
     <div className="w-full bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden shadow-lg flex flex-col">
       {/* Top Bar: Mode Switcher & Custom Clip Trigger */}
@@ -142,7 +150,6 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
                 : 'text-slate-400 hover:text-white bg-slate-800/60'
             }`}
           >
-            <Film size={13} />
             <span>🎬 วิดีโอ Shorts</span>
           </button>
 
@@ -154,20 +161,33 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
                 : 'text-slate-400 hover:text-white bg-slate-800/60'
             }`}
           >
-            <span>🏃 Stickman</span>
+            <span>🏃 ท่าจำลอง Stickman</span>
           </button>
         </div>
 
-        <button
-          onClick={() => {
-            setMediaInput(activeMediaUrl || currentVideo.shortUrl);
-            setShowMediaModal(true);
-          }}
-          className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-1 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1.5 rounded-xl border border-rose-500/30 transition cursor-pointer"
-        >
-          <Video size={13} />
-          <span>{activeMediaUrl ? 'แก้ไขคลิป' : 'เปลี่ยนคลิป/ใส่ลิงก์'}</span>
-        </button>
+        <div className="flex items-center gap-1.5">
+          <a
+            href={youtubeSearchUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] font-semibold text-slate-300 hover:text-white flex items-center gap-1 bg-slate-800/80 hover:bg-slate-700 px-2.5 py-1.5 rounded-xl border border-slate-700 transition"
+            title="ค้นหาคลิปสอนท่านี้ใน YouTube"
+          >
+            <Search size={12} />
+            <span className="hidden sm:inline">ค้นหาบน YouTube</span>
+          </a>
+
+          <button
+            onClick={() => {
+              setMediaInput(activeMediaUrl || currentVideo.shortUrl);
+              setShowMediaModal(true);
+            }}
+            className="text-[11px] font-semibold text-rose-400 hover:text-rose-300 flex items-center gap-1 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1.5 rounded-xl border border-rose-500/30 transition cursor-pointer"
+          >
+            <Video size={13} />
+            <span>{activeMediaUrl ? 'แก้ไขคลิป' : 'เปลี่ยนคลิป/ใส่ลิงก์'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Display Area */}
@@ -205,7 +225,7 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
               <span className="truncate font-medium">{currentVideo.channelName || 'YouTube Shorts'}</span>
             </div>
             <a
-              href={currentVideo.shortUrl}
+              href={currentVideo.shortUrl || youtubeSearchUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="text-rose-400 hover:text-rose-300 font-bold flex items-center gap-1 transition shrink-0 active:scale-95"
@@ -260,7 +280,7 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
               {/* Floor / Platform Line */}
               <line x1="20" y1="175" x2="280" y2="175" stroke="#334155" strokeWidth="2.5" strokeLinecap="round" />
 
-              {/* Dynamic Archetype Graphics */}
+              {/* 1. SQUAT ARCHETYPE */}
               {archetype === 'squat' && (
                 <g className="stickman-squat">
                   <style>{`
@@ -289,33 +309,22 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
                       animation-play-state: ${animState};
                     }
                   `}</style>
-
-                  {/* Legs */}
                   <path className="stickman-squat-legL" d="M 135 110 L 125 145 L 125 175" stroke="#f43f5e" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   <path className="stickman-squat-legR" d="M 165 110 L 175 145 L 175 175" stroke="#f43f5e" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-
-                  {/* Upper Body (Torso, Head, Arms & Barbell) moving together */}
                   <g className="stickman-squat-torso">
-                    {/* Head */}
                     <circle cx="150" cy="40" r="13" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2.5" />
-                    {/* Torso Spine */}
                     <line x1="150" y1="53" x2="150" y2="110" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" />
-                    {/* Glute / Hip Joint highlight */}
                     <circle cx="150" cy="110" r="6" fill="#f43f5e" filter="url(#glow-rose)" />
-
-                    {/* Barbell on upper traps */}
                     <rect x="70" y="55" width="160" height="4" rx="2" fill="url(#barbell-grad)" />
-                    {/* Plates */}
                     <rect x="75" y="44" width="8" height="26" rx="2" fill="#e11d48" stroke="#f43f5e" strokeWidth="1" />
                     <rect x="217" y="44" width="8" height="26" rx="2" fill="#e11d48" stroke="#f43f5e" strokeWidth="1" />
-
-                    {/* Arms holding barbell */}
                     <path d="M 150 62 L 130 68 L 105 57" stroke="#f8fafc" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                     <path d="M 150 62 L 170 68 L 195 57" stroke="#f8fafc" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </g>
                 </g>
               )}
 
+              {/* 2. BENCH PRESS ARCHETYPE */}
               {archetype === 'bench_press' && (
                 <g className="stickman-bench">
                   <style>{`
@@ -344,28 +353,15 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
                       animation-play-state: ${animState};
                     }
                   `}</style>
-
-                  {/* Workout Bench Structure */}
                   <rect x="75" y="132" width="150" height="10" rx="3" fill="#334155" />
                   <rect x="90" y="142" width="10" height="33" fill="#1e293b" />
                   <rect x="200" y="142" width="10" height="33" fill="#1e293b" />
-
-                  {/* Stickman Lying on Bench */}
-                  {/* Head */}
                   <circle cx="95" cy="122" r="10" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2" />
-                  {/* Torso lying down */}
                   <line x1="105" y1="125" x2="190" y2="125" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" />
-                  {/* Chest Highlight */}
                   <circle cx="140" cy="125" r="7" fill="#f43f5e" filter="url(#glow-rose)" />
-
-                  {/* Bent legs touching ground */}
                   <path d="M 190 125 L 220 135 L 230 175" stroke="#f8fafc" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-
-                  {/* Arms */}
                   <path className="stickman-bench-armL" d="M 125 125 L 120 90 L 120 70" stroke="#f43f5e" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   <path className="stickman-bench-armR" d="M 160 125 L 160 90 L 160 70" stroke="#f43f5e" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-
-                  {/* Barbell Pressed Up and Down */}
                   <g className="stickman-bench-bar">
                     <line x1="80" y1="70" x2="220" y2="70" stroke="url(#barbell-grad)" strokeWidth="4" strokeLinecap="round" />
                     <rect x="85" y="58" width="8" height="24" rx="2" fill="#e11d48" stroke="#f43f5e" strokeWidth="1" />
@@ -374,6 +370,7 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
                 </g>
               )}
 
+              {/* 3. DEADLIFT ARCHETYPE */}
               {archetype === 'deadlift' && (
                 <g className="stickman-deadlift">
                   <style>{`
@@ -394,21 +391,14 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
                       animation-play-state: ${animState};
                     }
                   `}</style>
-
-                  {/* Legs soft knee */}
                   <path d="M 150 115 L 140 145 L 140 175" stroke="#f43f5e" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   <path d="M 155 115 L 165 145 L 165 175" stroke="#f43f5e" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-
-                  {/* Torso hinged */}
                   <g className="stickman-dl-torso">
                     <circle cx="150" cy="40" r="12" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2.5" />
                     <line x1="150" y1="52" x2="150" y2="115" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" />
                     <circle cx="150" cy="115" r="6" fill="#f43f5e" filter="url(#glow-rose)" />
-                    {/* Arm extending straight down to bar */}
                     <line x1="150" y1="65" x2="160" y2="115" stroke="#f8fafc" strokeWidth="3.5" strokeLinecap="round" />
                   </g>
-
-                  {/* Barbell moving vertically */}
                   <g className="stickman-dl-bar">
                     <line x1="90" y1="115" x2="220" y2="115" stroke="url(#barbell-grad)" strokeWidth="4.5" strokeLinecap="round" />
                     <circle cx="95" cy="115" r="15" fill="#e11d48" stroke="#f43f5e" strokeWidth="1.5" />
@@ -417,6 +407,7 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
                 </g>
               )}
 
+              {/* 4. OVERHEAD PRESS ARCHETYPE */}
               {archetype === 'overhead_press' && (
                 <g className="stickman-ohp">
                   <style>{`
@@ -437,23 +428,13 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
                       animation-play-state: ${animState};
                     }
                   `}</style>
-
-                  {/* Legs */}
                   <line x1="140" y1="120" x2="135" y2="175" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" />
                   <line x1="160" y1="120" x2="165" y2="175" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" />
-
-                  {/* Torso & Head */}
                   <circle cx="150" cy="45" r="12" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2.5" />
                   <line x1="150" y1="57" x2="150" y2="120" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" />
-
-                  {/* Shoulders Highlight */}
                   <circle cx="138" cy="70" r="5" fill="#f43f5e" filter="url(#glow-rose)" />
                   <circle cx="162" cy="70" r="5" fill="#f43f5e" filter="url(#glow-rose)" />
-
-                  {/* Arms */}
                   <path className="stickman-ohp-arm" d="M 150 70 L 135 45 L 125 15" stroke="#f43f5e" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-
-                  {/* Barbell Pressed Overhead */}
                   <g className="stickman-ohp-bar">
                     <line x1="75" y1="55" x2="225" y2="55" stroke="url(#barbell-grad)" strokeWidth="4" strokeLinecap="round" />
                     <rect x="80" y="43" width="8" height="24" rx="2" fill="#e11d48" stroke="#f43f5e" strokeWidth="1" />
@@ -462,6 +443,7 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
                 </g>
               )}
 
+              {/* 5. LAT PULLDOWN ARCHETYPE */}
               {archetype === 'lat_pulldown' && (
                 <g className="stickman-lat">
                   <style>{`
@@ -482,34 +464,61 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
                       animation-play-state: ${animState};
                     }
                   `}</style>
-
-                  {/* Lat Pulldown Bench / Seat */}
                   <rect x="130" y="145" width="40" height="8" rx="2" fill="#334155" />
                   <rect x="145" y="153" width="10" height="22" fill="#1e293b" />
-
-                  {/* Cables from top pulley */}
                   <line x1="150" y1="10" x2="150" y2="28" stroke="#64748b" strokeWidth="2" strokeDasharray="3 3" />
-
-                  {/* Seated Stickman */}
-                  {/* Legs */}
                   <path d="M 150 145 L 175 145 L 180 175" stroke="#f8fafc" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                  {/* Torso arched slightly back */}
                   <circle cx="145" cy="72" r="11" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2.5" />
                   <line x1="145" y1="83" x2="150" y2="145" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" />
-
-                  {/* Lat Muscle Glow */}
                   <circle cx="146" cy="105" r="7" fill="#f43f5e" filter="url(#glow-rose)" />
-
-                  {/* Arms Pulling Bar Down */}
                   <path className="stickman-lat-arm" d="M 150 90 L 120 60 L 95 30" stroke="#f43f5e" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-
-                  {/* Wide Lat Bar */}
                   <g className="stickman-lat-bar">
                     <path d="M 75 35 L 90 28 L 210 28 L 225 35" stroke="url(#barbell-grad)" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   </g>
                 </g>
               )}
 
+              {/* 6. ROW ARCHETYPE */}
+              {archetype === 'row' && (
+                <g className="stickman-row">
+                  <style>{`
+                    @keyframes rowPullArm {
+                      0%, 100% { d: path("M 135 85 L 135 125 L 135 145"); }
+                      50% { d: path("M 135 85 L 110 95 L 125 110"); }
+                    }
+                    @keyframes rowBar {
+                      0%, 100% { transform: translateY(0px); }
+                      50% { transform: translateY(-30px); }
+                    }
+                    .stickman-row-arm {
+                      animation: rowPullArm ${animDuration} ease-in-out infinite;
+                      animation-play-state: ${animState};
+                    }
+                    .stickman-row-bar {
+                      animation: rowBar ${animDuration} ease-in-out infinite;
+                      animation-play-state: ${animState};
+                    }
+                  `}</style>
+                  {/* Bent knees */}
+                  <path d="M 175 125 L 185 150 L 180 175" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" fill="none" />
+                  <path d="M 165 125 L 170 150 L 165 175" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" fill="none" />
+                  {/* Bent Torso (45 deg) */}
+                  <line x1="170" y1="125" x2="120" y2="80" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" />
+                  <circle cx="110" cy="72" r="11" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2.5" />
+                  {/* Lats highlight */}
+                  <circle cx="145" cy="100" r="7" fill="#f43f5e" filter="url(#glow-rose)" />
+                  {/* Row Arm */}
+                  <path className="stickman-row-arm" d="M 135 85 L 135 125 L 135 145" stroke="#f43f5e" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  {/* Barbell / Handle */}
+                  <g className="stickman-row-bar">
+                    <line x1="90" y1="145" x2="180" y2="145" stroke="url(#barbell-grad)" strokeWidth="4" strokeLinecap="round" />
+                    <circle cx="95" cy="145" r="8" fill="#e11d48" stroke="#f43f5e" strokeWidth="1" />
+                    <circle cx="175" cy="145" r="8" fill="#e11d48" stroke="#f43f5e" strokeWidth="1" />
+                  </g>
+                </g>
+              )}
+
+              {/* 7. BICEP CURL ARCHETYPE */}
               {archetype === 'bicep_curl' && (
                 <g className="stickman-curl">
                   <style>{`
@@ -531,23 +540,40 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
                       transform-origin: 142px 90px;
                     }
                   `}</style>
-
-                  {/* Legs */}
                   <line x1="145" y1="125" x2="140" y2="175" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" />
                   <line x1="155" y1="125" x2="160" y2="175" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" />
-
-                  {/* Torso & Head */}
                   <circle cx="150" cy="45" r="12" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2.5" />
                   <line x1="150" y1="57" x2="150" y2="125" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" />
-
-                  {/* Bicep Muscle Peak Highlight */}
                   <circle className="stickman-curl-glow" cx="142" cy="90" r="6" fill="#f43f5e" filter="url(#glow-rose)" />
-
-                  {/* Curled Arm with Dumbbell */}
                   <path className="stickman-curl-arm" d="M 145 75 L 145 105 L 145 138" stroke="#f43f5e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 </g>
               )}
 
+              {/* 8. TRICEP EXTENSION ARCHETYPE */}
+              {archetype === 'tricep_extension' && (
+                <g className="stickman-tricep">
+                  <style>{`
+                    @keyframes tricepPushAnim {
+                      0%, 100% { d: path("M 145 75 L 145 100 L 130 90"); }
+                      50% { d: path("M 145 75 L 145 100 L 145 135"); }
+                    }
+                    .stickman-tricep-arm {
+                      animation: tricepPushAnim ${animDuration} ease-in-out infinite;
+                      animation-play-state: ${animState};
+                    }
+                  `}</style>
+                  <line x1="145" y1="125" x2="140" y2="175" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" />
+                  <line x1="155" y1="125" x2="160" y2="175" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" />
+                  <circle cx="150" cy="45" r="12" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2.5" />
+                  <line x1="150" y1="57" x2="150" y2="125" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" />
+                  {/* Tricep Highlight */}
+                  <circle cx="152" cy="85" r="6" fill="#f43f5e" filter="url(#glow-rose)" />
+                  <path className="stickman-tricep-arm" d="M 145 75 L 145 100 L 130 90" stroke="#f43f5e" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  <line x1="125" y1="20" x2="130" y2="90" stroke="#64748b" strokeWidth="2" strokeDasharray="3 3" />
+                </g>
+              )}
+
+              {/* 9. LATERAL RAISE ARCHETYPE */}
               {archetype === 'lateral_raise' && (
                 <g className="stickman-latraise">
                   <style>{`
@@ -568,52 +594,120 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
                       animation-play-state: ${animState};
                     }
                   `}</style>
-
-                  {/* Legs */}
                   <line x1="145" y1="125" x2="135" y2="175" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" />
                   <line x1="155" y1="125" x2="165" y2="175" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" />
-
-                  {/* Torso & Head */}
                   <circle cx="150" cy="45" r="12" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2.5" />
                   <line x1="150" y1="57" x2="150" y2="125" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" />
-
-                  {/* Side Delts Glow */}
                   <circle cx="138" cy="73" r="5" fill="#f43f5e" filter="url(#glow-rose)" />
                   <circle cx="162" cy="73" r="5" fill="#f43f5e" filter="url(#glow-rose)" />
-
-                  {/* Arms Raising Out in Scapular Plane */}
                   <path className="stickman-latraise-L" d="M 145 75 L 135 110 L 130 135" stroke="#f43f5e" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                   <path className="stickman-latraise-R" d="M 155 75 L 165 110 L 170 135" stroke="#f43f5e" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                 </g>
               )}
 
-              {/* Fallback for other patterns: Dynamic Multi-joint Skeleton */}
-              {(archetype === 'row' || archetype === 'tricep_extension' || archetype === 'crunch' || archetype === 'calf_raise' || archetype === 'hip_thrust') && (
-                <g className="stickman-generic">
+              {/* 10. CRUNCH / CORE ARCHETYPE */}
+              {archetype === 'crunch' && (
+                <g className="stickman-crunch">
                   <style>{`
-                    @keyframes genericCycle {
-                      0%, 100% { transform: translateY(0px) scale(1); }
-                      50% { transform: translateY(18px) scale(0.97); }
+                    @keyframes crunchAnim {
+                      0%, 100% { transform: rotate(0deg); transform-origin: 160px 165px; }
+                      50% { transform: rotate(-28deg); transform-origin: 160px 165px; }
                     }
-                    .stickman-gen {
-                      animation: genericCycle ${animDuration} ease-in-out infinite;
+                    .stickman-crunch-torso {
+                      animation: crunchAnim ${animDuration} ease-in-out infinite;
                       animation-play-state: ${animState};
-                      transform-origin: 150px 175px;
                     }
                   `}</style>
-                  <g className="stickman-gen">
-                    {/* Head */}
-                    <circle cx="150" cy="50" r="12" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2.5" />
-                    {/* Spine */}
-                    <line x1="150" y1="62" x2="150" y2="120" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" />
-                    {/* Primary Muscle Glow */}
-                    <circle cx="150" cy="85" r="8" fill="#f43f5e" filter="url(#glow-rose)" />
-                    {/* Arms */}
-                    <path d="M 150 72 L 125 95 L 110 120" stroke="#f43f5e" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                    <path d="M 150 72 L 175 95 L 190 120" stroke="#f43f5e" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  {/* Floor mat */}
+                  <rect x="60" y="168" width="180" height="6" rx="2" fill="#334155" />
+                  {/* Lower body & bent knees */}
+                  <path d="M 160 165 L 195 165 L 215 140 L 225 170" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  <g className="stickman-crunch-torso">
+                    <line x1="160" y1="165" x2="100" y2="165" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" />
+                    <circle cx="90" cy="162" r="10" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2" />
+                    {/* Abs highlight */}
+                    <circle cx="135" cy="165" r="6" fill="#f43f5e" filter="url(#glow-rose)" />
+                    {/* Hands behind head */}
+                    <path d="M 105 165 L 90 152 L 85 160" stroke="#f43f5e" strokeWidth="3" strokeLinecap="round" fill="none" />
+                  </g>
+                </g>
+              )}
+
+              {/* 11. CALF RAISE ARCHETYPE */}
+              {archetype === 'calf_raise' && (
+                <g className="stickman-calf">
+                  <style>{`
+                    @keyframes calfRaise {
+                      0%, 100% { transform: translateY(0px); }
+                      50% { transform: translateY(-22px); }
+                    }
+                    .stickman-calf-body {
+                      animation: calfRaise ${animDuration} ease-in-out infinite;
+                      animation-play-state: ${animState};
+                    }
+                  `}</style>
+                  {/* Step platform */}
+                  <rect x="110" y="165" width="80" height="10" rx="2" fill="#334155" />
+                  <g className="stickman-calf-body">
+                    <circle cx="150" cy="40" r="12" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2.5" />
+                    <line x1="150" y1="52" x2="150" y2="115" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" />
                     {/* Legs */}
-                    <path d="M 150 120 L 135 150 L 130 175" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-                    <path d="M 150 120 L 165 150 L 170 175" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    <line x1="145" y1="115" x2="140" y2="165" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" />
+                    <line x1="155" y1="115" x2="160" y2="165" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" />
+                    {/* Calves glow */}
+                    <circle cx="140" cy="145" r="5" fill="#f43f5e" filter="url(#glow-rose)" />
+                    <circle cx="160" cy="145" r="5" fill="#f43f5e" filter="url(#glow-rose)" />
+                  </g>
+                </g>
+              )}
+
+              {/* 12. HIP THRUST ARCHETYPE */}
+              {archetype === 'hip_thrust' && (
+                <g className="stickman-thrust">
+                  <style>{`
+                    @keyframes thrustAnim {
+                      0%, 100% { d: path("M 100 135 L 140 155 L 180 155 L 195 175"); }
+                      50% { d: path("M 100 135 L 140 120 L 180 120 L 180 175"); }
+                    }
+                    .stickman-thrust-body {
+                      animation: thrustAnim ${animDuration} ease-in-out infinite;
+                      animation-play-state: ${animState};
+                    }
+                  `}</style>
+                  {/* Bench */}
+                  <rect x="70" y="130" width="35" height="40" rx="3" fill="#334155" />
+                  {/* Head & shoulders resting on bench */}
+                  <circle cx="85" cy="120" r="9" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2" />
+                  {/* Body thrusting */}
+                  <path className="stickman-thrust-body" d="M 100 135 L 140 155 L 180 155 L 195 175" stroke="#f8fafc" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  {/* Glute highlight */}
+                  <circle cx="140" cy="135" r="7" fill="#f43f5e" filter="url(#glow-rose)" />
+                </g>
+              )}
+
+              {/* 13. STRETCH / YOGA ARCHETYPE */}
+              {archetype === 'stretch' && (
+                <g className="stickman-stretch">
+                  <style>{`
+                    @keyframes stretchGentle {
+                      0%, 100% { transform: scaleY(1); }
+                      50% { transform: scaleY(0.95); }
+                    }
+                    .stickman-stretch-figure {
+                      animation: stretchGentle ${animDuration} ease-in-out infinite;
+                      animation-play-state: ${animState};
+                      transform-origin: 150px 170px;
+                    }
+                  `}</style>
+                  {/* Yoga Mat */}
+                  <rect x="50" y="170" width="200" height="5" rx="2.5" fill="#f43f5e" opacity="0.6" />
+                  <g className="stickman-stretch-figure">
+                    {/* Seated forward fold stretch */}
+                    <circle cx="110" cy="140" r="10" fill="#f8fafc" stroke="#f43f5e" strokeWidth="2" />
+                    <path d="M 115 145 L 150 160 L 210 168" stroke="#f8fafc" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    {/* Arms reaching for toes */}
+                    <path d="M 120 148 L 165 158 L 205 165" stroke="#f43f5e" strokeWidth="3" strokeLinecap="round" fill="none" />
+                    <circle cx="160" cy="155" r="6" fill="#f43f5e" filter="url(#glow-rose)" />
                   </g>
                 </g>
               )}
@@ -665,7 +759,7 @@ export const StickmanExerciseAnimation: React.FC<StickmanProps> = ({ exercise })
                 onClick={() => setShowMediaModal(false)}
                 className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs cursor-pointer"
               >
-                <X size={15} />
+                ✕
               </button>
             </div>
 

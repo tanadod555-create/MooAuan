@@ -101,6 +101,7 @@ export interface BodyMetric {
   user_name?: string;
   date: string; // YYYY-MM-DD
   weight_kg: number;
+  height_cm?: number;
   body_fat_pct?: number;
   waist_cm?: number;
   chest_cm?: number;

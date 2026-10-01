@@ -23,7 +23,7 @@ export const SHEET_TABS = [
 
 export const SHEET_HEADERS: Record<string, string[]> = {
   profile: ['user_name', 'user_id', 'email', 'sex', 'goal', 'kcal_target', 'protein_target_g', 'carb_target_g', 'fat_target_g', 'height_cm', 'waist_cm', 'chest_cm', 'shoulders_cm', 'thigh_cm', 'hips_cm', 'arm_cm', 'calf_cm', 'neck_cm', 'updated_at'],
-  body_metrics: ['user_name', 'date', 'weight_kg', 'body_fat_pct', 'waist_cm', 'chest_cm', 'shoulders_cm', 'thigh_cm', 'hips_cm', 'arm_cm', 'calf_cm', 'neck_cm', 'note'],
+  body_metrics: ['user_name', 'date', 'weight_kg', 'height_cm', 'body_fat_pct', 'waist_cm', 'chest_cm', 'shoulders_cm', 'thigh_cm', 'hips_cm', 'arm_cm', 'calf_cm', 'neck_cm', 'note'],
   exercises: ['exercise_id', 'name_en', 'name_th', 'category', 'muscle_primary', 'muscle_secondary', 'pattern', 'equipment'],
   programs: ['user_name', 'program_id', 'name', 'day_of_week', 'note'],
   program_items: ['program_id', 'order', 'exercise_id', 'target_sets', 'target_reps', 'target_weight_kg'],
@@ -328,11 +328,12 @@ export class GoogleSheetsService {
 
     if (!this.accessToken) return;
 
-    // Matches SHEET_HEADERS.body_metrics: ['user_name', 'date', 'weight_kg', 'body_fat_pct', 'waist_cm', 'chest_cm', 'shoulders_cm', 'thigh_cm', 'hips_cm', 'arm_cm', 'calf_cm', 'neck_cm', 'note']
+    // Matches SHEET_HEADERS.body_metrics: ['user_name', 'date', 'weight_kg', 'height_cm', 'body_fat_pct', 'waist_cm', 'chest_cm', 'shoulders_cm', 'thigh_cm', 'hips_cm', 'arm_cm', 'calf_cm', 'neck_cm', 'note']
     const row = [
       finalUserName,
       metric.date,
       metric.weight_kg,
+      metric.height_cm || '',
       metric.body_fat_pct || '',
       metric.waist_cm || '',
       metric.chest_cm || '',
