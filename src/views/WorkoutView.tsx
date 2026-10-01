@@ -35,6 +35,7 @@ import { RestTimer } from '../components/workout/RestTimer';
 import { RoutineEditModal } from '../components/workout/RoutineEditModal';
 import { WorkoutHistorySection } from '../components/workout/WorkoutHistorySection';
 import { PigMascot } from '../components/ui/PigMascot';
+import { calculatePigEvolution, getUserAvatar, PIG_10_LEVELS } from '../utils/mascotLevels';
 
 const CARDIO_TYPE_PRESETS: {
   type: CardioType;
@@ -1197,41 +1198,60 @@ export const WorkoutView: React.FC = () => {
         /* If No Active Workout: Show Quick Start & Routine Programs */
         <div className="space-y-6">
           {/* Cute Pig Mascot Interactive Speech Bubble (Kawaii Game Dialogue) */}
-          <div
-            className={`relative p-4 sm:p-5 rounded-[28px] bg-white border-2 flex items-center gap-4 transition-all duration-300 ${
-              activeProfileKey === 'partner'
-                ? 'border-pink-200 shadow-[0_6px_0_#fecdd3]'
-                : 'border-sky-200 shadow-[0_6px_0_#bae6fd]'
-            }`}
-          >
-            {/* Mascot with Wiggle Animation */}
-            <div className="relative shrink-0">
-              <div className="animate-wiggle cursor-pointer">
-                <PigMascot size="lg" expression="workout" className="drop-shadow-xs" />
-              </div>
-              <span className="absolute -top-1 -right-1 text-sm animate-sparkle">✨</span>
-            </div>
+          {(() => {
+            const userHistory = workoutHistory || [];
+            const evolution = calculatePigEvolution(userHistory, false);
+            const isFemale = activeProfileKey === 'partner';
+            const cfg = PIG_10_LEVELS[evolution.level];
+            return (
+              <div
+                className={`relative p-4 sm:p-5 rounded-[28px] bg-white border-2 flex items-center gap-4 transition-all duration-300 ${
+                  activeProfileKey === 'partner'
+                    ? 'border-pink-200 shadow-[0_6px_0_#fecdd3]'
+                    : 'border-sky-200 shadow-[0_6px_0_#bae6fd]'
+                }`}
+              >
+                {/* Mascot with Animated GIF */}
+                <div className="relative shrink-0">
+                  <div className="cursor-pointer hover:scale-105 transition active:scale-95">
+                    <PigMascot
+                      level={evolution.level}
+                      gender={isFemale ? 'female' : 'male'}
+                      size="lg"
+                      className="drop-shadow-xs"
+                    />
+                  </div>
+                  <span className="absolute -top-1 -right-1 text-[10px] font-black bg-rose-500 text-white px-1.5 py-0.2 rounded-full border border-white">
+                    Lv.{evolution.level}
+                  </span>
+                </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span
-                  className={`text-xs font-black px-3 py-1 rounded-full text-white shadow-2xs ${
-                    activeProfileKey === 'partner'
-                      ? 'bg-pink-400'
-                      : 'bg-sky-400'
-                  }`}
-                >
-                  โค้ชหมูอ้วน 🐷
-                </span>
-                <span className="text-xs font-bold text-slate-500">
-                  สวัสดี {activeProfileKey === 'partner' ? 'คุณมะนาว 🌸' : 'คุณแม็กนั่ม 🏋️‍♂️'}!
-                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`text-xs font-black px-3 py-1 rounded-full text-white shadow-2xs ${
+                        activeProfileKey === 'partner' ? 'bg-pink-400' : 'bg-sky-400'
+                      }`}
+                    >
+                      โค้ชหมูอ้วน Lv.{evolution.level} 🐷
+                    </span>
+                    <span className="text-xs font-bold text-slate-500">
+                      สวัสดี {activeProfileKey === 'partner' ? 'คุณมะนาว 🌸' : 'คุณแม็กนั่ม 🏋️‍♂️'}!
+                    </span>
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 border border-orange-200 flex items-center gap-0.5">
+                      <Flame size={11} className="text-orange-500" />
+                      สตรีค {evolution.streakWeeks} วีค
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-700 font-bold mt-1.5 leading-relaxed">
+                    {evolution.recentWeekCount === 0
+                      ? '"หมูอ้วนตัวนี้ยังไม่ได้เข้ายิมเลยสัปดาห์นี้! รีบไปเปิดเซสชันด่วนๆ อู๊ดๆ 🍩🐽"'
+                      : `"สัปดาห์นี้ฟิตไปแล้ว ${evolution.recentWeekCount} เซสชัน! ซ้อมอีกนิดเพื่อเลเวลอัปนะหมูอ้วน 🐽💫"`}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs sm:text-sm text-slate-700 font-bold mt-1.5 leading-relaxed">
-                "หมูอ้วนอย่างเราก็ฟิตเฟิร์มได้! วันนี้พร้อมเบิร์นหรือยัง ลุยเควสต์ไปด้วยกันนะ 🐽💫"
-              </p>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Quick Start Quest Board */}
           <div

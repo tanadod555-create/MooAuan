@@ -39,6 +39,7 @@ import { PigMascot } from '../components/ui/PigMascot';
 import { GoalSetupModal } from '../components/goals/GoalSetupModal';
 import { FoodDatabaseModal } from '../components/food/FoodDatabaseModal';
 import { AiTrainerModal } from '../components/ai/AiTrainerModal';
+import { getUserAvatar, calculatePigEvolution } from '../utils/mascotLevels';
 
 export const FoodView: React.FC = () => {
   const {
@@ -456,13 +457,19 @@ export const FoodView: React.FC = () => {
     <div className="space-y-5 pb-24 animate-fadeIn">
       {/* Cute Pig Mascot Kitchen Greeting Card */}
       <div className="p-4 sm:p-5 rounded-3xl bg-white/90 border border-pink-200/70 shadow-sm shadow-pink-100/40 flex items-center gap-3.5">
-        <PigMascot size="lg" expression="eating" className="shrink-0 drop-shadow-xs" />
+        <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-pink-200 shadow-2xs shrink-0 bg-pink-50 flex items-center justify-center">
+          <img
+            src={getUserAvatar(selectedUserKey)}
+            alt={activeTargetProfile.name}
+            className="w-full h-full object-cover animate-bounce-subtle"
+          />
+        </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 border border-pink-200/60 shadow-2xs">
+            <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 border border-pink-200/60 shadow-2xs">
               ครัวหมูอ้วน 🍓
             </span>
-            <span className="text-xs text-slate-500 font-medium">
+            <span className="text-xs text-slate-500 font-bold">
               โภชนาการของ {activeTargetProfile.name}
             </span>
           </div>
@@ -472,27 +479,29 @@ export const FoodView: React.FC = () => {
         </div>
       </div>
 
-      {/* User Switcher Pills: Clean 2-person toggle (NO combined data) */}
-      <div className="flex items-center p-1.5 bg-white/90 rounded-2xl border border-pink-200/70 gap-1.5 shadow-2xs">
+      {/* User Switcher Pills: Clean 2-person toggle with avatars */}
+      <div className="flex items-center p-1.5 bg-white/90 rounded-2xl border border-pink-200/70 gap-2 shadow-2xs">
         <button
           onClick={() => setSelectedUserKey('primary')}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${
             selectedUserKey === 'primary'
-              ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
-              : 'text-slate-500 hover:text-slate-700 hover:bg-pink-50/50'
+              ? 'bg-gradient-to-r from-sky-400 to-blue-400 text-white shadow-xs'
+              : 'text-slate-500 hover:text-slate-700 hover:bg-sky-50/50'
           }`}
         >
-          <span>🏋️‍♂️ บันทึกของแม็กนั่ม ({magnumDayCount})</span>
+          <img src={getUserAvatar('primary')} className="w-5 h-5 rounded-full object-cover border border-white/60" />
+          <span>แม็กนั่ม ({magnumDayCount})</span>
         </button>
         <button
           onClick={() => setSelectedUserKey('partner')}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${
             selectedUserKey === 'partner'
-              ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
+              ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-xs'
               : 'text-slate-500 hover:text-slate-700 hover:bg-pink-50/50'
           }`}
         >
-          <span>🌸 บันทึกของมะนาว (Manow) ({manowDayCount})</span>
+          <img src={getUserAvatar('partner')} className="w-5 h-5 rounded-full object-cover border border-white/60" />
+          <span>มะนาว (Manow) ({manowDayCount})</span>
         </button>
       </div>
 

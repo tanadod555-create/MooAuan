@@ -38,6 +38,7 @@ import { NumberTicker } from '../components/ui/NumberTicker';
 import { ShimmerButton } from '../components/ui/ShimmerButton';
 import { PigMascot } from '../components/ui/PigMascot';
 import { GoalSetupModal } from '../components/goals/GoalSetupModal';
+import { calculatePigEvolution, getUserAvatar, PIG_10_LEVELS } from '../utils/mascotLevels';
 
 export const ProfileView: React.FC = () => {
   const {
@@ -421,24 +422,34 @@ export const ProfileView: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const evolution = calculatePigEvolution(workoutHistory);
+  const isMagnum = activeProfileKey === 'primary';
+  const levelCfg = PIG_10_LEVELS[evolution.level];
+
   return (
     <div className="space-y-6 pb-24 animate-fadeIn">
-      {/* Profile Selector Banner with Pig Mascot */}
-      {/* Profile Selector Banner with Pig Mascot */}
-      <div className="card-apple p-5 flex items-center justify-between">
+      {/* Profile Selector Banner with Avatar Icon & Dynamic Streak */}
+      <div className="card-apple p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5">
-          <div className="relative flex items-center justify-center p-1.5 rounded-2xl bg-zinc-100 border border-black/[0.05]">
-            <PigMascot
-              size="md"
-              expression={activeProfileKey === 'partner' ? 'cheer' : 'strong'}
-              className="drop-shadow-xs"
+          <div className="relative w-14 h-14 rounded-2xl overflow-hidden border-2 border-pink-300 shadow-sm shrink-0 bg-white flex items-center justify-center">
+            <img
+              src={getUserAvatar(activeProfileKey)}
+              alt={currentProfile.name}
+              className="w-full h-full object-cover animate-bounce-subtle"
             />
+            <span className="absolute -bottom-1 -right-1 text-[10px] font-black bg-rose-500 text-white px-1.5 py-0.2 rounded-full border border-white">
+              Lv.{evolution.level}
+            </span>
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-black text-zinc-900 tracking-tight">{currentProfile.name}</h2>
-              <span className="text-[11px] bg-zinc-100 text-zinc-700 border border-black/[0.06] px-2.5 py-0.5 rounded-full font-semibold">
-                {activeProfileKey === 'primary' ? '🏋️‍♂️ หมูอ้วนเทรนเนอร์' : '🌸 หมูอ้วนหวานแหวว'}
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-lg sm:text-xl font-black text-zinc-900 tracking-tight">{currentProfile.name}</h2>
+              <span className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold border ${levelCfg.badgeColor}`}>
+                {levelCfg.emoji} Lv.{evolution.level} ({levelCfg.titleTh})
+              </span>
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 border border-orange-200 flex items-center gap-0.5">
+                <Flame size={11} className="text-orange-500" />
+                Streak {evolution.streakWeeks} วีค
               </span>
             </div>
             <p className="text-xs text-zinc-500 mt-0.5">
@@ -450,10 +461,10 @@ export const ProfileView: React.FC = () => {
         {/* Toggle Account Pill */}
         <button
           onClick={() => setActiveProfileKey(activeProfileKey === 'primary' ? 'partner' : 'primary')}
-          className="px-3.5 py-2 rounded-full bg-zinc-100 hover:bg-zinc-200/80 border border-black/[0.06] text-xs font-semibold text-zinc-700 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs"
+          className="px-4 py-2 rounded-full bg-zinc-100 hover:bg-zinc-200/80 border border-black/[0.06] text-xs font-semibold text-zinc-700 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs self-stretch sm:self-auto justify-center"
         >
           <Users size={14} className="text-zinc-500" />
-          <span>สลับโปรไฟล์</span>
+          <span>สลับเป็น {isMagnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}</span>
         </button>
       </div>
 

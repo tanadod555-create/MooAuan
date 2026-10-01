@@ -26,22 +26,26 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b-2 border-pink-100/90 shadow-xs px-3.5 sm:px-6 py-2.5 transition-all duration-300">
       <div className="max-w-4xl mx-auto flex items-center justify-between">
-        {/* Brand Mascot with Cute Bouncy Wiggle */}
+        {/* Brand Mascot & Profile Avatar with Cute Bouncy Wiggle */}
         <div className="flex items-center gap-3">
           <button
             onClick={onOpenProfileModal}
-            className={`relative flex items-center justify-center p-1.5 rounded-2xl border-2 transition-transform duration-200 hover:scale-110 active:scale-95 cursor-pointer shadow-xs ${
+            className={`relative flex items-center justify-center p-1 rounded-2xl border-2 transition-transform duration-200 hover:scale-110 active:scale-95 cursor-pointer shadow-xs ${
               isMagnum
                 ? 'bg-sky-100/80 border-sky-300'
                 : 'bg-pink-100/80 border-pink-300'
             }`}
             title="แตะเพื่อเลือกโปรไฟล์หรือเปลี่ยนตัวละคร"
           >
-            <div className="animate-wiggle">
-              <PigMascot
-                size="sm"
-                expression={isMagnum ? 'workout' : 'cheer'}
-                className="drop-shadow-xs"
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-2xs flex items-center justify-center bg-white">
+              <img
+                src={isMagnum ? './mascots/magnum_icon.png' : './mascots/manow_icon.png'}
+                alt={currentProfile.name}
+                className="w-full h-full object-cover animate-bounce-subtle"
+                onError={(e) => {
+                  // Fallback
+                  e.currentTarget.style.display = 'none';
+                }}
               />
             </div>
             <span className="absolute -top-1 -right-1 text-xs animate-sparkle">✨</span>

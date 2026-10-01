@@ -1,28 +1,59 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { PigEvolutionLevel, getMascotGif } from '../../utils/mascotLevels';
 
 export type PigExpression = 'happy' | 'workout' | 'eating' | 'cheer' | 'strong' | 'sleep';
 
 interface PigMascotProps {
   expression?: PigExpression;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  level?: PigEvolutionLevel;
+  gender?: 'male' | 'female';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   className?: string;
   animate?: boolean;
+  useGif?: boolean;
 }
 
 export const PigMascot: React.FC<PigMascotProps> = ({
   expression = 'happy',
+  level,
+  gender = 'male',
   size = 'md',
   className = '',
   animate = true,
+  useGif = true,
 }) => {
+  const [imgError, setImgError] = useState(false);
+
   const sizeMap = {
-    xs: 'w-6 h-6',
-    sm: 'w-8 h-8',
-    md: 'w-12 h-12',
-    lg: 'w-20 h-20',
-    xl: 'w-32 h-32',
+    xs: 'w-7 h-7',
+    sm: 'w-10 h-10',
+    md: 'w-14 h-14',
+    lg: 'w-24 h-24',
+    xl: 'w-36 h-36',
+    '2xl': 'w-48 h-48 sm:w-56 sm:h-56',
   };
 
+  // If level is provided and useGif is true, render the animated GIF
+  if (level && useGif && !imgError) {
+    const gifSrc = getMascotGif(gender, level);
+    return (
+      <div
+        className={`relative inline-flex items-center justify-center select-none ${sizeMap[size]} ${
+          animate ? 'transition-transform duration-300 hover:scale-105 active:scale-95' : ''
+        } ${className}`}
+      >
+        <img
+          src={gifSrc}
+          alt={`Mascot Lv.${level} (${gender})`}
+          className="w-full h-full object-contain filter drop-shadow-md"
+          onError={() => setImgError(true)}
+          loading="lazy"
+        />
+      </div>
+    );
+  }
+
+  // Fallback SVG Mascot with Cute Wiggle
   return (
     <div
       className={`relative inline-flex items-center justify-center select-none ${sizeMap[size]} ${
@@ -106,7 +137,6 @@ export const PigMascot: React.FC<PigMascotProps> = ({
               stroke="#be123c"
               strokeWidth="1.2"
             />
-            {/* Cute bow knot on headband */}
             <circle cx="81" cy="38" r="4" fill="#f43f5e" />
             <path d="M 83 38 Q 90 35, 92 42 Q 86 42, 83 40" fill="#f43f5e" />
           </g>
@@ -114,25 +144,18 @@ export const PigMascot: React.FC<PigMascotProps> = ({
 
         {/* Eyes */}
         {expression === 'sleep' ? (
-          // Sleeping curved eyes
           <g stroke="#4a154b" strokeWidth="2.5" strokeLinecap="round">
             <path d="M 31 44 Q 36 49, 41 44" />
             <path d="M 59 44 Q 64 49, 69 44" />
           </g>
         ) : (
-          // Cute Anime Eyes with Sparkles
           <g>
-            {/* Left Eye */}
             <ellipse cx="36" cy="44" rx="4.5" ry="5.5" fill="#3b1633" />
             <circle cx="34.5" cy="42" r="1.8" fill="#ffffff" />
             <circle cx="38" cy="46" r="0.8" fill="#ffffff" />
-
-            {/* Right Eye */}
             <ellipse cx="64" cy="44" rx="4.5" ry="5.5" fill="#3b1633" />
             <circle cx="62.5" cy="42" r="1.8" fill="#ffffff" />
             <circle cx="66" cy="46" r="0.8" fill="#ffffff" />
-
-            {/* Cheerful Eyebrows */}
             <path
               d="M 32 36 Q 36 34, 40 36"
               stroke="#e91e63"
@@ -158,7 +181,6 @@ export const PigMascot: React.FC<PigMascotProps> = ({
           stroke="#e91e63"
           strokeWidth="2"
         />
-        {/* Nostrils */}
         <ellipse cx="44.5" cy="60" rx="3" ry="4.5" fill="#c2185b" opacity="0.8" />
         <ellipse cx="55.5" cy="60" rx="3" ry="4.5" fill="#c2185b" opacity="0.8" />
         <circle cx="44" cy="58.5" r="1" fill="#ff80ab" />
@@ -181,7 +203,7 @@ export const PigMascot: React.FC<PigMascotProps> = ({
           />
         )}
 
-        {/* Floating Heart / Sparkle for cheer & happy */}
+        {/* Floating Heart / Sparkle */}
         {(expression === 'cheer' || expression === 'happy') && (
           <g className="animate-pulse">
             <path
@@ -191,30 +213,12 @@ export const PigMascot: React.FC<PigMascotProps> = ({
           </g>
         )}
 
-        {/* Mini Dumbbell for workout or strong */}
+        {/* Mini Dumbbell */}
         {(expression === 'workout' || expression === 'strong') && (
           <g transform="translate(68, 62) rotate(-20)">
             <rect x="6" y="2" width="14" height="2.5" rx="1.2" fill="#94a3b8" />
             <rect x="2" y="-1" width="5" height="8.5" rx="2" fill="#fb7185" stroke="#e11d48" strokeWidth="0.8" />
             <rect x="19" y="-1" width="5" height="8.5" rx="2" fill="#fb7185" stroke="#e11d48" strokeWidth="0.8" />
-          </g>
-        )}
-
-        {/* Strawberry for eating */}
-        {expression === 'eating' && (
-          <g transform="translate(18, 65) scale(0.7)">
-            <path
-              d="M 10 5 C 16 0, 20 5, 18 14 C 16 19, 10 24, 10 24 C 10 24, 4 19, 2 14 C 0 5, 4 0, 10 5 Z"
-              fill="#f43f5e"
-            />
-            {/* Seeds */}
-            <circle cx="7" cy="8" r="0.8" fill="#fde047" />
-            <circle cx="13" cy="8" r="0.8" fill="#fde047" />
-            <circle cx="10" cy="13" r="0.8" fill="#fde047" />
-            <circle cx="6" cy="16" r="0.8" fill="#fde047" />
-            <circle cx="14" cy="16" r="0.8" fill="#fde047" />
-            {/* Leaves */}
-            <path d="M 6 4 C 10 6, 14 6, 14 4 C 12 1, 8 1, 6 4 Z" fill="#22c55e" />
           </g>
         )}
       </svg>
