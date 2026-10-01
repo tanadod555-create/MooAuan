@@ -67,6 +67,7 @@ export const FoodView: React.FC = () => {
   const [showFoodDbModal, setShowFoodDbModal] = useState(false);
   const [showAiTrainerModal, setShowAiTrainerModal] = useState(false);
   const [showMicronutrients, setShowMicronutrients] = useState(false);
+  const [showWaterTracker, setShowWaterTracker] = useState(false);
 
   // User Selection: Track food per person separately (default to active profile)
   const [selectedUserKey, setSelectedUserKey] = useState<'primary' | 'partner'>(activeProfileKey);
@@ -1058,114 +1059,126 @@ export const FoodView: React.FC = () => {
         </div>
       </MagicCard>
 
-      {/* Water Intake Tracker Card */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-white/95 border border-sky-100/90 shadow-sm shadow-sky-100/40 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-sky-100/80">
+      {/* Water Intake Tracker Card (Collapsible) */}
+      <div className="rounded-3xl bg-white/95 border border-sky-100/90 shadow-sm shadow-sky-100/40 overflow-hidden transition-all">
+        {/* Collapsible Header */}
+        <button
+          type="button"
+          onClick={() => setShowWaterTracker(!showWaterTracker)}
+          className="w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left cursor-pointer hover:bg-sky-50/40 transition group"
+        >
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-500 text-white flex items-center justify-center shadow-xs shadow-sky-300/50">
-              <Droplets size={22} className="animate-pulse" />
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-500 text-white flex items-center justify-center shadow-xs shadow-sky-300/50 shrink-0">
+              <Droplets size={20} className="animate-pulse" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="font-black text-slate-800 text-sm sm:text-base">
                   บันทึกการดื่มน้ำ 💧
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 border border-sky-200">
                   {activeTargetProfile.name}
                 </span>
+                <span className="text-xs font-black font-mono text-sky-600 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200/70">
+                  {totalWaterMl.toLocaleString()} / {targetWaterMl.toLocaleString()} ml ({waterPct}%)
+                </span>
               </div>
-              <p className="text-[11px] text-slate-500 mt-0.5">
-                เป้าหมายวันละ {targetWaterMl.toLocaleString()} ml เพื่อการฟื้นฟูกล้ามเนื้อและการเผาผลาญ
+              <p className="text-[11px] text-slate-500 mt-0.5 hidden sm:block">
+                เป้าหมายวันละ {targetWaterMl.toLocaleString()} ml ({waterPct >= 100 ? '🎉 ครบแล้ว' : `ขาดอีก ${(Math.max(0, targetWaterMl - totalWaterMl)).toLocaleString()} ml`})
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-end sm:self-auto">
-            <div className="text-right">
-              <span className="text-lg sm:text-xl font-black font-mono text-sky-600">
-                {totalWaterMl.toLocaleString()}
-              </span>
-              <span className="text-xs text-slate-400 font-bold"> / {targetWaterMl.toLocaleString()} ml</span>
-              <div className="text-[10px] font-bold text-sky-500">
-                {waterPct >= 100 ? '🎉 ดื่มน้ำครบเป้าหมายแล้ว!' : `เหลืออีก ${(Math.max(0, targetWaterMl - totalWaterMl)).toLocaleString()} ml`}
+          <div className="flex items-center gap-2 text-xs font-bold text-sky-600 shrink-0">
+            <span className="hidden sm:inline">{showWaterTracker ? 'พับเก็บ' : 'บันทึกน้ำ'}</span>
+            {showWaterTracker ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </div>
+        </button>
+
+        {/* Expanded Water Tracker Body */}
+        {showWaterTracker && (
+          <div className="p-4 sm:p-5 pt-0 border-t border-sky-100/60 space-y-4 animate-fadeIn">
+            {/* Animated Water Progress Bar */}
+            <div className="space-y-1.5 pt-3">
+              <div className="w-full h-3.5 bg-sky-50 rounded-full p-0.5 border border-sky-100 overflow-hidden shadow-inner">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-sky-400 via-blue-400 to-cyan-400 transition-all duration-500 shadow-xs relative overflow-hidden"
+                  style={{ width: `${waterPct}%` }}
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                </div>
+              </div>
+              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400">
+                <span>0 ml</span>
+                <span className="text-sky-600 font-mono">{waterPct}%</span>
+                <span>{targetWaterMl.toLocaleString()} ml</span>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Animated Water Progress Bar */}
-        <div className="space-y-1.5">
-          <div className="w-full h-3.5 bg-sky-50 rounded-full p-0.5 border border-sky-100 overflow-hidden shadow-inner">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-sky-400 via-blue-400 to-cyan-400 transition-all duration-500 shadow-xs relative overflow-hidden"
-              style={{ width: `${waterPct}%` }}
-            >
-              <div className="absolute inset-0 bg-white/20 animate-pulse" />
-            </div>
-          </div>
-          <div className="flex items-center justify-between text-[10px] font-bold text-slate-400">
-            <span>0 ml</span>
-            <span className="text-sky-600 font-mono">{waterPct}%</span>
-            <span>{targetWaterMl.toLocaleString()} ml</span>
-          </div>
-        </div>
-
-        {/* Quick Add Buttons */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-          {[
-            { label: '+250 ml', icon: '🥛', desc: 'แก้วเล็ก', amount: 250 },
-            { label: '+500 ml', icon: '💧', desc: 'ขวดเล็ก', amount: 500 },
-            { label: '+750 ml', icon: '🧋', desc: 'กระบอกน้ำ', amount: 750 },
-            { label: '+1,000 ml', icon: '🍶', desc: 'ขวดใหญ่', amount: 1000 },
-          ].map((btn) => (
-            <button
-              key={btn.amount}
-              type="button"
-              onClick={() => handleAddWater(btn.amount)}
-              className="p-2.5 rounded-2xl bg-sky-50/70 hover:bg-sky-100/80 border border-sky-200/70 text-slate-700 transition active:scale-95 text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer shadow-2xs group"
-            >
-              <span className="text-base group-hover:scale-110 transition">{btn.icon}</span>
-              <span className="text-xs font-black text-sky-700">{btn.label}</span>
-              <span className="text-[10px] text-slate-400 font-medium">{btn.desc}</span>
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setShowCustomWaterModal(true)}
-            className="p-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 transition active:scale-95 text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer shadow-2xs col-span-2 sm:col-span-1"
-          >
-            <Plus size={16} className="text-sky-500 mb-0.5" />
-            <span className="text-xs font-black text-slate-700">กำหนดเอง</span>
-            <span className="text-[10px] text-slate-400 font-medium">กรอก ml</span>
-          </button>
-        </div>
-
-        {/* Today's Water Log History */}
-        {todayWaterLogs.length > 0 && (
-          <div className="pt-2 border-t border-sky-100/60">
-            <span className="text-[11px] font-bold text-slate-500 block mb-2">
-              ประวัติการดื่มน้ำวันนี้ ({todayWaterLogs.length} ครั้ง):
-            </span>
-            <div className="flex items-center gap-2 flex-wrap">
-              {todayWaterLogs.map((log) => (
-                <div
-                  key={log.id}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-50/80 border border-sky-200/80 text-xs text-slate-700 shadow-2xs"
+            {/* Quick Add Buttons */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {[
+                { label: '+250 ml', icon: '🥛', desc: 'แก้วเล็ก', amount: 250 },
+                { label: '+500 ml', icon: '💧', desc: 'ขวดเล็ก', amount: 500 },
+                { label: '+750 ml', icon: '🧋', desc: 'กระบอกน้ำ', amount: 750 },
+                { label: '+1,000 ml', icon: '🍶', desc: 'ขวดใหญ่', amount: 1000 },
+              ].map((btn) => (
+                <button
+                  key={btn.amount}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAddWater(btn.amount);
+                  }}
+                  className="p-2.5 rounded-2xl bg-sky-50/70 hover:bg-sky-100/80 border border-sky-200/70 text-slate-700 transition active:scale-95 text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer shadow-2xs group"
                 >
-                  <span className="text-sky-500 text-[11px]">💧</span>
-                  <span className="font-bold text-sky-800">{log.amount_ml} ml</span>
-                  {log.time && <span className="text-[10px] text-slate-400">({log.time})</span>}
-                  <button
-                    type="button"
-                    onClick={() => deleteWaterLog(log.id)}
-                    className="text-slate-300 hover:text-rose-500 transition ml-0.5 p-0.5"
-                    title="ลบรายการนี้"
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                </div>
+                  <span className="text-base group-hover:scale-110 transition">{btn.icon}</span>
+                  <span className="text-xs font-black text-sky-700">{btn.label}</span>
+                  <span className="text-[10px] text-slate-400 font-medium">{btn.desc}</span>
+                </button>
               ))}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowCustomWaterModal(true);
+                }}
+                className="p-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 transition active:scale-95 text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer shadow-2xs col-span-2 sm:col-span-1"
+              >
+                <Plus size={16} className="text-sky-500 mb-0.5" />
+                <span className="text-xs font-black text-slate-700">กำหนดเอง</span>
+                <span className="text-[10px] text-slate-400 font-medium">กรอก ml</span>
+              </button>
             </div>
+
+            {/* Today's Water Log History */}
+            {todayWaterLogs.length > 0 && (
+              <div className="pt-2 border-t border-sky-100/60">
+                <span className="text-[11px] font-bold text-slate-500 block mb-2">
+                  ประวัติการดื่มน้ำวันนี้ ({todayWaterLogs.length} ครั้ง):
+                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {todayWaterLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-50/80 border border-sky-200/80 text-xs text-slate-700 shadow-2xs"
+                    >
+                      <span className="text-sky-500 text-[11px]">💧</span>
+                      <span className="font-bold text-sky-800">{log.amount_ml} ml</span>
+                      {log.time && <span className="text-[10px] text-slate-400">({log.time})</span>}
+                      <button
+                        type="button"
+                        onClick={() => deleteWaterLog(log.id)}
+                        className="text-slate-300 hover:text-rose-500 transition ml-0.5 p-0.5"
+                        title="ลบรายการนี้"
+                      >
+                        <Trash2 size={11} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
