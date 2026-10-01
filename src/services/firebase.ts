@@ -19,6 +19,7 @@ import {
   BodyMetric,
   Exercise,
   UserProfile,
+  WaterLog,
   FirebaseConfig,
 } from '../types';
 
@@ -187,7 +188,44 @@ export const subscribeToProfiles = (
   );
 };
 
+export const subscribeToWaterLogs = (
+  db: Firestore,
+  onUpdate: (logs: WaterLog[]) => void,
+  onError?: (err: Error) => void
+): Unsubscribe => {
+  const colRef = collection(db, 'water_logs');
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const logs: WaterLog[] = [];
+      snapshot.forEach((docSnap) => {
+        logs.push(docSnap.data() as WaterLog);
+      });
+      logs.sort((a, b) => {
+        const timeA = `${a.date} ${a.time || '00:00'}`;
+        const timeB = `${b.date} ${b.time || '00:00'}`;
+        return timeB.localeCompare(timeA);
+      });
+      onUpdate(logs);
+    },
+    (err) => {
+      console.error('Firestore WaterLogs subscription error:', err);
+      if (onError) onError(err);
+    }
+  );
+};
+
 // ==================== CLOUD MUTATION ACTIONS ====================
+
+export const cloudSaveWaterLog = async (db: Firestore, log: WaterLog): Promise<void> => {
+  const docRef = doc(db, 'water_logs', log.id);
+  await setDoc(docRef, log, { merge: true });
+};
+
+export const cloudDeleteWaterLog = async (db: Firestore, logId: string): Promise<void> => {
+  const docRef = doc(db, 'water_logs', logId);
+  await deleteDoc(docRef);
+};
 
 export const cloudSaveFoodLog = async (db: Firestore, log: FoodLog): Promise<void> => {
   const docRef = doc(db, 'food_logs', log.log_id);

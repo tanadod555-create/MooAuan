@@ -193,6 +193,15 @@ export interface Micronutrients {
   [key: string]: number | undefined;
 }
 
+export interface WaterLog {
+  id: string;
+  user_id?: string;
+  user_name?: string;
+  date: string; // YYYY-MM-DD
+  time?: string; // HH:mm
+  amount_ml: number;
+}
+
 export interface FoodLog {
   log_id: string;
   user_id?: string;

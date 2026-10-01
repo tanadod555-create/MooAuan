@@ -31,6 +31,7 @@ import {
   Bot,
   MessageCircle,
   Leaf,
+  Droplets,
 } from 'lucide-react';
 import { MagicCard } from '../components/ui/MagicCard';
 import { CircularProgress } from '../components/ui/CircularProgress';
@@ -52,6 +53,10 @@ export const FoodView: React.FC = () => {
     addFoodLog,
     updateFoodLog,
     deleteFoodLog,
+    waterLogs,
+    allWaterLogs,
+    addWaterLog,
+    deleteWaterLog,
     settings,
     updateSettings,
   } = useApp();
@@ -138,6 +143,17 @@ export const FoodView: React.FC = () => {
   const targetCarb = activeTargetProfile.carb_target_g || (selectedUserKey === 'primary' ? 260 : 180);
   const targetFat = activeTargetProfile.fat_target_g || (selectedUserKey === 'primary' ? 65 : 45);
 
+  // Water intake calculations for selected user & date
+  const todayWaterLogs = (allWaterLogs || []).filter(
+    (w) => w.date === selectedDate && (w.user_id || 'primary') === selectedUserKey
+  );
+  const totalWaterMl = todayWaterLogs.reduce((sum, w) => sum + (w.amount_ml || 0), 0);
+  const targetWaterMl = selectedUserKey === 'primary' ? 2500 : 2000;
+  const waterPct = Math.min(100, Math.round((totalWaterMl / targetWaterMl) * 100));
+
+  const [showCustomWaterModal, setShowCustomWaterModal] = useState(false);
+  const [customWaterMl, setCustomWaterMl] = useState<number | ''>(300);
+
   // Search Results across all dates for selected user
   const searchResults = foodSearchQuery.trim()
     ? (allFoodLogs || []).filter((l) => {
@@ -159,6 +175,7 @@ export const FoodView: React.FC = () => {
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState(effectiveGeminiKey);
   const [analyzing, setAnalyzing] = useState(false);
+  const [isSubmittingAi, setIsSubmittingAi] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [aiResultItems, setAiResultItems] = useState<GeminiFoodItem[]>([]);
@@ -333,6 +350,7 @@ export const FoodView: React.FC = () => {
       setPortionMultiplier(1.0);
       setAiNotes(result.notes || '');
       setShowAiResultModal(true);
+      setAiUserNote(''); // Clear note after scan completes so it does not persist across different food scans
     } catch (err: any) {
       console.error(err);
       setAnalysisError(
@@ -364,37 +382,57 @@ export const FoodView: React.FC = () => {
 
   // Confirm and save AI detected items
   const handleConfirmAiFood = async () => {
+    if (isSubmittingAi) return;
+    setIsSubmittingAi(true);
+
     const nowTime = new Date().toLocaleTimeString('th-TH', {
       hour: '2-digit',
       minute: '2-digit',
     });
 
-    for (const item of aiResultItems) {
-      await addFoodLog({
-        date: selectedDate,
-        time: nowTime,
-        meal: selectedMeal,
-        name: item.name,
-        grams: Number(item.grams) || 0,
-        kcal: Number(item.kcal) || 0,
-        protein_g: Number(item.protein_g) || 0,
-        carb_g: Number(item.carb_g) || 0,
-        fat_g: Number(item.fat_g) || 0,
-        fiber_g: typeof item.fiber_g === 'number' ? item.fiber_g : (item.fiber_g ? Number(item.fiber_g) : undefined),
-        sugar_g: typeof item.sugar_g === 'number' ? item.sugar_g : (item.sugar_g ? Number(item.sugar_g) : undefined),
-        sodium_mg: typeof item.sodium_mg === 'number' ? item.sodium_mg : (item.sodium_mg ? Number(item.sodium_mg) : undefined),
-        micros: item.micros,
-        source: 'ai',
-        confidence: item.confidence,
-        user_id: selectedUserKey,
-        note: aiUserNote.trim() || undefined,
-      });
-    }
+    const itemsToSave = [...aiResultItems];
+    const userNoteToSave = aiUserNote.trim() || undefined;
 
+    // Immediately close modal and reset preview so user cannot double-tap
     setShowAiResultModal(false);
     setPreviewImage(null);
     setAiResultItems([]);
     setBaseAiItems([]);
+    setAiUserNote('');
+
+    try {
+      for (const item of itemsToSave) {
+        await addFoodLog({
+          date: selectedDate,
+          time: nowTime,
+          meal: selectedMeal,
+          name: item.name,
+          grams: Number(item.grams) || 0,
+          kcal: Number(item.kcal) || 0,
+          protein_g: Number(item.protein_g) || 0,
+          carb_g: Number(item.carb_g) || 0,
+          fat_g: Number(item.fat_g) || 0,
+          fiber_g: typeof item.fiber_g === 'number' ? item.fiber_g : (item.fiber_g ? Number(item.fiber_g) : undefined),
+          sugar_g: typeof item.sugar_g === 'number' ? item.sugar_g : (item.sugar_g ? Number(item.sugar_g) : undefined),
+          sodium_mg: typeof item.sodium_mg === 'number' ? item.sodium_mg : (item.sodium_mg ? Number(item.sodium_mg) : undefined),
+          micros: item.micros,
+          source: 'ai',
+          confidence: item.confidence,
+          user_id: selectedUserKey,
+          note: userNoteToSave,
+        });
+      }
+    } catch (err) {
+      console.error('Error saving AI food items:', err);
+    } finally {
+      setIsSubmittingAi(false);
+    }
+  };
+
+  // Water intake quick add handler
+  const handleAddWater = async (amount: number) => {
+    if (!amount || amount <= 0) return;
+    await addWaterLog(amount, selectedDate, selectedUserKey);
   };
 
   // Update item in AI modal before confirming
@@ -1028,6 +1066,118 @@ export const FoodView: React.FC = () => {
         </div>
       </MagicCard>
 
+      {/* Water Intake Tracker Card */}
+      <div className="p-4 sm:p-5 rounded-3xl bg-white/95 border border-sky-100/90 shadow-sm shadow-sky-100/40 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-sky-100/80">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-400 to-blue-500 text-white flex items-center justify-center shadow-xs shadow-sky-300/50">
+              <Droplets size={22} className="animate-pulse" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-black text-slate-800 text-sm sm:text-base">
+                  บันทึกการดื่มน้ำ 💧
+                </h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-700 border border-sky-200">
+                  {activeTargetProfile.name}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                เป้าหมายวันละ {targetWaterMl.toLocaleString()} ml เพื่อการฟื้นฟูกล้ามเนื้อและการเผาผลาญ
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 self-end sm:self-auto">
+            <div className="text-right">
+              <span className="text-lg sm:text-xl font-black font-mono text-sky-600">
+                {totalWaterMl.toLocaleString()}
+              </span>
+              <span className="text-xs text-slate-400 font-bold"> / {targetWaterMl.toLocaleString()} ml</span>
+              <div className="text-[10px] font-bold text-sky-500">
+                {waterPct >= 100 ? '🎉 ดื่มน้ำครบเป้าหมายแล้ว!' : `เหลืออีก ${(Math.max(0, targetWaterMl - totalWaterMl)).toLocaleString()} ml`}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Animated Water Progress Bar */}
+        <div className="space-y-1.5">
+          <div className="w-full h-3.5 bg-sky-50 rounded-full p-0.5 border border-sky-100 overflow-hidden shadow-inner">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-sky-400 via-blue-400 to-cyan-400 transition-all duration-500 shadow-xs relative overflow-hidden"
+              style={{ width: `${waterPct}%` }}
+            >
+              <div className="absolute inset-0 bg-white/20 animate-pulse" />
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-[10px] font-bold text-slate-400">
+            <span>0 ml</span>
+            <span className="text-sky-600 font-mono">{waterPct}%</span>
+            <span>{targetWaterMl.toLocaleString()} ml</span>
+          </div>
+        </div>
+
+        {/* Quick Add Buttons */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+          {[
+            { label: '+250 ml', icon: '🥛', desc: 'แก้วเล็ก', amount: 250 },
+            { label: '+500 ml', icon: '💧', desc: 'ขวดเล็ก', amount: 500 },
+            { label: '+750 ml', icon: '🧋', desc: 'กระบอกน้ำ', amount: 750 },
+            { label: '+1,000 ml', icon: '🍶', desc: 'ขวดใหญ่', amount: 1000 },
+          ].map((btn) => (
+            <button
+              key={btn.amount}
+              type="button"
+              onClick={() => handleAddWater(btn.amount)}
+              className="p-2.5 rounded-2xl bg-sky-50/70 hover:bg-sky-100/80 border border-sky-200/70 text-slate-700 transition active:scale-95 text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer shadow-2xs group"
+            >
+              <span className="text-base group-hover:scale-110 transition">{btn.icon}</span>
+              <span className="text-xs font-black text-sky-700">{btn.label}</span>
+              <span className="text-[10px] text-slate-400 font-medium">{btn.desc}</span>
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setShowCustomWaterModal(true)}
+            className="p-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200/90 text-slate-700 transition active:scale-95 text-center flex flex-col items-center justify-center gap-0.5 cursor-pointer shadow-2xs col-span-2 sm:col-span-1"
+          >
+            <Plus size={16} className="text-sky-500 mb-0.5" />
+            <span className="text-xs font-black text-slate-700">กำหนดเอง</span>
+            <span className="text-[10px] text-slate-400 font-medium">กรอก ml</span>
+          </button>
+        </div>
+
+        {/* Today's Water Log History */}
+        {todayWaterLogs.length > 0 && (
+          <div className="pt-2 border-t border-sky-100/60">
+            <span className="text-[11px] font-bold text-slate-500 block mb-2">
+              ประวัติการดื่มน้ำวันนี้ ({todayWaterLogs.length} ครั้ง):
+            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {todayWaterLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-50/80 border border-sky-200/80 text-xs text-slate-700 shadow-2xs"
+                >
+                  <span className="text-sky-500 text-[11px]">💧</span>
+                  <span className="font-bold text-sky-800">{log.amount_ml} ml</span>
+                  {log.time && <span className="text-[10px] text-slate-400">({log.time})</span>}
+                  <button
+                    type="button"
+                    onClick={() => deleteWaterLog(log.id)}
+                    className="text-slate-300 hover:text-rose-500 transition ml-0.5 p-0.5"
+                    title="ลบรายการนี้"
+                  >
+                    <Trash2 size={11} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
 
 
       {/* Action Buttons: Camera / Gallery / Quick Food DB / Manual Add */}
@@ -1618,13 +1768,17 @@ export const FoodView: React.FC = () => {
             <div className="p-4 border-t border-pink-100 bg-pink-50/60 flex items-center gap-3">
               <button
                 onClick={handleConfirmAiFood}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition"
+                disabled={isSubmittingAi}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition"
               >
                 <CheckCircle2 size={16} />
-                บันทึกลงโปรไฟล์ของ {activeTargetProfile.name}
+                {isSubmittingAi ? 'กำลังบันทึก...' : `บันทึกลงโปรไฟล์ของ ${activeTargetProfile.name}`}
               </button>
               <button
-                onClick={() => setShowAiResultModal(false)}
+                onClick={() => {
+                  setShowAiResultModal(false);
+                  setAiUserNote('');
+                }}
                 className="py-2.5 px-4 rounded-xl bg-white hover:bg-pink-100 text-slate-600 border border-pink-200/70 text-xs font-bold"
               >
                 ยกเลิก
@@ -2158,6 +2312,96 @@ export const FoodView: React.FC = () => {
                 บันทึกและเชื่อมต่อ
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Water Intake Modal */}
+      {showCustomWaterModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-sm bg-white border border-sky-200 rounded-3xl overflow-hidden shadow-2xl p-5 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-sky-100">
+              <div className="flex items-center gap-2">
+                <Droplets size={18} className="text-sky-500" />
+                <h3 className="font-bold text-slate-800 text-base">บันทึกการดื่มน้ำ</h3>
+              </div>
+              <button
+                onClick={() => setShowCustomWaterModal(false)}
+                className="text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (customWaterMl && customWaterMl > 0) {
+                  handleAddWater(Number(customWaterMl));
+                  setShowCustomWaterModal(false);
+                }
+              }}
+              className="space-y-4 text-xs"
+            >
+              <div>
+                <label className="block font-bold text-slate-700 mb-1.5">
+                  ระบุปริมาณน้ำที่ดื่ม (มิลลิลิตร / ml):
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    min="1"
+                    max="5000"
+                    step="10"
+                    required
+                    placeholder="เช่น 350, 600..."
+                    value={customWaterMl}
+                    onChange={(e) =>
+                      setCustomWaterMl(e.target.value === '' ? '' : Math.max(0, parseInt(e.target.value) || 0))
+                    }
+                    className="w-full bg-sky-50/50 border border-sky-200 rounded-2xl px-4 py-3 text-lg font-black text-sky-700 focus:outline-none focus:border-sky-400 focus:bg-white transition"
+                    autoFocus
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-400 text-sm">
+                    ml
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick Preset Buttons inside modal */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {[150, 250, 350, 500, 600, 750, 1000].map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => setCustomWaterMl(preset)}
+                    className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border transition cursor-pointer ${
+                      customWaterMl === preset
+                        ? 'bg-sky-500 text-white border-sky-500 shadow-2xs'
+                        : 'bg-sky-50/60 text-slate-600 border-sky-200/80 hover:bg-sky-100'
+                    }`}
+                  >
+                    {preset} ml
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-sky-100">
+                <button
+                  type="button"
+                  onClick={() => setShowCustomWaterModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-500 hover:to-blue-600 text-white font-bold shadow-xs active:scale-95 transition cursor-pointer"
+                >
+                  บันทึกการดื่มน้ำ
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

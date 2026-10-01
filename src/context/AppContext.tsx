@@ -7,6 +7,7 @@ import {
   CardioActivity,
   CardioType,
   FoodLog,
+  WaterLog,
   BodyMetric,
   Program,
   AppSettings,
@@ -20,12 +21,15 @@ import {
   initFirebase,
   getFirestoreInstance,
   subscribeToFoodLogs,
+  subscribeToWaterLogs,
   subscribeToWorkoutHistory,
   subscribeToBodyMetrics,
   subscribeToCustomExercises,
   subscribeToProfiles,
   cloudSaveFoodLog,
   cloudDeleteFoodLog,
+  cloudSaveWaterLog,
+  cloudDeleteWaterLog,
   cloudSaveWorkout,
   cloudDeleteWorkout,
   cloudSaveBodyMetric,
@@ -98,6 +102,11 @@ interface AppContextType {
   addFoodLog: (log: Omit<FoodLog, 'log_id'>) => Promise<void>;
   updateFoodLog: (log_id: string, updates: Partial<FoodLog>) => Promise<void>;
   deleteFoodLog: (log_id: string) => void;
+
+  waterLogs: WaterLog[];
+  allWaterLogs: WaterLog[];
+  addWaterLog: (amount_ml: number, date?: string, user_id?: string) => Promise<void>;
+  deleteWaterLog: (id: string) => void;
   
   bodyMetrics: BodyMetric[];
   allBodyMetrics: BodyMetric[];
@@ -809,6 +818,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const foodLogs = allFoodLogs.filter(l => (l.user_id || 'primary') === activeProfileKey);
 
+  // Unified Water Logs (Combined for Maxnum & Manow)
+  const [allWaterLogs, setAllWaterLogs] = useState<WaterLog[]>(() => {
+    const saved = localStorage.getItem('ft_water_unified');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch {}
+    }
+    return [];
+  });
+
+  const waterLogs = allWaterLogs.filter(w => (w.user_id || 'primary') === activeProfileKey);
+
+  useEffect(() => {
+    localStorage.setItem('ft_water_unified', JSON.stringify(allWaterLogs));
+  }, [allWaterLogs]);
+
+  useEffect(() => {
+    localStorage.setItem('ft_food_logs_unified', JSON.stringify(allFoodLogs));
+  }, [allFoodLogs]);
+
   // Unified Body Metrics (Combined for Maxnum & Manow)
   const [allBodyMetrics, setAllBodyMetrics] = useState<BodyMetric[]>(() => {
     // Migration: One-time clearing of legacy/mock body metrics as requested
@@ -967,8 +998,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         (err) => setFirebaseError(`Profiles: ${err.message}`)
       );
 
+      // 6. Water Logs Real-time listener
+      const unsubWater = subscribeToWaterLogs(
+        db,
+        (logs) => {
+          if (logs) {
+            setAllWaterLogs(logs);
+          }
+        },
+        (err) => setFirebaseError(`Water Logs: ${err.message}`)
+      );
+
       return () => {
         unsubFood();
+        unsubWater();
         unsubWorkouts();
         unsubMetrics();
         unsubExercises();
@@ -1615,6 +1658,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const addWaterLog = async (amount_ml: number, date?: string, user_id?: string) => {
+    const targetUserId = (user_id as 'primary' | 'partner') || activeProfileKey;
+    const currentName = targetUserId === 'partner' ? partnerProfile.name : primaryProfile.name;
+    const today = date || new Date().toISOString().split('T')[0];
+    const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+    const newLog: WaterLog = {
+      id: 'water_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      user_id: targetUserId,
+      user_name: currentName,
+      date: today,
+      time: nowTime,
+      amount_ml,
+    };
+
+    setAllWaterLogs(prev => [newLog, ...prev]);
+
+    if (firestoreDbRef.current) {
+      cloudSaveWaterLog(firestoreDbRef.current, newLog).catch(console.error);
+    }
+  };
+
+  const deleteWaterLog = (id: string) => {
+    setAllWaterLogs(prev => prev.filter(w => w.id !== id));
+    if (firestoreDbRef.current) {
+      cloudDeleteWaterLog(firestoreDbRef.current, id).catch(console.error);
+    }
+  };
+
   const addBodyMetric = async (metricData: Omit<BodyMetric, 'id'>) => {
     const currentName = activeProfileKey === 'partner' ? partnerProfile.name : primaryProfile.name;
     const newMetric: BodyMetric = {
@@ -1758,6 +1830,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addFoodLog,
         updateFoodLog,
         deleteFoodLog,
+        waterLogs,
+        allWaterLogs,
+        addWaterLog,
+        deleteWaterLog,
         bodyMetrics,
         allBodyMetrics,
         addBodyMetric,
