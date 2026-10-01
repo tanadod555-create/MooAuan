@@ -499,109 +499,89 @@ export const FoodView: React.FC = () => {
   return (
     <div className="space-y-5 pb-24 animate-fadeIn">
       {/* Cute Pig Mascot Kitchen Greeting Card */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-white/90 border border-pink-200/70 shadow-sm shadow-pink-100/40 flex items-center gap-3.5">
-        <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-pink-200 shadow-2xs shrink-0 bg-pink-50 flex items-center justify-center">
+      <div className="p-3.5 sm:p-4 rounded-3xl bg-white/90 border border-pink-200/70 shadow-sm shadow-pink-100/40 flex items-center gap-3">
+        <div className="w-11 h-11 rounded-2xl overflow-hidden border-2 border-pink-200 shadow-2xs shrink-0 bg-pink-50 flex items-center justify-center">
           <img
             src={getUserAvatar(selectedUserKey)}
             alt={activeTargetProfile.name}
-            className="w-full h-full object-cover animate-bounce-subtle"
+            className="w-full h-full object-cover"
           />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700 border border-pink-200/60 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700">
               ครัวหมูอ้วน 🍓
             </span>
             <span className="text-xs text-slate-500 font-bold">
-              โภชนาการของ {activeTargetProfile.name}
+              {activeTargetProfile.name}
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-700 font-bold mt-1 leading-snug">
-            "กินให้อิ่มอย่างถูกหลักสารอาหาร กินให้ฟิน ไม่ต้องอดนะหมูอ้วน 🥗🐽"
+          <p className="text-xs text-slate-600 font-semibold mt-0.5">
+            บันทึกโภชนาการและแคลอรีประจำวัน
           </p>
         </div>
       </div>
 
       {/* User Switcher Pills: Clean 2-person toggle with avatars */}
-      <div className="flex items-center p-1.5 bg-white/90 rounded-2xl border border-pink-200/70 gap-2 shadow-2xs">
+      <div className="flex items-center p-1 bg-white/90 rounded-2xl border border-pink-200/70 gap-1.5 shadow-2xs">
         <button
           onClick={() => setSelectedUserKey('primary')}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${
+          className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${
             selectedUserKey === 'primary'
               ? 'bg-gradient-to-r from-sky-400 to-blue-400 text-white shadow-xs'
               : 'text-slate-500 hover:text-slate-700 hover:bg-sky-50/50'
           }`}
         >
-          <img src={getUserAvatar('primary')} className="w-5 h-5 rounded-full object-cover border border-white/60" />
+          <img src={getUserAvatar('primary')} className="w-4 h-4 rounded-full object-cover border border-white/60" />
           <span>แม็กนั่ม ({maxnumDayCount})</span>
         </button>
         <button
           onClick={() => setSelectedUserKey('partner')}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${
+          className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${
             selectedUserKey === 'partner'
               ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-xs'
               : 'text-slate-500 hover:text-slate-700 hover:bg-pink-50/50'
           }`}
         >
-          <img src={getUserAvatar('partner')} className="w-5 h-5 rounded-full object-cover border border-white/60" />
-          <span>มะนาว (Manow) ({manowDayCount})</span>
+          <img src={getUserAvatar('partner')} className="w-4 h-4 rounded-full object-cover border border-white/60" />
+          <span>มะนาว ({manowDayCount})</span>
         </button>
       </div>
 
-      {/* Quick Access Banner: 1) Quick Food Database & 2) AI Trainer Live Chat */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {/* Quick Access Buttons: 1) Food Database & 2) AI Chat */}
+      <div className="grid grid-cols-2 gap-2.5">
         {/* Quick Food Database */}
         <button
           type="button"
           onClick={() => setShowFoodDbModal(true)}
-          className="p-3.5 rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50/60 to-pink-50 hover:from-pink-100/70 hover:to-rose-100/60 border border-pink-200/90 text-left transition active:scale-[0.99] shadow-xs group cursor-pointer flex items-center justify-between gap-3"
+          className="p-3 rounded-2xl bg-white hover:bg-pink-50 border border-pink-200 text-left transition active:scale-98 shadow-xs flex items-center gap-2.5 cursor-pointer"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-pink-100 text-rose-500 flex items-center justify-center shrink-0 group-hover:scale-105 transition shadow-2xs">
-              <BookOpen size={20} />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <h4 className="text-xs sm:text-sm font-black text-slate-800">
-                  ตารางโภชนาการด่วน & อาหารไทย 📖
-                </h4>
-                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-700 flex items-center gap-0.5">
-                  <Leaf size={10} /> ไฟเบอร์ครบ
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                เช็กแคล ไข่ต้ม, อกไก่, ข้าวสวย, กะเพรา + แตะลงมื้อทันที
-              </p>
-            </div>
+          <div className="w-8 h-8 rounded-xl bg-pink-100 text-rose-500 flex items-center justify-center shrink-0">
+            <BookOpen size={16} />
           </div>
-          <ChevronRight size={18} className="text-pink-400 group-hover:translate-x-0.5 transition shrink-0" />
+          <div className="min-w-0 flex-1">
+            <h4 className="text-xs font-black text-slate-800 truncate">
+              ตารางโภชนาการด่วน
+            </h4>
+            <span className="text-[10px] text-pink-500 font-bold">เช็กแคล & เมนูไทย</span>
+          </div>
         </button>
 
         {/* AI Trainer Chat */}
         <button
           type="button"
           onClick={() => setShowAiTrainerModal(true)}
-          className="p-3.5 rounded-2xl bg-gradient-to-r from-rose-50 via-pink-50/60 to-rose-50 hover:from-rose-100/70 hover:to-pink-100/60 border border-pink-200/90 text-left transition active:scale-[0.99] shadow-xs group cursor-pointer flex items-center justify-between gap-3"
+          className="p-3 rounded-2xl bg-white hover:bg-rose-50 border border-pink-200 text-left transition active:scale-98 shadow-xs flex items-center gap-2.5 cursor-pointer"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition shadow-2xs">
-              <Bot size={20} />
-            </div>
-            <div>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <h4 className="text-xs sm:text-sm font-black text-slate-800">
-                  คุยกับโค้ชหมูอ้วน AI (คุยสด) 💬
-                </h4>
-                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-100 text-rose-600 flex items-center gap-0.5">
-                  <Sparkles size={9} /> Gemini
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
-                วิเคราะห์การกินวันนี้ แนะนำเมนูถัดไป ปรึกษาฟอร์มและอาการล้า
-              </p>
-            </div>
+          <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+            <Bot size={16} />
           </div>
-          <ChevronRight size={18} className="text-rose-400 group-hover:translate-x-0.5 transition shrink-0" />
+          <div className="min-w-0 flex-1">
+            <h4 className="text-xs font-black text-slate-800 truncate">
+              โค้ช AI วิเคราะห์
+            </h4>
+            <span className="text-[10px] text-rose-500 font-bold">ปรึกษาเมนู & สารอาหาร</span>
+          </div>
         </button>
       </div>
 
