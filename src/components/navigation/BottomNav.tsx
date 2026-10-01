@@ -39,7 +39,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
               <button
                 key={item.key}
                 onClick={() => onTabChange(item.key)}
-                className={`group relative flex flex-col items-center justify-center py-2 px-1 rounded-2xl transition-all duration-200 cursor-pointer select-none active:scale-90 ${
+                className={`group relative flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl transition-all duration-200 cursor-pointer select-none active:scale-90 min-h-[52px] ${
                   isActive
                     ? isMaxnum
                       ? 'bg-sky-400 text-white shadow-md shadow-sky-300/60 font-black scale-105'

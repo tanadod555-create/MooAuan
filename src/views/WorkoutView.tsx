@@ -36,6 +36,12 @@ import { RoutineEditModal } from '../components/workout/RoutineEditModal';
 import { WorkoutHistorySection } from '../components/workout/WorkoutHistorySection';
 import { PigMascot } from '../components/ui/PigMascot';
 import { calculatePigEvolution, getUserAvatar, PIG_10_LEVELS } from '../utils/mascotLevels';
+import {
+  playGymAlertSound,
+  triggerMobileVibrate,
+  sendBackgroundNotification,
+  requestNotificationPermission,
+} from '../utils/backgroundTimer';
 
 const CARDIO_TYPE_PRESETS: {
   type: CardioType;
@@ -91,11 +97,40 @@ export const WorkoutView: React.FC = () => {
   const [showAddExerciseDrawer, setShowAddExerciseDrawer] = useState(false);
   const [drawerSearch, setDrawerSearch] = useState('');
   const [drawerMuscle, setDrawerMuscle] = useState<string>('all');
-  const [restTimerSeconds, setRestTimerSeconds] = useState<number | null>(null);
-  const [restTimerInitial, setRestTimerInitial] = useState(90);
+  const [restTimerTargetMs, setRestTimerTargetMs] = useState<number | null>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('mooauan_rest_target_ms');
+      if (saved) {
+        const ms = Number(saved);
+        if (ms > Date.now()) return ms;
+      }
+    }
+    return null;
+  });
+
+  const [restTimerSeconds, setRestTimerSeconds] = useState<number | null>(() => {
+    if (typeof window !== 'undefined') {
+      const savedTarget = localStorage.getItem('mooauan_rest_target_ms');
+      if (savedTarget) {
+        const diff = Math.ceil((Number(savedTarget) - Date.now()) / 1000);
+        if (diff > 0) return diff;
+      }
+    }
+    return null;
+  });
+  const [restTimerInitial, setRestTimerInitial] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('mooauan_rest_initial');
+      if (saved) return Number(saved);
+    }
+    return 90;
+  });
   const [restTimerPaused, setRestTimerPaused] = useState(false);
   const [restTimerSound, setRestTimerSound] = useState(true);
   const [showRestTimer, setShowRestTimer] = useState(false);
+
+  // Reference to prevent duplicate finish alerts
+  const prevSecRef = React.useRef<number | null>(null);
 
   // Cardio Setup Modal State (Choose activity & target before starting)
   const [showCardioModal, setShowCardioModal] = useState(false);
@@ -180,41 +215,132 @@ export const WorkoutView: React.FC = () => {
   const [editingProgram, setEditingProgram] = useState<Program | null>(null);
   const [showRoutineModal, setShowRoutineModal] = useState(false);
 
-  // Rest Timer Interval
+  const formatSeconds = (sec: number) => {
+    const mins = Math.floor(sec / 60);
+    const remaining = sec % 60;
+    return `${mins.toString().padStart(2, '0')}:${remaining.toString().padStart(2, '0')}`;
+  };
+
+  // Rest Timer Interval with Background/Tab Switch Recovery and Alerts
   useEffect(() => {
-    if (restTimerSeconds === null || restTimerPaused || restTimerSeconds <= 0) return;
-    const interval = setInterval(() => {
-      setRestTimerSeconds((prev) => {
-        if (prev === null || prev <= 1) return 0;
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [restTimerSeconds, restTimerPaused]);
+    if (restTimerSeconds === null) {
+      if (typeof window !== 'undefined') {
+        document.title = 'MooAuan - หมูอ้วน ฟิตเนส & ไดอารี่';
+      }
+      return;
+    }
+
+    const updateTimer = () => {
+      if (restTimerPaused) return;
+
+      let remaining = 0;
+      if (restTimerTargetMs) {
+        remaining = Math.max(0, Math.ceil((restTimerTargetMs - Date.now()) / 1000));
+      } else {
+        remaining = Math.max(0, (restTimerSeconds ?? 0) - 1);
+      }
+
+      setRestTimerSeconds(remaining);
+
+      // Document title countdown
+      if (typeof window !== 'undefined') {
+        if (remaining > 0) {
+          document.title = `(${formatSeconds(remaining)}) ⏳ พักเซต | MooAuan 🐷`;
+        } else {
+          document.title = `⏰ ครบเวลาพักแล้ว! ลุยต่อ | MooAuan 🐷`;
+        }
+      }
+
+      // Warning audio on 3, 2, 1 seconds
+      if (restTimerSound && remaining <= 3 && remaining >= 1 && prevSecRef.current !== remaining) {
+        playGymAlertSound('warning');
+      }
+
+      // Finish alerts
+      if (remaining === 0 && (prevSecRef.current === null || prevSecRef.current > 0)) {
+        if (restTimerSound) {
+          playGymAlertSound('finish');
+        }
+        triggerMobileVibrate([200, 100, 200, 100, 400]);
+        sendBackgroundNotification(
+          '⏰ พักเซ็ตครบเวลาแล้ว! 🐷',
+          'ถึงเวลาเล่นเซ็ตต่อไปแล้ว ลุยเลย!'
+        );
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('mooauan_rest_target_ms');
+        }
+      }
+
+      prevSecRef.current = remaining;
+    };
+
+    // Run ticker
+    const interval = setInterval(updateTimer, 1000);
+
+    // Visibility change listener (when returning from TikTok or background tab)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        updateTimer();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
+    };
+  }, [restTimerTargetMs, restTimerPaused, restTimerSound, restTimerSeconds]);
 
   const startRestTimer = (seconds: number) => {
+    requestNotificationPermission().catch(() => {});
+    const targetMs = Date.now() + seconds * 1000;
     setRestTimerInitial(seconds);
     setRestTimerSeconds(seconds);
+    setRestTimerTargetMs(targetMs);
     setRestTimerPaused(false);
-    // On mobile, keep floating notification unless user opens full panel
+    prevSecRef.current = seconds;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mooauan_rest_target_ms', String(targetMs));
+      localStorage.setItem('mooauan_rest_initial', String(seconds));
+    }
   };
 
   const handleAddSeconds = (delta: number) => {
     setRestTimerSeconds((prev) => {
       const current = prev ?? restTimerInitial;
-      return Math.max(0, current + delta);
+      const next = Math.max(0, current + delta);
+      if (next > 0) {
+        const targetMs = Date.now() + next * 1000;
+        setRestTimerTargetMs(targetMs);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('mooauan_rest_target_ms', String(targetMs));
+        }
+      } else {
+        setRestTimerTargetMs(null);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('mooauan_rest_target_ms');
+        }
+      }
+      return next;
     });
   };
 
   const handleResetTimer = () => {
-    setRestTimerSeconds(restTimerInitial);
-    setRestTimerPaused(false);
+    startRestTimer(restTimerInitial);
   };
 
-  const formatSeconds = (sec: number) => {
-    const mins = Math.floor(sec / 60);
-    const remaining = sec % 60;
-    return `${mins.toString().padStart(2, '0')}:${remaining.toString().padStart(2, '0')}`;
+  const handleClearRestTimer = () => {
+    setRestTimerSeconds(null);
+    setRestTimerTargetMs(null);
+    setShowRestTimer(false);
+    prevSecRef.current = null;
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('mooauan_rest_target_ms');
+      document.title = 'MooAuan - หมูอ้วน ฟิตเนส & ไดอารี่';
+    }
   };
 
   // Launch a workout from routine template
@@ -568,10 +694,7 @@ export const WorkoutView: React.FC = () => {
                   onPauseToggle={() => setRestTimerPaused((p) => !p)}
                   onAddSeconds={handleAddSeconds}
                   onReset={handleResetTimer}
-                  onClose={() => {
-                    setRestTimerSeconds(null);
-                    setShowRestTimer(false);
-                  }}
+                  onClose={handleClearRestTimer}
                   onSoundToggle={() => setRestTimerSound((s) => !s)}
                 />
               </div>
@@ -703,15 +826,15 @@ export const WorkoutView: React.FC = () => {
                       {/* Weight & Reps Stepper Controllers */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-3">
                         {/* Weight (kg) Stepper */}
-                        <div className="bg-pink-50/40 rounded-2xl p-2.5 border border-pink-100">
-                          <div className="flex items-center justify-between mb-1.5 px-1">
+                        <div className="bg-pink-50/40 rounded-2xl p-3 border border-pink-100">
+                          <div className="flex items-center justify-between mb-2 px-1">
                             <span className="text-xs font-bold text-slate-500">น้ำหนัก (Weight)</span>
                             <span className="text-xs font-black text-rose-500 font-mono">
                               {set.weight_kg} kg
                             </span>
                           </div>
 
-                          <div className="flex items-center justify-between gap-1.5">
+                          <div className="flex items-center justify-between gap-2">
                             <button
                               type="button"
                               onClick={() => {
@@ -721,13 +844,13 @@ export const WorkoutView: React.FC = () => {
                                 );
                                 updateSet(item.exercise_id, setIdx, { weight_kg: next });
                               }}
-                              className="w-11 h-11 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                              className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
                               title={`ลด ${weightStep} กก.`}
                             >
-                              <Minus size={18} className="stroke-[2.5]" />
+                              <Minus size={20} className="stroke-[2.5]" />
                             </button>
 
-                            <div className="flex-1 min-w-[70px]">
+                            <div className="flex-1 min-w-[75px]">
                               <input
                                 type="number"
                                 step="0.5"
@@ -739,7 +862,7 @@ export const WorkoutView: React.FC = () => {
                                     weight_kg: parseFloat(e.target.value) || 0,
                                   })
                                 }
-                                className="w-full h-11 text-center font-black font-mono text-lg text-slate-800 bg-white border border-pink-200 rounded-xl focus:outline-none focus:border-rose-400 shadow-inner"
+                                className="w-full h-12 text-center font-black font-mono text-xl text-slate-800 bg-white border-2 border-pink-200 rounded-2xl focus:outline-none focus:border-rose-400 shadow-inner"
                               />
                             </div>
 
@@ -749,26 +872,26 @@ export const WorkoutView: React.FC = () => {
                                 const next = Math.round(((set.weight_kg || 0) + weightStep) * 100) / 100;
                                 updateSet(item.exercise_id, setIdx, { weight_kg: next });
                               }}
-                              className="w-11 h-11 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                              className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
                               title={`เพิ่ม ${weightStep} กก.`}
                             >
-                              <Plus size={18} className="stroke-[2.5]" />
+                              <Plus size={20} className="stroke-[2.5]" />
                             </button>
                           </div>
 
                           {/* Weight Step Size Selector */}
-                          <div className="flex items-center justify-between gap-1 mt-2 px-0.5">
+                          <div className="flex items-center justify-between gap-1 mt-2.5 px-0.5">
                             <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">ปรับทีละ:</span>
-                            <div className="flex items-center gap-1 overflow-x-auto">
+                            <div className="flex items-center gap-1.5 overflow-x-auto">
                               {[1, 1.25, 2.5, 5, 10].map((s) => (
                                 <button
                                   key={s}
                                   type="button"
                                   onClick={() => setWeightStep(s)}
-                                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded-lg border transition cursor-pointer active:scale-95 ${
+                                  className={`text-xs font-bold px-2 py-1 rounded-xl border transition cursor-pointer active:scale-95 min-h-[28px] ${
                                     weightStep === s
                                       ? 'bg-rose-500 text-white border-rose-500 shadow-2xs font-extrabold'
-                                      : 'bg-white/90 hover:bg-white text-slate-600 border-pink-200/80'
+                                      : 'bg-white hover:bg-pink-50 text-slate-600 border-pink-200'
                                   }`}
                                   title={`กด +/- เพื่อปรับทีละ ${s} กก.`}
                                 >
@@ -780,8 +903,8 @@ export const WorkoutView: React.FC = () => {
                         </div>
 
                         {/* Reps Stepper */}
-                        <div className="bg-pink-50/40 rounded-2xl p-2.5 border border-pink-100">
-                          <div className="flex items-center justify-between mb-1.5 px-1">
+                        <div className="bg-pink-50/40 rounded-2xl p-3 border border-pink-100">
+                          <div className="flex items-center justify-between mb-2 px-1">
                             <span className="text-xs font-bold text-slate-500">
                               จำนวนครั้ง (Reps)
                             </span>
@@ -790,20 +913,20 @@ export const WorkoutView: React.FC = () => {
                             </span>
                           </div>
 
-                          <div className="flex items-center justify-between gap-1.5">
+                          <div className="flex items-center justify-between gap-2">
                             <button
                               type="button"
                               onClick={() => {
                                 const next = Math.max(0, (set.reps || 0) - repsStep);
                                 updateSet(item.exercise_id, setIdx, { reps: next });
                               }}
-                              className="w-11 h-11 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                              className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
                               title={`ลด ${repsStep} ครั้ง`}
                             >
-                              <Minus size={18} className="stroke-[2.5]" />
+                              <Minus size={20} className="stroke-[2.5]" />
                             </button>
 
-                            <div className="flex-1 min-w-[70px]">
+                            <div className="flex-1 min-w-[75px]">
                               <input
                                 type="number"
                                 step="1"
@@ -815,7 +938,7 @@ export const WorkoutView: React.FC = () => {
                                     reps: parseInt(e.target.value) || 0,
                                   })
                                 }
-                                className="w-full h-11 text-center font-black font-mono text-lg text-slate-800 bg-white border border-pink-200 rounded-xl focus:outline-none focus:border-rose-400 shadow-inner"
+                                className="w-full h-12 text-center font-black font-mono text-xl text-slate-800 bg-white border-2 border-pink-200 rounded-2xl focus:outline-none focus:border-rose-400 shadow-inner"
                               />
                             </div>
 
@@ -825,26 +948,26 @@ export const WorkoutView: React.FC = () => {
                                 const next = (set.reps || 0) + repsStep;
                                 updateSet(item.exercise_id, setIdx, { reps: next });
                               }}
-                              className="w-11 h-11 rounded-xl bg-white border border-pink-200 text-slate-600 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer"
+                              className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
                               title={`เพิ่ม ${repsStep} ครั้ง`}
                             >
-                              <Plus size={18} className="stroke-[2.5]" />
+                              <Plus size={20} className="stroke-[2.5]" />
                             </button>
                           </div>
 
                           {/* Reps Step Size Selector */}
-                          <div className="flex items-center justify-between gap-1 mt-2 px-0.5">
+                          <div className="flex items-center justify-between gap-1 mt-2.5 px-0.5">
                             <span className="text-[10px] font-bold text-slate-400 whitespace-nowrap">ปรับทีละ:</span>
-                            <div className="flex items-center gap-1 overflow-x-auto">
+                            <div className="flex items-center gap-1.5 overflow-x-auto">
                               {[1, 2, 5].map((s) => (
                                 <button
                                   key={s}
                                   type="button"
                                   onClick={() => setRepsStep(s)}
-                                  className={`text-[10px] font-bold px-2 py-0.5 rounded-lg border transition cursor-pointer active:scale-95 ${
+                                  className={`text-xs font-bold px-2.5 py-1 rounded-xl border transition cursor-pointer active:scale-95 min-h-[28px] ${
                                     repsStep === s
                                       ? 'bg-rose-500 text-white border-rose-500 shadow-2xs font-extrabold'
-                                      : 'bg-white/90 hover:bg-white text-slate-600 border-pink-200/80'
+                                      : 'bg-white hover:bg-pink-50 text-slate-600 border-pink-200'
                                   }`}
                                   title={`กด +/- เพื่อปรับทีละ ${s} ครั้ง`}
                                 >
@@ -866,23 +989,22 @@ export const WorkoutView: React.FC = () => {
                             startRestTimer(standardRestSeconds);
                           }
                         }}
-                        className={`w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer shadow-xs ${
+                        className={`w-full py-4 px-4 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer shadow-md min-h-[52px] ${
                           set.done
-                            ? 'bg-rose-100/70 hover:bg-rose-100 text-rose-700 border border-rose-200'
-                            : 'bg-gradient-to-r from-pink-400 to-rose-400 hover:opacity-95 text-white shadow-md shadow-pink-200'
+                            ? 'bg-rose-100/80 hover:bg-rose-100 text-rose-800 border-2 border-rose-300'
+                            : 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-pink-200'
                         }`}
                       >
                         {set.done ? (
                           <>
-                            <Check size={17} className="stroke-[3] text-rose-500" />
+                            <Check size={18} className="stroke-[3] text-rose-600" />
                             <span>
-                              เซ็ต {setIdx + 1} เรียบร้อย ({set.weight_kg} kg × {set.reps} ครั้ง)
-                              · แตะเพื่อแก้ไข
+                              เซ็ต {setIdx + 1} เรียบร้อย ({set.weight_kg} kg × {set.reps} ครั้ง) · แตะเพื่อแก้ไข
                             </span>
                           </>
                         ) : (
                           <>
-                            <span className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center text-[11px] font-mono">
+                            <span className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-mono font-bold">
                               {setIdx + 1}
                             </span>
                             <span>
@@ -898,9 +1020,9 @@ export const WorkoutView: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => addSetToExercise(item.exercise_id)}
-                    className="w-full py-3 rounded-2xl bg-pink-50/70 hover:bg-pink-100 text-rose-600 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 border border-pink-200/80 transition active:scale-98 cursor-pointer mt-1"
+                    className="w-full py-3.5 rounded-2xl bg-pink-50 hover:bg-pink-100 text-rose-600 font-bold text-sm flex items-center justify-center gap-2 border border-pink-200 transition active:scale-98 cursor-pointer mt-1 min-h-[48px]"
                   >
-                    <Plus size={16} />
+                    <Plus size={18} />
                     <span>เพิ่มเซ็ตถัดไป (เซ็ตที่ {item.sets.length + 1})</span>
                   </button>
                 </div>
@@ -1237,25 +1359,25 @@ export const WorkoutView: React.FC = () => {
 
           {/* Floating Sticky Rest Timer Widget (Prominent Cancel/Skip Button) */}
           {restTimerSeconds !== null && !showRestTimer && (
-            <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-40 bg-white/98 border-2 border-rose-400 rounded-3xl p-3.5 shadow-2xl shadow-rose-200/60 backdrop-blur-xl animate-fadeIn">
-              <div className="flex items-center justify-between gap-3 mb-2.5">
+            <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-40 bg-white/98 border-2 border-rose-400 rounded-3xl p-4 shadow-2xl shadow-rose-200/60 backdrop-blur-xl animate-fadeIn">
+              <div className="flex items-center justify-between gap-3 mb-3">
                 <div
                   onClick={() => setShowRestTimer(true)}
-                  className="flex items-center gap-2.5 cursor-pointer"
+                  className="flex items-center gap-3 cursor-pointer"
                 >
                   <Timer
-                    size={22}
+                    size={26}
                     className={`text-rose-500 ${
                       !restTimerPaused && restTimerSeconds > 0 ? 'animate-spin' : ''
                     }`}
                   />
                   <div>
-                    <span className="text-[10px] text-pink-700 font-bold block uppercase tracking-wider">
+                    <span className="text-[11px] text-pink-700 font-black block uppercase tracking-wider">
                       เวลาพักระหว่างเซ็ต 🐷
                     </span>
                     <span
-                      className={`text-2xl font-black font-mono leading-none ${
-                        restTimerSeconds === 0 ? 'text-rose-600 animate-bounce' : 'text-slate-700'
+                      className={`text-2xl sm:text-3xl font-black font-mono leading-none ${
+                        restTimerSeconds === 0 ? 'text-rose-600 animate-bounce' : 'text-slate-800'
                       }`}
                     >
                       {restTimerSeconds === 0 ? 'ลุยต่อเลย!' : formatSeconds(restTimerSeconds)}
@@ -1263,23 +1385,23 @@ export const WorkoutView: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleAddSeconds(30)}
-                    className="px-2.5 py-1.5 bg-pink-50 hover:bg-pink-100 active:scale-90 text-xs font-bold text-pink-900 border border-pink-200 rounded-xl"
+                    className="px-3 py-2 bg-pink-50 hover:bg-pink-100 active:scale-90 text-xs font-black text-pink-900 border border-pink-200 rounded-xl min-h-[38px] flex items-center justify-center cursor-pointer"
                     title="เพิ่ม 30 วินาที"
                   >
                     +30s
                   </button>
                   <button
                     onClick={() => setRestTimerPaused((p) => !p)}
-                    className="p-2 bg-pink-50 hover:bg-pink-100 active:scale-90 text-pink-900 border border-pink-200 rounded-xl"
+                    className="p-2.5 bg-pink-50 hover:bg-pink-100 active:scale-90 text-pink-900 border border-pink-200 rounded-xl min-h-[38px] min-w-[38px] flex items-center justify-center cursor-pointer"
                     title={restTimerPaused ? 'ทำงานต่อ' : 'พักชั่วคราว'}
                   >
                     {restTimerPaused ? (
-                      <Play size={14} className="fill-current text-rose-500" />
+                      <Play size={16} className="fill-current text-rose-500" />
                     ) : (
-                      <Pause size={14} className="fill-current text-pink-800" />
+                      <Pause size={16} className="fill-current text-pink-800" />
                     )}
                   </button>
                 </div>
@@ -1287,8 +1409,8 @@ export const WorkoutView: React.FC = () => {
 
               {/* Large Skip Rest Button as requested by user */}
               <button
-                onClick={() => setRestTimerSeconds(null)}
-                className="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-400 hover:opacity-95 text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm shadow-pink-200 active:scale-[0.98] transition cursor-pointer"
+                onClick={handleClearRestTimer}
+                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-pink-200 active:scale-[0.98] transition cursor-pointer min-h-[48px]"
               >
                 <span>ข้ามการพัก / พร้อมลุยต่อเลย ⚡</span>
               </button>

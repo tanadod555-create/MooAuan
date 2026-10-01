@@ -9,9 +9,16 @@ import {
   VolumeX,
   Plus,
   Minus,
-  Sparkles
+  Sparkles,
+  Bell,
 } from 'lucide-react';
 import { PigMascot } from '../ui/PigMascot';
+import {
+  playGymAlertSound,
+  triggerMobileVibrate,
+  sendBackgroundNotification,
+  requestNotificationPermission,
+} from '../../utils/backgroundTimer';
 
 interface RestTimerProps {
   seconds: number | null;
@@ -40,28 +47,6 @@ export const RestTimer: React.FC<RestTimerProps> = ({
 }) => {
   const lastSecondRef = useRef<number | null>(null);
 
-  // Sound synthesis via Web Audio API
-  const playBeep = (freq = 550, duration = 0.15) => {
-    if (!soundEnabled) return;
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      gain.gain.setValueAtTime(0.25, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + duration);
-    } catch {
-      // Ignored if user hasn't interacted or audio is blocked
-    }
-  };
-
   // Trigger beep on countdown 3, 2, 1 and finished 0
   useEffect(() => {
     if (seconds === null || isPaused) return;
@@ -70,13 +55,15 @@ export const RestTimer: React.FC<RestTimerProps> = ({
       lastSecondRef.current = seconds;
 
       if (seconds === 3 || seconds === 2 || seconds === 1) {
-        playBeep(520, 0.12);
-        if (navigator.vibrate) navigator.vibrate(80);
+        if (soundEnabled) playGymAlertSound('warning');
+        triggerMobileVibrate([80]);
       } else if (seconds === 0) {
-        // High double-chime for finish
-        playBeep(880, 0.3);
-        setTimeout(() => playBeep(1046, 0.4), 200);
-        if (navigator.vibrate) navigator.vibrate([150, 80, 150, 80, 300]);
+        if (soundEnabled) playGymAlertSound('finish');
+        triggerMobileVibrate([200, 100, 200, 100, 400]);
+        sendBackgroundNotification(
+          '⏰ หมดเวลาพักแล้วหมูอ้วน! ยกเซตต่อไปได้เลย 💪',
+          'พักครบตามเวลาแล้ว ลุยต่อเลย!'
+        );
       }
     }
   }, [seconds, isPaused, soundEnabled]);
@@ -173,21 +160,21 @@ export const RestTimer: React.FC<RestTimerProps> = ({
             <div className="flex items-center gap-1.5">
               <button
                 onClick={() => onAddSeconds(-15)}
-                className="px-2.5 py-1.5 bg-white border border-pink-200 hover:bg-pink-100 active:scale-95 text-pink-900 rounded-xl text-xs font-bold shadow-xs"
+                className="px-3 py-2 bg-white border border-pink-200 hover:bg-pink-100 active:scale-90 text-pink-900 rounded-xl text-xs font-black shadow-xs min-h-[40px] flex items-center justify-center cursor-pointer"
                 title="ลด 15 วินาที"
               >
                 -15s
               </button>
               <button
                 onClick={() => onAddSeconds(30)}
-                className="px-2.5 py-1.5 bg-white border border-pink-200 hover:bg-pink-100 active:scale-95 text-pink-900 rounded-xl text-xs font-bold shadow-xs"
+                className="px-3 py-2 bg-white border border-pink-200 hover:bg-pink-100 active:scale-90 text-pink-900 rounded-xl text-xs font-black shadow-xs min-h-[40px] flex items-center justify-center cursor-pointer"
                 title="เพิ่ม 30 วินาที"
               >
                 +30s
               </button>
               <button
                 onClick={() => onAddSeconds(60)}
-                className="px-2.5 py-1.5 bg-white border border-pink-200 hover:bg-pink-100 active:scale-95 text-pink-900 rounded-xl text-xs font-bold shadow-xs"
+                className="px-3 py-2 bg-white border border-pink-200 hover:bg-pink-100 active:scale-90 text-pink-900 rounded-xl text-xs font-black shadow-xs min-h-[40px] flex items-center justify-center cursor-pointer"
                 title="เพิ่ม 60 วินาที"
               >
                 +1m
@@ -196,7 +183,7 @@ export const RestTimer: React.FC<RestTimerProps> = ({
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-pink-100 h-2 rounded-full overflow-hidden">
+          <div className="w-full bg-pink-100 h-2.5 rounded-full overflow-hidden">
             <div
               className={`h-full transition-all duration-300 ${
                 isFinished ? 'bg-rose-500' : 'bg-gradient-to-r from-pink-400 to-rose-500'
@@ -208,9 +195,9 @@ export const RestTimer: React.FC<RestTimerProps> = ({
           {/* Prominent Skip Rest Button requested by user */}
           <button
             onClick={onClose}
-            className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-200 active:scale-[0.98] transition cursor-pointer"
+            className="w-full min-h-[48px] py-3 px-4 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-black text-sm flex items-center justify-center gap-2 shadow-md shadow-rose-200 active:scale-[0.98] transition cursor-pointer"
           >
-            <Sparkles size={16} />
+            <Sparkles size={18} />
             <span>ข้ามการพัก / พร้อมลุยต่อเลย ⚡</span>
           </button>
 
@@ -218,7 +205,7 @@ export const RestTimer: React.FC<RestTimerProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={onPauseToggle}
-              className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 border ${
+              className={`flex-1 min-h-[44px] py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95 border cursor-pointer ${
                 isPaused
                   ? 'bg-rose-500 hover:bg-rose-600 text-white border-rose-500 shadow-sm'
                   : 'bg-white hover:bg-pink-50 text-pink-900 border-pink-200'
@@ -226,21 +213,21 @@ export const RestTimer: React.FC<RestTimerProps> = ({
             >
               {isPaused ? (
                 <>
-                  <Play size={14} className="fill-current" /> ทำงานต่อ (Resume)
+                  <Play size={16} className="fill-current" /> ทำงานต่อ (Resume)
                 </>
               ) : (
                 <>
-                  <Pause size={14} className="fill-current" /> พักชั่วคราว (Pause)
+                  <Pause size={16} className="fill-current" /> พักชั่วคราว (Pause)
                 </>
               )}
             </button>
 
             <button
               onClick={onReset}
-              className="py-2 px-3 bg-white hover:bg-pink-50 active:scale-95 text-pink-800 border border-pink-200 rounded-xl text-xs font-semibold flex items-center gap-1"
+              className="min-h-[44px] py-2.5 px-3.5 bg-white hover:bg-pink-50 active:scale-95 text-pink-800 border border-pink-200 rounded-xl text-xs sm:text-sm font-semibold flex items-center gap-1.5 cursor-pointer"
               title="เริ่มนับใหม่"
             >
-              <RotateCcw size={14} /> เริ่มใหม่
+              <RotateCcw size={16} /> เริ่มใหม่
             </button>
           </div>
         </div>
@@ -252,17 +239,20 @@ export const RestTimer: React.FC<RestTimerProps> = ({
           <span>เลือกเวลาพักด่วน:</span>
           {seconds !== null && <span className="text-[10px] text-rose-500 font-bold">กดเพื่อเริ่มนับใหม่ทันที</span>}
         </div>
-        <div className="grid grid-cols-6 gap-1.5">
+        <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {PRESETS.map((p) => {
             const isSelected = initialSeconds === p.sec && seconds !== null;
             return (
               <button
                 key={p.sec}
-                onClick={() => onStart(p.sec)}
-                className={`py-1.5 px-1 rounded-xl text-xs font-bold transition active:scale-90 text-center ${
+                onClick={() => {
+                  requestNotificationPermission();
+                  onStart(p.sec);
+                }}
+                className={`min-h-[44px] py-2.5 px-2 rounded-2xl text-xs sm:text-sm font-black transition active:scale-95 text-center cursor-pointer ${
                   isSelected
                     ? 'bg-rose-500 text-white shadow-sm ring-2 ring-rose-300'
-                    : 'bg-pink-50/80 hover:bg-pink-100 text-pink-900 border border-pink-200'
+                    : 'bg-pink-50/80 hover:bg-pink-100 text-pink-900 border border-pink-200 shadow-2xs'
                 }`}
               >
                 {p.label}
