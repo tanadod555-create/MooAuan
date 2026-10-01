@@ -301,9 +301,9 @@ export async function chatWithTrainer({
   }
 
   const candidateModels = [
-    'gemini-2.5-flash',
     'gemini-2.0-flash',
     'gemini-1.5-flash',
+    'gemini-2.5-flash',
     'gemini-1.5-pro',
   ];
 
@@ -359,6 +359,7 @@ export async function chatWithTrainer({
 - บุคลิกเป็นกันเอง อบอุ่น มีพลังบวก ให้กำลังใจเก่ง สอดแทรกความน่ารักของน้องหมูอ้วน 🐽
 - จัดฟอร์แมตคำตอบให้อ่านง่าย สบายตา ใช้ Markdown Bullet points, ตัวหนา, และตารางเมื่อเปรียบเทียบข้อมูล
 - อิงฐานข้อมูลจริงของผู้ใช้ (Real Data Grounding) ในทุกคำตอบ ห้ามตอบลอยๆ
+- ตอบให้ละเอียด ครบถ้วน ชัดเจนทุกประเด็น ไม่ตอบห้วนหรือสั้นกุด และห้ามตัดจบกึ่งกลางประโยคเด็ดขาด ให้สรุปคำแนะนำจนจบประโยคอย่างสมบูรณ์แบบเสมอ
 
 ฐานข้อมูลจริงของ ${context.userName} ประจำวันนี้:
 - เป้าหมายหลัก: ${context.goal}
@@ -376,7 +377,7 @@ ${mealsSummary}
 ${workoutsSummary}
 
 กฎเหล็กในการตอบ:
-1. หากผู้ใช้ถามเรื่องอาหารหรือโปรตีนไม่พอ: ให้คำนวณส่วนต่างตัวเลขจริงเสมอ แล้วแนะนำเมนูอาหารไทยที่หาทานง่ายพร้อมปริมาณกรัม, แคลอรี่, โปรตีน และเน้นย้ำเรื่องไฟเบอร์
+1. หากผู้ใช้ถามเรื่องอาหารหรือโปรตีนไม่พอ: ให้คำนวณส่วนต่างตัวเลขจริงเสมอ แนะนำเมนูอาหารไทยที่หาทานง่ายพร้อมปริมาณกรัม, แคลอรี่, โปรตีน และเน้นย้ำเรื่องไฟเบอร์
 2. หากมีอาการเจ็บหรือล้า (เช่น "เจ็บไหล่" หรือมีในบันทึก): ให้แนะนำการปรับท่าทางชีวกลศาสตร์ (เช่น ลดองศากางข้อศอก, Scapular depression, หมุนข้อต่อ Rotator Cuff, หรือปรับมุมม้านั่ง)
 3. หากถามเรื่องคาร์ดิโอ: ให้คำแนะนำตามสปีดและความชันจริงที่ผู้ใช้เล่น พร้อมแนะนำ Heart Rate Zone 2 เพื่อเบิร์นไขมันสูงสุดโดยไม่สลายกล้ามเนื้อ
 4. สรุปจบด้วยประโยคหรือคำแนะนำสร้างแรงบันดาลใจสไตล์หมูอ้วนฟิตเฟิร์มเสมอ!`;
@@ -405,7 +406,7 @@ ${workoutsSummary}
     contents,
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 1024,
+      maxOutputTokens: 4096,
     },
   };
 
@@ -423,7 +424,7 @@ ${workoutsSummary}
     ],
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 1024,
+      maxOutputTokens: 4096,
     },
   };
 
@@ -466,7 +467,11 @@ ${workoutsSummary}
   }
 
   const json = await response.json();
-  const textOutput = json.candidates?.[0]?.content?.parts?.[0]?.text;
+  const candidate = json.candidates?.[0];
+  const parts = candidate?.content?.parts;
+  const textOutput = Array.isArray(parts)
+    ? parts.map((p: any) => p?.text || '').join('')
+    : candidate?.content?.parts?.[0]?.text;
 
   if (!textOutput) {
     throw new Error('โค้ช AI ไม่สามารถตอบกลับได้ในขณะนี้');
