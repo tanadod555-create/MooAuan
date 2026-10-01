@@ -72,7 +72,7 @@ export const MainContent: React.FC = () => {
           onClick={() => setShowAiTrainer(true)}
           className={`group relative flex items-center gap-2 pl-2 pr-3.5 py-2 rounded-full text-white shadow-lg active:scale-95 transition cursor-pointer border-2 border-white/90 ${
             isMagnum
-              ? 'bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 hover:from-sky-500 hover:to-indigo-600 shadow-sky-300/50'
+              ? 'bg-gradient-to-r from-sky-400 via-blue-400 to-sky-300 hover:from-sky-500 hover:to-blue-400 shadow-sky-200/50'
               : 'bg-gradient-to-r from-pink-400 via-rose-400 to-pink-400 hover:from-pink-500 hover:to-rose-500 shadow-pink-300/50'
           }`}
           title="แตะเพื่อคุยกับโค้ชหมูอ้วน AI ได้ทุกเมื่อ"
