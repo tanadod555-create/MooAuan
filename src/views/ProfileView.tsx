@@ -141,6 +141,18 @@ export const ProfileView: React.FC = () => {
   const [editProtein, setEditProtein] = useState<number | ''>(currentProfile.protein_target_g);
   const [editCarb, setEditCarb] = useState<number | ''>(currentProfile.carb_target_g || 200);
   const [editFat, setEditFat] = useState<number | ''>(currentProfile.fat_target_g || 60);
+  const [editFiber, setEditFiber] = useState<number | ''>(currentProfile.fiber_target_g || 25);
+  const [editWater, setEditWater] = useState<number | ''>(
+    currentProfile.water_target_ml || (activeProfileKey === 'partner' ? 2000 : 2500)
+  );
+  const [editSodium, setEditSodium] = useState<number | ''>(currentProfile.sodium_limit_mg || 2000);
+  const [editSugar, setEditSugar] = useState<number | ''>(currentProfile.sugar_limit_g || 24);
+  const [editVitC, setEditVitC] = useState<number | ''>(currentProfile.vitC_target_mg || 100);
+  const [editCalcium, setEditCalcium] = useState<number | ''>(currentProfile.calcium_target_mg || 1000);
+  const [editIron, setEditIron] = useState<number | ''>(
+    currentProfile.iron_target_mg || (activeProfileKey === 'partner' ? 15 : 12)
+  );
+  const [editPotassium, setEditPotassium] = useState<number | ''>(currentProfile.potassium_target_mg || 3000);
   const [editWaist, setEditWaist] = useState<number | undefined>(currentProfile.waist_cm);
   const [editChest, setEditChest] = useState<number | undefined>(currentProfile.chest_cm);
   const [editShoulders, setEditShoulders] = useState<number | undefined>(currentProfile.shoulders_cm);
@@ -167,6 +179,14 @@ export const ProfileView: React.FC = () => {
     setEditProtein(currentProfile.protein_target_g);
     setEditCarb(currentProfile.carb_target_g || 200);
     setEditFat(currentProfile.fat_target_g || 60);
+    setEditFiber(currentProfile.fiber_target_g || 25);
+    setEditWater(currentProfile.water_target_ml || (activeProfileKey === 'partner' ? 2000 : 2500));
+    setEditSodium(currentProfile.sodium_limit_mg || 2000);
+    setEditSugar(currentProfile.sugar_limit_g || 24);
+    setEditVitC(currentProfile.vitC_target_mg || 100);
+    setEditCalcium(currentProfile.calcium_target_mg || 1000);
+    setEditIron(currentProfile.iron_target_mg || (activeProfileKey === 'partner' ? 15 : 12));
+    setEditPotassium(currentProfile.potassium_target_mg || 3000);
     setEditWaist(profileUnit === 'inch' ? cmToInch(currentProfile.waist_cm) : currentProfile.waist_cm);
     setEditChest(profileUnit === 'inch' ? cmToInch(currentProfile.chest_cm) : currentProfile.chest_cm);
     setEditShoulders(profileUnit === 'inch' ? cmToInch(currentProfile.shoulders_cm) : currentProfile.shoulders_cm);
@@ -300,6 +320,14 @@ export const ProfileView: React.FC = () => {
       protein_target_g: Number(editProtein) || 150,
       carb_target_g: Number(editCarb) || 200,
       fat_target_g: Number(editFat) || 60,
+      fiber_target_g: editFiber === '' ? 25 : Number(editFiber),
+      water_target_ml: editWater === '' ? 2500 : Number(editWater),
+      sodium_limit_mg: editSodium === '' ? 2000 : Number(editSodium),
+      sugar_limit_g: editSugar === '' ? 24 : Number(editSugar),
+      vitC_target_mg: editVitC === '' ? 100 : Number(editVitC),
+      calcium_target_mg: editCalcium === '' ? 1000 : Number(editCalcium),
+      iron_target_mg: editIron === '' ? (activeProfileKey === 'partner' ? 15 : 12) : Number(editIron),
+      potassium_target_mg: editPotassium === '' ? 3000 : Number(editPotassium),
       waist_cm: finalWaist,
       chest_cm: finalChest,
       shoulders_cm: finalShoulders,
@@ -1205,46 +1233,154 @@ export const ProfileView: React.FC = () => {
           </div>
 
           {/* Nutrition Targets */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            <div>
-              <label className="block font-bold text-amber-700 mb-1">แคลอรี่/วัน (kcal)</label>
-              <input
-                type="number"
-                value={editKcal}
-                placeholder="2000"
-                onChange={(e) => setEditKcal(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                className="w-full bg-amber-50/60 border border-amber-200 rounded-xl px-3 py-2.5 text-amber-950 focus:outline-none focus:border-amber-400 focus:bg-white font-bold"
-              />
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+              <span>พลังงาน & สารอาหารหลัก (Macronutrients)</span>
+            </h4>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div>
+                <label className="block font-bold text-amber-700 mb-1">แคลอรี่/วัน (kcal)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={editKcal}
+                  placeholder="2000"
+                  onChange={(e) => setEditKcal(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                  className="w-full bg-amber-50/60 border border-amber-200 rounded-xl px-3 py-2.5 text-amber-950 focus:outline-none focus:border-amber-400 focus:bg-white font-bold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-sky-700 mb-1">โปรตีน/วัน (g)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={editProtein}
+                  placeholder="150"
+                  onChange={(e) => setEditProtein(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                  className="w-full bg-sky-50/60 border border-sky-200 rounded-xl px-3 py-2.5 text-sky-950 focus:outline-none focus:border-sky-400 focus:bg-white font-bold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-emerald-700 mb-1">คาร์บ/วัน (g)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={editCarb}
+                  placeholder="200"
+                  onChange={(e) => setEditCarb(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                  className="w-full bg-emerald-50/60 border border-emerald-200 rounded-xl px-3 py-2.5 text-emerald-950 focus:outline-none focus:border-emerald-400 focus:bg-white font-bold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-rose-700 mb-1">ไขมัน/วัน (g)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={editFat}
+                  placeholder="60"
+                  onChange={(e) => setEditFat(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                  className="w-full bg-rose-50/60 border border-rose-200 rounded-xl px-3 py-2.5 text-rose-950 focus:outline-none focus:border-rose-400 focus:bg-white font-bold"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block font-bold text-sky-700 mb-1">โปรตีน/วัน (g)</label>
-              <input
-                type="number"
-                value={editProtein}
-                placeholder="150"
-                onChange={(e) => setEditProtein(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                className="w-full bg-sky-50/60 border border-sky-200 rounded-xl px-3 py-2.5 text-sky-950 focus:outline-none focus:border-sky-400 focus:bg-white font-bold"
-              />
+
+            {/* Extra Target & Limits: Fiber, Water, Sodium, Sugar */}
+            <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5 pt-1">
+              <span>เป้าหมายสุขภาพ & ขีดจำกัดสารอาหาร (Limits)</span>
+            </h4>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div>
+                <label className="block font-bold text-emerald-800 mb-1">🌿 ไฟเบอร์/วัน (g)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={editFiber}
+                  placeholder="25"
+                  onChange={(e) => setEditFiber(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                  className="w-full bg-emerald-50/60 border border-emerald-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-emerald-400 focus:bg-white font-bold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-sky-800 mb-1">💧 น้ำดื่ม/วัน (ml)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={editWater}
+                  placeholder="2500"
+                  onChange={(e) => setEditWater(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                  className="w-full bg-sky-50/60 border border-sky-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-sky-400 focus:bg-white font-bold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-amber-800 mb-1">🧂 โซเดียม Limit (mg)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={editSodium}
+                  placeholder="2000"
+                  onChange={(e) => setEditSodium(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                  className="w-full bg-amber-50/60 border border-amber-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-amber-400 focus:bg-white font-bold"
+                />
+              </div>
+              <div>
+                <label className="block font-bold text-rose-800 mb-1">🍯 น้ำตาล Limit (g)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={editSugar}
+                  placeholder="24"
+                  onChange={(e) => setEditSugar(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                  className="w-full bg-rose-50/60 border border-rose-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-rose-400 focus:bg-white font-bold"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block font-bold text-emerald-700 mb-1">คาร์บ/วัน (g)</label>
-              <input
-                type="number"
-                value={editCarb}
-                placeholder="200"
-                onChange={(e) => setEditCarb(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                className="w-full bg-emerald-50/60 border border-emerald-200 rounded-xl px-3 py-2.5 text-emerald-950 focus:outline-none focus:border-emerald-400 focus:bg-white font-bold"
-              />
-            </div>
-            <div>
-              <label className="block font-bold text-rose-700 mb-1">ไขมัน/วัน (g)</label>
-              <input
-                type="number"
-                value={editFat}
-                placeholder="60"
-                onChange={(e) => setEditFat(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                className="w-full bg-rose-50/60 border border-rose-200 rounded-xl px-3 py-2.5 text-rose-950 focus:outline-none focus:border-rose-400 focus:bg-white font-bold"
-              />
+
+            {/* Micronutrients: Vit C, Calcium, Iron, Potassium */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
+              <div>
+                <label className="block font-semibold text-slate-600 mb-1">🍊 วิตามินซี (mg)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={editVitC}
+                  placeholder="100"
+                  onChange={(e) => setEditVitC(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-pink-300 font-medium"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-600 mb-1">🥛 แคลเซียม (mg)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={editCalcium}
+                  placeholder="1000"
+                  onChange={(e) => setEditCalcium(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-pink-300 font-medium"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-600 mb-1">🥩 ธาตุเหล็ก (mg)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={editIron}
+                  placeholder="15"
+                  onChange={(e) => setEditIron(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-pink-300 font-medium"
+                />
+              </div>
+              <div>
+                <label className="block font-semibold text-slate-600 mb-1">🍌 โพแทสเซียม (mg)</label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={editPotassium}
+                  placeholder="3000"
+                  onChange={(e) => setEditPotassium(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-pink-300 font-medium"
+                />
+              </div>
             </div>
           </div>
 

@@ -84,6 +84,14 @@ export interface UserProfile {
   protein_target_g: number;
   carb_target_g?: number;
   fat_target_g?: number;
+  fiber_target_g?: number;
+  water_target_ml?: number;
+  sodium_limit_mg?: number;
+  sugar_limit_g?: number;
+  vitC_target_mg?: number;
+  calcium_target_mg?: number;
+  iron_target_mg?: number;
+  potassium_target_mg?: number;
   created_at: string;
   waist_cm?: number;
   chest_cm?: number;

@@ -36,6 +36,7 @@ import {
   MessageCircle,
   Leaf,
   Droplets,
+  Sliders,
 } from 'lucide-react';
 import { MagicCard } from '../components/ui/MagicCard';
 import { CircularProgress } from '../components/ui/CircularProgress';
@@ -52,6 +53,7 @@ export const FoodView: React.FC = () => {
     primaryProfile,
     partnerProfile,
     activeProfileKey,
+    updateProfile,
     foodLogs,
     allFoodLogs,
     addFoodLog,
@@ -138,15 +140,15 @@ export const FoodView: React.FC = () => {
   const totalCalcium = todayLogs.reduce((sum, l) => sum + (l.micros?.calcium_mg || 0), 0);
   const totalPotassium = todayLogs.reduce((sum, l) => sum + (l.micros?.potassium_mg || 0), 0);
 
-  // Thai DRI (Dietary Reference Intake for Thais 2020) Reference Standards
+  // Thai DRI & Custom Nutrient Limits for selected user
   const THAI_DRI = {
-    fiber_g: 25,
-    sodium_mg: 2000,
-    sugar_g: 24,
-    vitC_mg: 100,
-    calcium_mg: 1000,
-    iron_mg: selectedUserKey === 'partner' ? 15 : 12,
-    potassium_mg: 3000,
+    fiber_g: activeTargetProfile.fiber_target_g || 25,
+    sodium_mg: activeTargetProfile.sodium_limit_mg || 2000,
+    sugar_g: activeTargetProfile.sugar_limit_g || 24,
+    vitC_mg: activeTargetProfile.vitC_target_mg || 100,
+    calcium_mg: activeTargetProfile.calcium_target_mg || 1000,
+    iron_mg: activeTargetProfile.iron_target_mg || (selectedUserKey === 'partner' ? 15 : 12),
+    potassium_mg: activeTargetProfile.potassium_target_mg || 3000,
   };
 
   // Targets strictly for selected user
@@ -154,17 +156,82 @@ export const FoodView: React.FC = () => {
   const targetProtein = activeTargetProfile.protein_target_g || (selectedUserKey === 'primary' ? 150 : 110);
   const targetCarb = activeTargetProfile.carb_target_g || (selectedUserKey === 'primary' ? 260 : 180);
   const targetFat = activeTargetProfile.fat_target_g || (selectedUserKey === 'primary' ? 65 : 45);
+  const targetFiber = activeTargetProfile.fiber_target_g || 25;
 
   // Water intake calculations for selected user & date
   const todayWaterLogs = (allWaterLogs || []).filter(
     (w) => w.date === selectedDate && (w.user_id || 'primary') === selectedUserKey
   );
   const totalWaterMl = todayWaterLogs.reduce((sum, w) => sum + (w.amount_ml || 0), 0);
-  const targetWaterMl = selectedUserKey === 'primary' ? 2500 : 2000;
+  const targetWaterMl = activeTargetProfile.water_target_ml || (selectedUserKey === 'primary' ? 2500 : 2000);
   const waterPct = Math.min(100, Math.round((totalWaterMl / targetWaterMl) * 100));
 
   const [showCustomWaterModal, setShowCustomWaterModal] = useState(false);
   const [customWaterMl, setCustomWaterMl] = useState<number | ''>(300);
+
+  // Adjust Nutrition Limits Modal state
+  const [showAdjustNutritionModal, setShowAdjustNutritionModal] = useState(false);
+  const [adjustKcal, setAdjustKcal] = useState<number | ''>(targetKcal);
+  const [adjustProtein, setAdjustProtein] = useState<number | ''>(targetProtein);
+  const [adjustCarb, setAdjustCarb] = useState<number | ''>(targetCarb);
+  const [adjustFat, setAdjustFat] = useState<number | ''>(targetFat);
+  const [adjustFiber, setAdjustFiber] = useState<number | ''>(targetFiber);
+  const [adjustWater, setAdjustWater] = useState<number | ''>(targetWaterMl);
+  const [adjustSodium, setAdjustSodium] = useState<number | ''>(THAI_DRI.sodium_mg);
+  const [adjustSugar, setAdjustSugar] = useState<number | ''>(THAI_DRI.sugar_g);
+  const [adjustVitC, setAdjustVitC] = useState<number | ''>(THAI_DRI.vitC_mg);
+  const [adjustCalcium, setAdjustCalcium] = useState<number | ''>(THAI_DRI.calcium_mg);
+  const [adjustIron, setAdjustIron] = useState<number | ''>(THAI_DRI.iron_mg);
+  const [adjustPotassium, setAdjustPotassium] = useState<number | ''>(THAI_DRI.potassium_mg);
+
+  const handleOpenAdjustModal = () => {
+    setAdjustKcal(activeTargetProfile.kcal_target || (selectedUserKey === 'primary' ? 2400 : 1750));
+    setAdjustProtein(activeTargetProfile.protein_target_g || (selectedUserKey === 'primary' ? 150 : 110));
+    setAdjustCarb(activeTargetProfile.carb_target_g || (selectedUserKey === 'primary' ? 260 : 180));
+    setAdjustFat(activeTargetProfile.fat_target_g || (selectedUserKey === 'primary' ? 65 : 45));
+    setAdjustFiber(activeTargetProfile.fiber_target_g || 25);
+    setAdjustWater(activeTargetProfile.water_target_ml || (selectedUserKey === 'primary' ? 2500 : 2000));
+    setAdjustSodium(activeTargetProfile.sodium_limit_mg || 2000);
+    setAdjustSugar(activeTargetProfile.sugar_limit_g || 24);
+    setAdjustVitC(activeTargetProfile.vitC_target_mg || 100);
+    setAdjustCalcium(activeTargetProfile.calcium_target_mg || 1000);
+    setAdjustIron(activeTargetProfile.iron_target_mg || (selectedUserKey === 'partner' ? 15 : 12));
+    setAdjustPotassium(activeTargetProfile.potassium_target_mg || 3000);
+    setShowAdjustNutritionModal(true);
+  };
+
+  const handleSaveAdjustNutrition = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateProfile(
+      {
+        kcal_target: Number(adjustKcal) || 2000,
+        protein_target_g: Number(adjustProtein) || 150,
+        carb_target_g: Number(adjustCarb) || 200,
+        fat_target_g: Number(adjustFat) || 60,
+        fiber_target_g: Number(adjustFiber) || 25,
+        water_target_ml: Number(adjustWater) || 2500,
+        sodium_limit_mg: Number(adjustSodium) || 2000,
+        sugar_limit_g: Number(adjustSugar) || 24,
+        vitC_target_mg: Number(adjustVitC) || 100,
+        calcium_target_mg: Number(adjustCalcium) || 1000,
+        iron_target_mg: Number(adjustIron) || (selectedUserKey === 'partner' ? 15 : 12),
+        potassium_target_mg: Number(adjustPotassium) || 3000,
+      },
+      selectedUserKey === 'partner'
+    );
+    setShowAdjustNutritionModal(false);
+  };
+
+  const handleResetAdjustNutrition = () => {
+    setAdjustFiber(25);
+    setAdjustWater(selectedUserKey === 'primary' ? 2500 : 2000);
+    setAdjustSodium(2000);
+    setAdjustSugar(24);
+    setAdjustVitC(100);
+    setAdjustCalcium(1000);
+    setAdjustIron(selectedUserKey === 'partner' ? 15 : 12);
+    setAdjustPotassium(3000);
+  };
 
   // Search Results across all dates for selected user
   const searchResults = foodSearchQuery.trim()
@@ -884,18 +951,27 @@ export const FoodView: React.FC = () => {
                 เป้าหมายของ {activeTargetProfile.name}
               </span>
               <h2 className="text-lg sm:text-xl font-bold text-slate-700 mt-1">เป้าหมายพลังงาน</h2>
-              <div className="flex items-center gap-2 mt-1">
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                 <p className="text-xs text-slate-500">
                   เป้าหมาย: <strong className="text-slate-700">{targetKcal.toLocaleString()} kcal</strong>
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowGoalModal(true)}
-                  className="px-2 py-0.5 rounded-full bg-pink-100/70 hover:bg-pink-200 text-pink-700 border border-pink-200/70 text-[10px] font-bold flex items-center gap-1 transition active:scale-95"
+                  className="px-2 py-0.5 rounded-full bg-pink-100/70 hover:bg-pink-200 text-pink-700 border border-pink-200/70 text-[10px] font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer"
                   title="คำนวณเป้าหมายและสารอาหารอัตโนมัติ"
                 >
                   <Sparkles size={11} className="text-pink-400" />
                   <span>คำนวณ Goal</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenAdjustModal}
+                  className="px-2 py-0.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer"
+                  title="ปรับค่าเป้าหมายและ Limit สารอาหารเอง"
+                >
+                  <Sliders size={11} className="text-rose-500" />
+                  <span>ปรับ Limit เอง</span>
                 </button>
               </div>
               <div className="flex items-center gap-2 mt-1.5">
@@ -965,26 +1041,36 @@ export const FoodView: React.FC = () => {
                     <Leaf size={11} className="text-emerald-600" /> ไฟเบอร์
                   </span>
                   <span className="text-slate-700 font-bold font-mono">
-                    <NumberTicker value={Math.round(totalFiber * 10) / 10} /> / 25g
+                    <NumberTicker value={Math.round(totalFiber * 10) / 10} /> / {targetFiber}g
                   </span>
                 </div>
                 <div className="w-full h-1.5 bg-emerald-100 rounded-full mt-1 overflow-hidden">
                   <div
                     className="h-full bg-emerald-400 rounded-full transition-all"
-                    style={{ width: `${Math.min(100, (totalFiber / 25) * 100)}%` }}
+                    style={{ width: `${Math.min(100, (totalFiber / targetFiber) * 100)}%` }}
                   />
                 </div>
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setShowGoalModal(true)}
-              className="w-full py-1.5 px-2 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-700 font-bold text-[11px] flex items-center justify-center gap-1.5 border border-pink-200/70 transition active:scale-95"
-            >
-              <Target size={13} className="text-pink-500" />
-              <span>🎯 ปรับคำนวณ Goal โภชนาการ</span>
-            </button>
+            <div className="grid grid-cols-2 gap-1.5 w-full">
+              <button
+                type="button"
+                onClick={() => setShowGoalModal(true)}
+                className="py-1.5 px-2 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-700 font-bold text-[11px] flex items-center justify-center gap-1 border border-pink-200/70 transition active:scale-95 cursor-pointer"
+              >
+                <Target size={13} className="text-pink-500" />
+                <span>คำนวณ Goal</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenAdjustModal}
+                className="py-1.5 px-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold text-[11px] flex items-center justify-center gap-1 shadow-2xs transition active:scale-95 cursor-pointer"
+              >
+                <Sliders size={13} className="text-white" />
+                <span>ปรับ Limit เอง</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1004,9 +1090,23 @@ export const FoodView: React.FC = () => {
                 โซเดียม, ใยอาหาร ฯลฯ
               </span>
             </div>
-            <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 group-hover:text-slate-800">
-              <span>{showMicronutrients ? 'ซ่อน' : 'ดูรายละเอียด'}</span>
-              {showMicronutrients ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenAdjustModal();
+                }}
+                className="px-2 py-0.5 rounded-lg bg-pink-100/80 hover:bg-pink-200 text-pink-700 text-[10px] font-bold flex items-center gap-1 border border-pink-200/70 transition active:scale-95 cursor-pointer"
+                title="ปรับค่าขีดจำกัดสารอาหารเอง"
+              >
+                <Sliders size={11} className="text-pink-500" />
+                <span>ปรับ Limit</span>
+              </button>
+              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 group-hover:text-slate-800">
+                <span>{showMicronutrients ? 'ซ่อน' : 'ดูรายละเอียด'}</span>
+                {showMicronutrients ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </div>
             </div>
           </button>
 
@@ -3077,6 +3177,239 @@ export const FoodView: React.FC = () => {
                 >
                   บันทึกการดื่มน้ำ
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Nutrition Targets & Limits Adjustment Modal (Bottom Sheet on mobile) */}
+      {showAdjustNutritionModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="absolute inset-0" onClick={() => setShowAdjustNutritionModal(false)} />
+          <div className="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-3xl border border-pink-200 shadow-2xl z-10 max-h-[92dvh] flex flex-col overflow-hidden pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-pink-100 flex items-center justify-between bg-gradient-to-r from-pink-50 via-rose-50 to-purple-50 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-400 text-white flex items-center justify-center shadow-xs">
+                  <Sliders size={18} />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-800 text-base">ปรับเป้าหมาย & Limit สารอาหาร</h3>
+                  <p className="text-xs text-pink-700 font-medium">สำหรับ {activeTargetProfile.name}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAdjustNutritionModal(false)}
+                className="w-8 h-8 rounded-full bg-white/80 hover:bg-pink-100 text-slate-400 hover:text-slate-700 flex items-center justify-center transition border border-pink-200/60 cursor-pointer min-h-[36px]"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <form onSubmit={handleSaveAdjustNutrition} className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-xs">
+              {/* Section 1: Macronutrients */}
+              <div className="p-3.5 rounded-2xl bg-pink-50/40 border border-pink-200/70 space-y-2.5">
+                <span className="font-black text-slate-800 text-xs flex items-center gap-1.5">
+                  <Flame size={14} className="text-rose-500" />
+                  <span>พลังงาน & สารอาหารหลัก (Macronutrients)</span>
+                </span>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="col-span-2">
+                    <label className="block font-bold text-amber-800 mb-1">แคลอรี่เป้าหมายต่อวัน (kcal)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={adjustKcal}
+                      placeholder="2000"
+                      onChange={(e) => setAdjustKcal(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                      className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-slate-800 font-black text-sm focus:outline-none focus:border-amber-400 min-h-[40px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-sky-800 mb-1">โปรตีน (g)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={adjustProtein}
+                      placeholder="150"
+                      onChange={(e) => setAdjustProtein(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                      className="w-full bg-white border border-sky-200 rounded-xl px-3 py-2 text-slate-800 font-bold focus:outline-none focus:border-sky-400 min-h-[40px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-amber-800 mb-1">คาร์โบไฮเดรต (g)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={adjustCarb}
+                      placeholder="200"
+                      onChange={(e) => setAdjustCarb(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                      className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-slate-800 font-bold focus:outline-none focus:border-amber-400 min-h-[40px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-rose-800 mb-1">ไขมัน (g)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={adjustFat}
+                      placeholder="60"
+                      onChange={(e) => setAdjustFat(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                      className="w-full bg-white border border-rose-200 rounded-xl px-3 py-2 text-slate-800 font-bold focus:outline-none focus:border-rose-400 min-h-[40px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-emerald-800 mb-1">ไฟเบอร์ / ใยอาหาร (g)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={adjustFiber}
+                      placeholder="25"
+                      onChange={(e) => setAdjustFiber(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                      className="w-full bg-white border border-emerald-200 rounded-xl px-3 py-2 text-slate-800 font-bold focus:outline-none focus:border-emerald-400 min-h-[40px]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: Water Target */}
+              <div className="p-3.5 rounded-2xl bg-sky-50/50 border border-sky-200/70 space-y-2">
+                <span className="font-black text-sky-900 text-xs flex items-center gap-1.5">
+                  <Droplets size={14} className="text-sky-500" />
+                  <span>เป้าหมายน้ำดื่ม (Daily Hydration)</span>
+                </span>
+                <div>
+                  <label className="block font-bold text-sky-800 mb-1">ปริมาณน้ำดื่มต่อวัน (มิลลิลิตร - ml)</label>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={adjustWater}
+                    placeholder="2500"
+                    onChange={(e) => setAdjustWater(e.target.value === '' ? '' : (parseInt(e.target.value) || 0))}
+                    className="w-full bg-white border border-sky-200 rounded-xl px-3 py-2 text-slate-800 font-bold focus:outline-none focus:border-sky-400 min-h-[40px]"
+                  />
+                  <span className="text-[10px] text-sky-600 font-medium block mt-1">
+                    แนะนำ: 2,000 - 3,000 ml ตามน้ำหนักตัวและกิจกรรม
+                  </span>
+                </div>
+              </div>
+
+              {/* Section 3: Limits (Sodium & Sugar) */}
+              <div className="p-3.5 rounded-2xl bg-amber-50/50 border border-amber-200/70 space-y-2.5">
+                <span className="font-black text-amber-900 text-xs flex items-center gap-1.5">
+                  <AlertCircle size={14} className="text-amber-500" />
+                  <span>ขีดจำกัดสารอาหารที่ควรควบคุม (Limit ไม่ควรเกิน)</span>
+                </span>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">🧂 โซเดียม Limit (mg)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={adjustSodium}
+                      placeholder="2000"
+                      onChange={(e) => setAdjustSodium(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                      className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-slate-800 font-bold focus:outline-none focus:border-amber-400 min-h-[40px]"
+                    />
+                    <span className="text-[10px] text-slate-500 block mt-0.5">มาตรฐาน: ไม่เกิน 2,000 mg</span>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">🍯 น้ำตาล Limit (g)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={adjustSugar}
+                      placeholder="24"
+                      onChange={(e) => setAdjustSugar(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                      className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-slate-800 font-bold focus:outline-none focus:border-amber-400 min-h-[40px]"
+                    />
+                    <span className="text-[10px] text-slate-500 block mt-0.5">มาตรฐาน: ไม่เกิน 24 g (6 ช้อนชา)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 4: Micronutrients (Thai DRI) */}
+              <div className="p-3.5 rounded-2xl bg-slate-50/70 border border-slate-200/70 space-y-2.5">
+                <span className="font-black text-slate-800 text-xs flex items-center gap-1.5">
+                  <Leaf size={14} className="text-emerald-500" />
+                  <span>วิตามิน & แร่ธาตุเป้าหมาย (Micronutrients)</span>
+                </span>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label className="block font-semibold text-slate-600 mb-1">🍊 วิตามินซี (mg)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={adjustVitC}
+                      placeholder="100"
+                      onChange={(e) => setAdjustVitC(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:outline-none focus:border-pink-300 min-h-[38px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-600 mb-1">🥛 แคลเซียม (mg)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={adjustCalcium}
+                      placeholder="1000"
+                      onChange={(e) => setAdjustCalcium(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:outline-none focus:border-pink-300 min-h-[38px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-600 mb-1">🥩 ธาตุเหล็ก (mg)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={adjustIron}
+                      placeholder="15"
+                      onChange={(e) => setAdjustIron(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:outline-none focus:border-pink-300 min-h-[38px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-semibold text-slate-600 mb-1">🍌 โพแทสเซียม (mg)</label>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={adjustPotassium}
+                      placeholder="3000"
+                      onChange={(e) => setAdjustPotassium(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-medium focus:outline-none focus:border-pink-300 min-h-[38px]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex items-center justify-between gap-2 border-t border-pink-100 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleResetAdjustNutrition}
+                  className="px-3 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold transition active:scale-95 text-xs min-h-[44px]"
+                  title="รีเซ็ตเป็นค่ามาตรฐาน Thai DRI"
+                >
+                  🔄 ค่ามาตรฐาน
+                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdjustNutritionModal(false)}
+                    className="px-4 py-2.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-slate-600 font-bold border border-pink-200/70 transition active:scale-95 min-h-[44px]"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold shadow-xs active:scale-95 transition cursor-pointer min-h-[44px]"
+                  >
+                    💾 บันทึกเป้าหมาย
+                  </button>
+                </div>
               </div>
             </form>
           </div>
