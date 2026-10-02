@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import {
   getFirestore,
+  initializeFirestore,
   Firestore,
   collection,
   doc,
@@ -35,6 +36,17 @@ export const DEFAULT_FIREBASE_CONFIG: FirebaseConfig = {
 let firebaseApp: FirebaseApp | null = null;
 let firestoreDb: Firestore | null = null;
 
+/**
+ * Recursively strips keys with undefined values from objects/arrays so Firebase Firestore
+ * never throws "Function setDoc() called with invalid data. Unsupported field value: undefined".
+ */
+export const sanitizeForFirestore = <T>(data: T): T => {
+  if (data === undefined || data === null) {
+    return null as any;
+  }
+  return JSON.parse(JSON.stringify(data));
+};
+
 export const initFirebase = (config?: FirebaseConfig): Firestore | null => {
   try {
     const activeConfig = config && config.apiKey && config.projectId ? config : DEFAULT_FIREBASE_CONFIG;
@@ -43,7 +55,13 @@ export const initFirebase = (config?: FirebaseConfig): Firestore | null => {
     }
     const apps = getApps();
     firebaseApp = apps.length === 0 ? initializeApp(activeConfig) : getApp();
-    firestoreDb = getFirestore(firebaseApp);
+    try {
+      firestoreDb = initializeFirestore(firebaseApp, {
+        ignoreUndefinedProperties: true,
+      });
+    } catch {
+      firestoreDb = getFirestore(firebaseApp);
+    }
     return firestoreDb;
   } catch (error) {
     console.error('Error initializing Firebase:', error);
@@ -219,7 +237,7 @@ export const subscribeToWaterLogs = (
 
 export const cloudSaveWaterLog = async (db: Firestore, log: WaterLog): Promise<void> => {
   const docRef = doc(db, 'water_logs', log.id);
-  await setDoc(docRef, log, { merge: true });
+  await setDoc(docRef, sanitizeForFirestore(log), { merge: true });
 };
 
 export const cloudDeleteWaterLog = async (db: Firestore, logId: string): Promise<void> => {
@@ -229,7 +247,7 @@ export const cloudDeleteWaterLog = async (db: Firestore, logId: string): Promise
 
 export const cloudSaveFoodLog = async (db: Firestore, log: FoodLog): Promise<void> => {
   const docRef = doc(db, 'food_logs', log.log_id);
-  await setDoc(docRef, log, { merge: true });
+  await setDoc(docRef, sanitizeForFirestore(log), { merge: true });
 };
 
 export const cloudDeleteFoodLog = async (db: Firestore, logId: string): Promise<void> => {
@@ -239,7 +257,7 @@ export const cloudDeleteFoodLog = async (db: Firestore, logId: string): Promise<
 
 export const cloudSaveWorkout = async (db: Firestore, session: WorkoutSession): Promise<void> => {
   const docRef = doc(db, 'workout_history', session.session_id);
-  await setDoc(docRef, session, { merge: true });
+  await setDoc(docRef, sanitizeForFirestore(session), { merge: true });
 };
 
 export const cloudDeleteWorkout = async (db: Firestore, sessionId: string): Promise<void> => {
@@ -250,7 +268,7 @@ export const cloudDeleteWorkout = async (db: Firestore, sessionId: string): Prom
 export const cloudSaveBodyMetric = async (db: Firestore, metric: BodyMetric): Promise<void> => {
   const docId = metric.id || metric.date;
   const docRef = doc(db, 'body_metrics', docId);
-  await setDoc(docRef, { ...metric, id: docId }, { merge: true });
+  await setDoc(docRef, sanitizeForFirestore({ ...metric, id: docId }), { merge: true });
 };
 
 export const cloudDeleteBodyMetric = async (db: Firestore, metricIdOrDate: string): Promise<void> => {
@@ -260,7 +278,7 @@ export const cloudDeleteBodyMetric = async (db: Firestore, metricIdOrDate: strin
 
 export const cloudSaveCustomExercise = async (db: Firestore, exercise: Exercise): Promise<void> => {
   const docRef = doc(db, 'custom_exercises', exercise.exercise_id);
-  await setDoc(docRef, exercise, { merge: true });
+  await setDoc(docRef, sanitizeForFirestore(exercise), { merge: true });
 };
 
 export const cloudSaveProfile = async (
@@ -269,7 +287,7 @@ export const cloudSaveProfile = async (
   isPartner: boolean
 ): Promise<void> => {
   const docRef = doc(db, 'user_profiles', isPartner ? 'partner' : 'primary');
-  await setDoc(docRef, profile, { merge: true });
+  await setDoc(docRef, sanitizeForFirestore(profile), { merge: true });
 };
 
 // ==================== BATCH DATA MIGRATION ====================
@@ -315,7 +333,7 @@ export const migrateAllDataToCloud = async (
         const batch = writeBatch(db);
         chunk.forEach((log) => {
           const docRef = doc(db, 'food_logs', log.log_id);
-          batch.set(docRef, log, { merge: true });
+          batch.set(docRef, sanitizeForFirestore(log), { merge: true });
         });
         await batch.commit();
         totalSynced += chunk.length;
@@ -331,7 +349,7 @@ export const migrateAllDataToCloud = async (
         const batch = writeBatch(db);
         chunk.forEach((sess) => {
           const docRef = doc(db, 'workout_history', sess.session_id);
-          batch.set(docRef, sess, { merge: true });
+          batch.set(docRef, sanitizeForFirestore(sess), { merge: true });
         });
         await batch.commit();
         totalSynced += chunk.length;
@@ -348,7 +366,7 @@ export const migrateAllDataToCloud = async (
         chunk.forEach((m) => {
           const docId = m.id || m.date;
           const docRef = doc(db, 'body_metrics', docId);
-          batch.set(docRef, { ...m, id: docId }, { merge: true });
+          batch.set(docRef, sanitizeForFirestore({ ...m, id: docId }), { merge: true });
         });
         await batch.commit();
         totalSynced += chunk.length;

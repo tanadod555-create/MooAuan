@@ -20,6 +20,7 @@ import {
   PieChart,
   Edit2,
   AlertTriangle,
+  AlertCircle,
   X,
   ChevronRight,
   ChevronLeft,
@@ -55,6 +56,12 @@ export const FoodView: React.FC = () => {
     addFoodLog,
     updateFoodLog,
     deleteFoodLog,
+    startFoodScan,
+    isFoodScanning,
+    foodScanStatus,
+    foodScanResult,
+    foodScanError,
+    dismissFoodScanResult,
     waterLogs,
     allWaterLogs,
     addWaterLog,
@@ -336,40 +343,19 @@ export const FoodView: React.FC = () => {
     const currentNote = aiUserNote;
 
     setShowPhotoNoteModal(false);
-    setAnalyzing(true);
-    setBgScanCompleted(false);
+    setPendingPhoto(null);
+    setAiUserNote('');
     setAnalysisError(null);
 
-    try {
-      const result = await analyzeFoodImage({
-        base64Image: currentPhoto.base64,
-        mimeType: currentPhoto.mimeType,
-        apiKey: settings.geminiApiKey || effectiveGeminiKey,
-        proxyUrl: settings.geminiProxyUrl,
-        useProxy: settings.useProxy,
-        userNotes: currentNote,
-      });
-
-      if (!result.items || result.items.length === 0) {
-        throw new Error('ไม่พบรายการอาหารในภาพ กรุณาลองใหม่อีกครั้ง');
-      }
-
-      setAiResultItems(result.items);
-      setBaseAiItems(result.items);
-      setPortionMultiplier(1.0);
-      setAiNotes(result.notes || '');
-      setBgScanCompleted(true);
-      setShowAiResultModal(true);
-      setAiUserNote(''); // Clear note after scan completes
-    } catch (err: any) {
-      console.error(err);
-      setAnalysisError(
-        err.message || 'เกิดข้อผิดพลาดในการวิเคราะห์ภาพ กรุณาตรวจสอบ Gemini API Key ในการตั้งค่า'
-      );
-    } finally {
-      setAnalyzing(false);
-      setPendingPhoto(null);
-    }
+    // Run global background scan in AppContext so navigating away or closing never loses progress
+    startFoodScan({
+      base64Image: currentPhoto.base64,
+      mimeType: currentPhoto.mimeType,
+      targetUserId: selectedUserKey,
+      targetDate: selectedDate,
+      targetMeal: selectedMeal,
+      userNote: currentNote,
+    });
   };
 
   // Apply portion multiplier (e.g. 0.5x, 0.75x, 1x, 1.5x)
@@ -1297,7 +1283,7 @@ export const FoodView: React.FC = () => {
       </div>
 
       {/* Non-blocking Background Analyzing Indicator */}
-      {analyzing && (
+      {isFoodScanning && (
         <div className="p-4 rounded-2xl bg-gradient-to-r from-pink-50 via-rose-50 to-sky-50 border border-pink-200/80 flex items-center justify-between gap-3 shadow-xs animate-fadeIn">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-pink-500 text-white flex items-center justify-center shrink-0 shadow-xs shadow-pink-300/50">
@@ -1305,13 +1291,13 @@ export const FoodView: React.FC = () => {
             </div>
             <div>
               <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                <span>กำลังวิเคราะห์รูปอาหารในพื้นหลัง...</span>
+                <span>{foodScanStatus || 'กำลังวิเคราะห์รูปอาหารในพื้นหลัง...'}</span>
                 <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-pink-100 text-pink-700 animate-pulse">
                   Background
                 </span>
               </h4>
               <p className="text-[11px] text-slate-500 mt-0.5">
-                คุณสามารถกรอกน้ำ ดื่มน้ำ หรือสลับไปดูหน้าอื่นได้ทันที เมื่อเสร็จแล้วระบบจะแจ้งเตือน
+                ระบบกำลังคำนวณแคลอรีและบันทึกอัตโนมัติ คุณสามารถสลับไปหน้าอื่นหรือปิดแอปได้โดยข้อมูลไม่หาย
               </p>
             </div>
           </div>
@@ -1319,46 +1305,20 @@ export const FoodView: React.FC = () => {
         </div>
       )}
 
-      {/* Floating Bottom Toast for Background Scanning / Completion */}
-      {(analyzing || (bgScanCompleted && aiResultItems.length > 0 && !showAiResultModal)) && (
-        <div className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 max-w-sm animate-slideUp">
-          <div className="p-3.5 rounded-2xl bg-slate-900/95 text-white border border-slate-700 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              {analyzing ? (
-                <Sparkles size={18} className="text-pink-400 animate-spin shrink-0" />
-              ) : (
-                <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
-              )}
-              <div className="min-w-0">
-                <p className="text-xs font-bold truncate">
-                  {analyzing ? 'กำลังสแกนรูปอาหารในพื้นหลัง...' : '✨ AI วิเคราะห์อาหารเสร็จแล้ว!'}
-                </p>
-                <p className="text-[10px] text-slate-300 truncate">
-                  {analyzing ? 'ระบบกำลังประเมินแคลอรี่' : `พบ ${aiResultItems.length} รายการสำหรับ ${activeTargetProfile.name}`}
-                </p>
-              </div>
-            </div>
-
-            {!analyzing && (
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setShowAiResultModal(true)}
-                  className="px-3 py-1.5 rounded-xl bg-pink-500 hover:bg-pink-600 text-white text-xs font-bold transition active:scale-95 cursor-pointer shadow-xs"
-                >
-                  ดูผลลัพธ์
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setBgScanCompleted(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white"
-                  title="ปิดการแจ้งเตือน"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            )}
+      {/* Background Scan Error Alert */}
+      {foodScanError && (
+        <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between gap-2 animate-fadeIn">
+          <div className="flex items-center gap-2">
+            <AlertCircle size={16} className="shrink-0 text-rose-500" />
+            <span>{foodScanError}</span>
           </div>
+          <button
+            type="button"
+            onClick={dismissFoodScanResult}
+            className="text-slate-400 hover:text-rose-700 font-bold p-1 cursor-pointer"
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
 

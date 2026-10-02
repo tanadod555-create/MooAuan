@@ -13,7 +13,7 @@ import { ProfileGateModal } from './components/auth/ProfileGateModal';
 import { AiTrainerModal } from './components/ai/AiTrainerModal';
 import { PigMascot } from './components/ui/PigMascot';
 import { PiggyRunModal } from './components/game/PiggyRunModal';
-import { Timer, Play, Pause, Plus, X, ChevronRight, Volume2, VolumeX, Gamepad2 } from 'lucide-react';
+import { Timer, Play, Pause, Plus, X, ChevronRight, Volume2, VolumeX, Gamepad2, Loader2, CheckCircle2, AlertCircle, Utensils } from 'lucide-react';
 
 export const MainContent: React.FC = () => {
   const {
@@ -25,6 +25,11 @@ export const MainContent: React.FC = () => {
     toggleRestTimerPause,
     toggleRestTimerSound,
     clearRestTimer,
+    isFoodScanning,
+    foodScanStatus,
+    foodScanResult,
+    foodScanError,
+    dismissFoodScanResult,
   } = useApp();
   const isMaxnum = activeProfileKey === 'primary';
 
@@ -54,6 +59,16 @@ export const MainContent: React.FC = () => {
     }
   }, [isMaxnum]);
 
+  // Auto-dismiss scan completion/error toast after 8 seconds
+  useEffect(() => {
+    if (foodScanResult || foodScanError) {
+      const timer = setTimeout(() => {
+        dismissFoodScanResult();
+      }, 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [foodScanResult, foodScanError, dismissFoodScanResult]);
+
   return (
     <div
       className={`min-h-screen ${
@@ -66,6 +81,87 @@ export const MainContent: React.FC = () => {
         onOpenProfileModal={() => setShowProfileGate(true)}
         onOpenAiTrainer={() => setShowAiTrainer(true)}
       />
+
+      {/* Global Floating AI Food Scan Notification (Visible across all tabs) */}
+      {(isFoodScanning || foodScanResult || foodScanError) && (
+        <div className="fixed top-16 sm:top-20 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-50 animate-slideDown">
+          <div
+            className={`rounded-2xl border-2 backdrop-blur-md shadow-2xl p-3 flex items-center justify-between gap-2.5 transition-all ${
+              foodScanError
+                ? 'bg-rose-950/95 border-rose-500 text-white shadow-rose-950/40'
+                : foodScanResult
+                ? 'bg-emerald-950/95 border-emerald-500 text-white shadow-emerald-950/40'
+                : 'bg-slate-900/95 border-amber-400 text-white shadow-slate-950/40'
+            }`}
+          >
+            {/* Status / Content */}
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div
+                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 shadow-inner ${
+                  foodScanError
+                    ? 'bg-rose-500/20 text-rose-300 border border-rose-400/40'
+                    : foodScanResult
+                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
+                    : 'bg-amber-500/20 text-amber-300 border border-amber-400/40'
+                }`}
+              >
+                {foodScanError ? (
+                  <AlertCircle size={20} className="text-rose-400" />
+                ) : foodScanResult ? (
+                  <CheckCircle2 size={20} className="text-emerald-400" />
+                ) : (
+                  <Loader2 size={20} className="animate-spin text-amber-400" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black truncate">
+                    {foodScanError
+                      ? 'สแกนอาหารไม่สำเร็จ'
+                      : foodScanResult
+                      ? `บันทึกอาหารแล้ว (${foodScanResult.length} รายการ)`
+                      : 'AI กำลังสแกนอาหารในพื้นหลัง...'}
+                  </span>
+                </div>
+                <p className="text-[11px] text-white/80 truncate">
+                  {foodScanError
+                    ? foodScanError
+                    : foodScanResult
+                    ? foodScanResult.map((f) => f.name).join(', ')
+                    : foodScanStatus || 'คุณสามารถสลับหน้าอื่นได้ ระบบจะบันทึกให้อัตโนมัติ'}
+                </p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {foodScanResult && activeTab !== 'food' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('food');
+                    dismissFoodScanResult();
+                  }}
+                  className="px-2.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-xs font-bold text-white transition cursor-pointer flex items-center gap-1 shadow-xs"
+                >
+                  <Utensils size={12} />
+                  <span>ดูบันทึก</span>
+                </button>
+              )}
+              {(foodScanResult || foodScanError) && (
+                <button
+                  type="button"
+                  onClick={dismissFoodScanResult}
+                  className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white/70 hover:text-white active:scale-95 transition cursor-pointer"
+                  title="ปิดการแจ้งเตือน"
+                >
+                  <X size={15} />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Profile Selection Gate on Enter */}
       <ProfileGateModal isOpen={showProfileGate} onClose={handleCloseGate} />

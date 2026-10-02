@@ -7,6 +7,7 @@ import {
   CardioActivity,
   CardioType,
   FoodLog,
+  MealType,
   WaterLog,
   BodyMetric,
   Program,
@@ -16,7 +17,7 @@ import {
 import { SEED_EXERCISES } from '../data/exercises';
 import { PREDEFINED_FOODS, PredefinedFood } from '../data/foodDatabase';
 import { GoogleSheetsService } from '../services/googleSheets';
-import { getDefaultGeminiApiKey } from '../services/gemini';
+import { getDefaultGeminiApiKey, analyzeFoodImage } from '../services/gemini';
 import {
   playGymAlertSound,
   triggerMobileVibrate,
@@ -109,6 +110,20 @@ interface AppContextType {
   addFoodLog: (log: Omit<FoodLog, 'log_id'>) => Promise<void>;
   updateFoodLog: (log_id: string, updates: Partial<FoodLog>) => Promise<void>;
   deleteFoodLog: (log_id: string) => void;
+  // Global AI Food Scanning (Persistent background scan)
+  isFoodScanning: boolean;
+  foodScanStatus: string | null;
+  foodScanResult: FoodLog[] | null;
+  foodScanError: string | null;
+  startFoodScan: (params: {
+    base64Image: string;
+    mimeType: string;
+    targetUserId?: 'primary' | 'partner';
+    targetDate?: string;
+    targetMeal?: MealType;
+    userNote?: string;
+  }) => Promise<void>;
+  dismissFoodScanResult: () => void;
 
   waterLogs: WaterLog[];
   allWaterLogs: WaterLog[];
@@ -950,27 +965,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsFirebaseConnected(true);
       setFirebaseError(null);
 
-      // 1. Food Logs Real-time listener
+      // 1. Food Logs Real-time listener (Safely merges cloud with local uncommitted items)
       const unsubFood = subscribeToFoodLogs(
         db,
         (logs) => {
           if (logs && logs.length > 0) {
-            let hasFix = false;
             const sanitizedLogs = logs.map((l) => {
               if (l.log_id === 'log_1790840905402_1q37' && l.user_id === 'primary') {
-                hasFix = true;
                 const fixed = { ...l, user_id: 'partner', user_name: 'มะนาว (Manow)' };
                 cloudSaveFoodLog(db, fixed).catch(console.error);
                 return fixed;
               }
               return l;
             });
-            setAllFoodLogs(sanitizedLogs);
-            localStorage.setItem('ft_food_logs', JSON.stringify(sanitizedLogs));
+
+            setAllFoodLogs((prev) => {
+              const cloudIds = new Set(sanitizedLogs.map((l) => l.log_id));
+              // PRESERVE local items not yet in Cloud snapshot
+              const localUnsynced = prev.filter((p) => p.log_id && !cloudIds.has(p.log_id));
+              if (localUnsynced.length > 0) {
+                localUnsynced.forEach((item) => cloudSaveFoodLog(db, item).catch(console.error));
+              }
+              const merged = [...localUnsynced, ...sanitizedLogs];
+              merged.sort((a, b) => {
+                const timeA = `${a.date} ${a.time || '00:00'}`;
+                const timeB = `${b.date} ${b.time || '00:00'}`;
+                return timeB.localeCompare(timeA);
+              });
+              localStorage.setItem('ft_food_logs_unified', JSON.stringify(merged));
+              return merged;
+            });
           }
           // Auto-sync: Check if local storage has food logs missing from Cloud
           try {
-            const savedLocal = localStorage.getItem('ft_food_logs');
+            const savedLocal = localStorage.getItem('ft_food_logs_unified');
             if (savedLocal) {
               const parsed: FoodLog[] = JSON.parse(savedLocal);
               if (Array.isArray(parsed) && parsed.length > 0) {
@@ -984,13 +1012,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         (err) => setFirebaseError(`Food Logs: ${err.message}`)
       );
 
-      // 2. Workout History Real-time listener
+      // 2. Workout History Real-time listener (Safely merges cloud with local)
       const unsubWorkouts = subscribeToWorkoutHistory(
         db,
         (workouts) => {
           if (workouts && workouts.length > 0) {
-            setAllWorkoutHistory(workouts);
-            localStorage.setItem('ft_history_unified', JSON.stringify(workouts));
+            setAllWorkoutHistory((prev) => {
+              const cloudIds = new Set(workouts.map((w) => w.session_id));
+              const localUnsynced = prev.filter((w) => w.session_id && !cloudIds.has(w.session_id));
+              if (localUnsynced.length > 0) {
+                localUnsynced.forEach((item) => cloudSaveWorkout(db, item).catch(console.error));
+              }
+              const merged = [...localUnsynced, ...workouts];
+              merged.sort((a, b) => {
+                const timeA = `${a.date} ${a.start_time || '00:00:00'}`;
+                const timeB = `${b.date} ${b.start_time || '00:00:00'}`;
+                return timeB.localeCompare(timeA);
+              });
+              localStorage.setItem('ft_history_unified', JSON.stringify(merged));
+              return merged;
+            });
           }
           // Auto-sync: Check if local storage has workouts missing from Cloud
           try {
@@ -1069,17 +1110,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         (err) => setFirebaseError(`Profiles: ${err.message}`)
       );
 
-      // 6. Water Logs Real-time listener
+      // 6. Water Logs Real-time listener (Safely merges cloud with local)
       const unsubWater = subscribeToWaterLogs(
         db,
         (logs) => {
           if (logs && logs.length > 0) {
-            setAllWaterLogs(logs);
-            localStorage.setItem('ft_water_logs', JSON.stringify(logs));
+            setAllWaterLogs((prev) => {
+              const cloudIds = new Set(logs.map((w) => w.id));
+              const localUnsynced = prev.filter((w) => w.id && !cloudIds.has(w.id));
+              if (localUnsynced.length > 0) {
+                localUnsynced.forEach((item) => cloudSaveWaterLog(db, item).catch(console.error));
+              }
+              const merged = [...localUnsynced, ...logs];
+              merged.sort((a, b) => {
+                const timeA = `${a.date} ${a.time || '00:00'}`;
+                const timeB = `${b.date} ${b.time || '00:00'}`;
+                return timeB.localeCompare(timeA);
+              });
+              localStorage.setItem('ft_water_unified', JSON.stringify(merged));
+              return merged;
+            });
           }
           // Auto-sync: Check if local storage has water logs missing from Cloud
           try {
-            const savedLocal = localStorage.getItem('ft_water_logs');
+            const savedLocal = localStorage.getItem('ft_water_unified');
             if (savedLocal) {
               const parsed: WaterLog[] = JSON.parse(savedLocal);
               if (Array.isArray(parsed) && parsed.length > 0) {
@@ -1894,12 +1948,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       user_id: targetUserId,
       user_name: currentName,
     };
-    setAllFoodLogs(prev => [newLog, ...prev]);
 
-    // Cloud Firestore Sync
+    // 1. Immediately update local state & localStorage synchronously
+    setAllFoodLogs((prev) => {
+      const updated = [newLog, ...prev.filter((l) => l.log_id !== newLog.log_id)];
+      try {
+        localStorage.setItem('ft_food_logs_unified', JSON.stringify(updated));
+      } catch (e) {
+        console.error('LocalStorage write error:', e);
+      }
+      return updated;
+    });
+
+    // 2. Cloud Firestore Sync with retry
     const db = firestoreDbRef.current || getFirestoreInstance();
     if (db) {
-      cloudSaveFoodLog(db, newLog).catch(console.error);
+      try {
+        await cloudSaveFoodLog(db, newLog);
+      } catch (err) {
+        console.error('Cloud save food log failed:', err);
+      }
     }
 
     if (settings.appsScriptUrl || (settings.autoSyncGoogleSheets && settings.googleAccessToken)) {
@@ -1912,23 +1980,155 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateFoodLog = async (log_id: string, updates: Partial<FoodLog>) => {
-    setAllFoodLogs(prev => {
-      const updated = prev.map(l => (l.log_id === log_id ? { ...l, ...updates } : l));
-      const target = updated.find(l => l.log_id === log_id);
-      const db = firestoreDbRef.current || getFirestoreInstance();
-      if (target && db) {
-        cloudSaveFoodLog(db, target).catch(console.error);
-      }
+    let updatedTarget: FoodLog | null = null;
+    setAllFoodLogs((prev) => {
+      const updated = prev.map((l) => {
+        if (l.log_id === log_id) {
+          updatedTarget = { ...l, ...updates };
+          return updatedTarget;
+        }
+        return l;
+      });
+      try {
+        localStorage.setItem('ft_food_logs_unified', JSON.stringify(updated));
+      } catch {}
       return updated;
     });
+
+    const db = firestoreDbRef.current || getFirestoreInstance();
+    if (updatedTarget && db) {
+      cloudSaveFoodLog(db, updatedTarget).catch(console.error);
+    }
   };
 
   const deleteFoodLog = (log_id: string) => {
-    setAllFoodLogs(prev => prev.filter(l => l.log_id !== log_id));
+    setAllFoodLogs((prev) => {
+      const updated = prev.filter((l) => l.log_id !== log_id);
+      try {
+        localStorage.setItem('ft_food_logs_unified', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+
     const db = firestoreDbRef.current || getFirestoreInstance();
     if (db) {
       cloudDeleteFoodLog(db, log_id).catch(console.error);
     }
+  };
+
+  // Global AI Food Scanning State (Runs persistently across tab switches & exits)
+  const [isFoodScanning, setIsFoodScanning] = useState(false);
+  const [foodScanStatus, setFoodScanStatus] = useState<string | null>(null);
+  const [foodScanResult, setFoodScanResult] = useState<FoodLog[] | null>(null);
+  const [foodScanError, setFoodScanError] = useState<string | null>(null);
+
+  const startFoodScan = async (params: {
+    base64Image: string;
+    mimeType: string;
+    targetUserId?: 'primary' | 'partner';
+    targetDate?: string;
+    targetMeal?: MealType;
+    userNote?: string;
+  }) => {
+    setIsFoodScanning(true);
+    setFoodScanStatus('กำลังวิเคราะห์รูปภาพด้วย AI ในพื้นหลัง...');
+    setFoodScanResult(null);
+    setFoodScanError(null);
+
+    const targetUserId = params.targetUserId || activeProfileKey;
+    const targetDate = params.targetDate || new Date().toISOString().split('T')[0];
+    const targetMeal = params.targetMeal || 'lunch';
+
+    try {
+      const result = await analyzeFoodImage({
+        base64Image: params.base64Image,
+        mimeType: params.mimeType,
+        apiKey: settings.geminiApiKey || getDefaultGeminiApiKey(),
+        proxyUrl: settings.geminiProxyUrl,
+        useProxy: settings.useProxy,
+        userNotes: params.userNote,
+      });
+
+      if (!result.items || result.items.length === 0) {
+        throw new Error('ไม่พบรายการอาหารในภาพ กรุณาลองใหม่อีกครั้ง');
+      }
+
+      const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+      const currentName = targetUserId === 'partner' ? partnerProfile.name : primaryProfile.name;
+      const savedLogs: FoodLog[] = [];
+
+      for (const item of result.items) {
+        const newLog: FoodLog = {
+          log_id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+          date: targetDate,
+          time: nowTime,
+          meal: targetMeal,
+          name: item.name,
+          grams: Number(item.grams) || 0,
+          kcal: Number(item.kcal) || 0,
+          protein_g: Number(item.protein_g) || 0,
+          carb_g: Number(item.carb_g) || 0,
+          fat_g: Number(item.fat_g) || 0,
+          fiber_g: typeof item.fiber_g === 'number' ? item.fiber_g : (item.fiber_g ? Number(item.fiber_g) : undefined),
+          sugar_g: typeof item.sugar_g === 'number' ? item.sugar_g : (item.sugar_g ? Number(item.sugar_g) : undefined),
+          sodium_mg: typeof item.sodium_mg === 'number' ? item.sodium_mg : (item.sodium_mg ? Number(item.sodium_mg) : undefined),
+          micros: item.micros,
+          source: 'ai',
+          confidence: item.confidence,
+          user_id: targetUserId,
+          user_name: currentName,
+          note: params.userNote?.trim() || undefined,
+        };
+        savedLogs.push(newLog);
+      }
+
+      // 1. Save to local state and localStorage immediately
+      setAllFoodLogs((prev) => {
+        const updated = [...savedLogs, ...prev];
+        try {
+          localStorage.setItem('ft_food_logs_unified', JSON.stringify(updated));
+        } catch (e) {
+          console.error(e);
+        }
+        return updated;
+      });
+
+      // 2. Save to Firestore
+      const db = firestoreDbRef.current || getFirestoreInstance();
+      if (db) {
+        for (const l of savedLogs) {
+          await cloudSaveFoodLog(db, l).catch(console.error);
+        }
+      }
+
+      // 3. Auto sync to Google Sheets if configured
+      if (settings.appsScriptUrl || (settings.autoSyncGoogleSheets && settings.googleAccessToken)) {
+        for (const l of savedLogs) {
+          sheetsService.syncFoodLog(l, currentName).catch(console.error);
+        }
+      }
+
+      setFoodScanResult(savedLogs);
+      setFoodScanStatus(null);
+
+      // Play alert sound and notification
+      playGymAlertSound('finish');
+      triggerMobileVibrate([100, 50, 100]);
+      sendBackgroundNotification(
+        '✨ สแกนอาหารสำเร็จ!',
+        `บันทึก ${savedLogs.map((l) => l.name).join(', ')} เรียบร้อยแล้ว`
+      );
+    } catch (err: any) {
+      console.error('Background food scan error:', err);
+      setFoodScanError(err.message || 'เกิดข้อผิดพลาดในการวิเคราะห์ภาพ');
+    } finally {
+      setIsFoodScanning(false);
+    }
+  };
+
+  const dismissFoodScanResult = () => {
+    setFoodScanResult(null);
+    setFoodScanError(null);
   };
 
   const addWaterLog = async (amount_ml: number, date?: string, user_id?: string) => {
@@ -2127,6 +2327,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addFoodLog,
         updateFoodLog,
         deleteFoodLog,
+        isFoodScanning,
+        foodScanStatus,
+        foodScanResult,
+        foodScanError,
+        startFoodScan,
+        dismissFoodScanResult,
         waterLogs,
         allWaterLogs,
         addWaterLog,
