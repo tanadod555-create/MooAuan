@@ -294,10 +294,13 @@ export const GoalSetupModal: React.FC<GoalSetupModalProps> = ({
 
   // Save and Apply to Profile
   const handleApplyToProfile = () => {
+    const currentYear = new Date().getFullYear();
     updateProfile(
       {
         goal: currentGoalConfig.title,
         height_cm: heightCm,
+        birth_year: currentYear - age,
+        sex: gender,
         kcal_target: calculation.targetKcal,
         protein_target_g: calculation.targetProteinG,
         carb_target_g: calculation.targetCarbG,

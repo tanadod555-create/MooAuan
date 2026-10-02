@@ -124,8 +124,17 @@ export const ProfileView: React.FC = () => {
   const [newMetricNote, setNewMetricNote] = useState('');
 
   // Editable Profile States
+  const currentYear = new Date().getFullYear();
+  const currentAge = currentProfile.birth_year
+    ? currentYear - currentProfile.birth_year
+    : activeProfileKey === 'partner'
+    ? 24
+    : 26;
+
   const [profileUnit, setProfileUnit] = useState<'cm' | 'inch'>('cm');
   const [editName, setEditName] = useState(currentProfile.name);
+  const [editSex, setEditSex] = useState<'male' | 'female' | 'other'>(currentProfile.sex || 'male');
+  const [editAge, setEditAge] = useState<number | ''>(currentAge);
   const [editHeight, setEditHeight] = useState<number | ''>(currentProfile.height_cm);
   const [editGoal, setEditGoal] = useState(currentProfile.goal);
   const [editKcal, setEditKcal] = useState<number | ''>(currentProfile.kcal_target);
@@ -144,6 +153,14 @@ export const ProfileView: React.FC = () => {
   // Sync profile edit states whenever active profile or unit changes
   useEffect(() => {
     setEditName(currentProfile.name);
+    setEditSex(currentProfile.sex || 'male');
+    setEditAge(
+      currentProfile.birth_year
+        ? currentYear - currentProfile.birth_year
+        : activeProfileKey === 'partner'
+        ? 24
+        : 26
+    );
     setEditHeight(currentProfile.height_cm);
     setEditGoal(currentProfile.goal);
     setEditKcal(currentProfile.kcal_target);
@@ -158,7 +175,7 @@ export const ProfileView: React.FC = () => {
     setEditArm(profileUnit === 'inch' ? cmToInch(currentProfile.arm_cm) : currentProfile.arm_cm);
     setEditCalf(profileUnit === 'inch' ? cmToInch(currentProfile.calf_cm) : currentProfile.calf_cm);
     setEditNeck(profileUnit === 'inch' ? cmToInch(currentProfile.neck_cm) : currentProfile.neck_cm);
-  }, [currentProfile, activeProfileKey, profileUnit]);
+  }, [currentProfile, activeProfileKey, profileUnit, currentYear]);
 
   // Modal Unit State
   const [modalUnit, setModalUnit] = useState<'cm' | 'inch'>('cm');
@@ -270,8 +287,13 @@ export const ProfileView: React.FC = () => {
     const finalCalf = profileUnit === 'inch' ? inchToCm(editCalf) : editCalf;
     const finalNeck = profileUnit === 'inch' ? inchToCm(editNeck) : editNeck;
 
+    const calculatedBirthYear =
+      editAge !== '' && Number(editAge) > 0 ? currentYear - Number(editAge) : currentProfile.birth_year;
+
     updateProfile({
       name: editName,
+      sex: editSex,
+      birth_year: calculatedBirthYear,
       height_cm: Number(editHeight) || currentProfile.height_cm || 170,
       goal: editGoal,
       kcal_target: Number(editKcal) || 2000,
@@ -476,9 +498,13 @@ export const ProfileView: React.FC = () => {
                 Streak {evolution.streakWeeks} วีค
               </span>
             </div>
-            <p className="text-xs text-zinc-500 mt-0.5">
-              เป้าหมาย: <strong className="text-zinc-800 font-semibold">{currentProfile.goal}</strong>
-            </p>
+            <div className="flex items-center gap-2 mt-1 text-xs text-zinc-500 flex-wrap">
+              <span>เป้าหมาย: <strong className="text-zinc-800 font-semibold">{currentProfile.goal}</strong></span>
+              <span className="text-zinc-300">•</span>
+              <span>อายุ: <strong className="text-zinc-800 font-semibold">{currentAge} ปี</strong></span>
+              <span className="text-zinc-300">•</span>
+              <span>ส่วนสูง: <strong className="text-zinc-800 font-semibold">{currentProfile.height_cm || 170} ซม.</strong></span>
+            </div>
           </div>
         </div>
 
@@ -1115,7 +1141,7 @@ export const ProfileView: React.FC = () => {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 text-xs">
             <div>
               <label className="block font-bold text-pink-900 mb-1">ชื่อเล่น / ชื่อเรียก</label>
               <input
@@ -1126,9 +1152,40 @@ export const ProfileView: React.FC = () => {
               />
             </div>
             <div>
+              <label className="block font-bold text-pink-900 mb-1">เพศ</label>
+              <select
+                value={editSex}
+                onChange={(e) => setEditSex(e.target.value as 'male' | 'female' | 'other')}
+                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-rose-400 focus:bg-white font-medium cursor-pointer"
+              >
+                <option value="male">ชาย 👨</option>
+                <option value="female">หญิง 👩</option>
+                <option value="other">อื่นๆ ✨</option>
+              </select>
+            </div>
+            <div>
+              <label className="block font-bold text-pink-900 mb-1">อายุ (ปี)</label>
+              <input
+                type="number"
+                inputMode="decimal"
+                value={editAge}
+                placeholder="26"
+                min={10}
+                max={120}
+                onChange={(e) => setEditAge(e.target.value === '' ? '' : (parseInt(e.target.value) || 0))}
+                className="w-full bg-pink-50/50 border border-pink-200 rounded-xl px-3 py-2.5 text-slate-700 focus:outline-none focus:border-rose-400 focus:bg-white font-bold"
+              />
+              {editAge !== '' && Number(editAge) > 0 && (
+                <span className="text-[10px] text-pink-700/80 font-medium block mt-1 truncate">
+                  เกิด ค.ศ. {currentYear - Number(editAge)} (พ.ศ. {currentYear - Number(editAge) + 543})
+                </span>
+              )}
+            </div>
+            <div>
               <label className="block font-bold text-pink-900 mb-1">ส่วนสูง (ซม.)</label>
               <input
                 type="number"
+                inputMode="decimal"
                 value={editHeight}
                 placeholder="170"
                 onChange={(e) => setEditHeight(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
