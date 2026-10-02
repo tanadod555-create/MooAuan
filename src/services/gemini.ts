@@ -255,6 +255,138 @@ export async function analyzeFoodImage({
   return JSON.parse(cleanedText);
 }
 
+/**
+ * Analyzes food menu description from text using Gemini AI
+ */
+export async function analyzeFoodText({
+  query,
+  apiKey,
+  userNotes,
+}: {
+  query: string;
+  apiKey?: string;
+  userNotes?: string;
+}): Promise<GeminiAnalysisResponse> {
+  const activeKey =
+    apiKey ||
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) ||
+    (typeof window !== 'undefined' ? localStorage.getItem('fittrack_gemini_key') : '') ||
+    getDefaultGeminiApiKey();
+
+  if (!activeKey) {
+    throw new Error('กรุณาระบุ Gemini API Key ในหน้าการตั้งค่า หรือตรวจสอบการเชื่อมต่อ');
+  }
+
+  const candidateModels = [
+    'gemini-flash-lite-latest',
+    'gemini-3.5-flash-lite',
+    'gemini-3.5-flash',
+    'gemini-3.6-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-flash-latest',
+    'gemini-3.8-flash',
+    'gemini-3.7-flash',
+  ];
+
+  const systemPrompt = `You are an expert nutrition analysis assistant.
+The user will provide a food name, menu description, portion, or meal in natural language (Thai or English), e.g. "ข้าวมันไก่พิเศษไม่เอาหนัง + ไข่ต้ม 2 ฟอง" or "แซลมอนย่างซีอิ๊ว 150g กับข้าวกล้อง 1 ถ้วย".
+Analyze the text description, identify all individual food items or ingredients, and accurately estimate portion weight in grams and nutrition values (kcal, protein_g, carb_g, fat_g, fiber_g, sugar_g, sodium_mg, micros).
+Calculate Thai dishes according to standard Thai food nutrition data (e.g. INMU / Bureau of Nutrition Thailand).
+
+Return ONLY valid JSON matching this schema, no markdown codeblocks, no extra text:
+{
+  "items": [
+    {
+      "name": "string (clear Thai name if Thai dish, e.g. ข้าวมันไก่เนื้ออกล้วน (พิเศษ))",
+      "grams": number,
+      "kcal": number,
+      "protein_g": number,
+      "carb_g": number,
+      "fat_g": number,
+      "fiber_g": number,
+      "sugar_g": number,
+      "sodium_mg": number,
+      "micros": {
+        "vitC_mg": number,
+        "iron_mg": number,
+        "calcium_mg": number,
+        "potassium_mg": number
+      },
+      "confidence": number between 0 and 1
+    }
+  ],
+  "notes": "string (brief note explaining portion and nutrition estimate)"
+}`;
+
+  const promptText = userNotes && userNotes.trim()
+    ? `${systemPrompt}\n\nUSER FOOD DESCRIPTION: "${query.trim()}"\nADDITIONAL NOTES / PREFERENCES: "${userNotes.trim()}"`
+    : `${systemPrompt}\n\nUSER FOOD DESCRIPTION: "${query.trim()}"`;
+
+  const requestBody = {
+    contents: [
+      {
+        parts: [{ text: promptText }],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.2,
+      response_mime_type: 'application/json',
+    },
+  };
+
+  const defaultKey = getDefaultGeminiApiKey();
+  const keysToTry = [activeKey];
+  if (defaultKey && defaultKey !== activeKey) {
+    keysToTry.push(defaultKey);
+  }
+
+  let response: Response | null = null;
+  let lastErrorText = '';
+
+  for (const currentKey of keysToTry) {
+    for (const model of candidateModels) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`;
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (res.ok) {
+          response = res;
+          break;
+        } else {
+          lastErrorText = await res.text();
+          console.warn(`Model ${model} returned ${res.status}`);
+        }
+      } catch (err: any) {
+        lastErrorText = err.message;
+      }
+    }
+    if (response && response.ok) break;
+  }
+
+  if (!response || !response.ok) {
+    throw new Error(`Gemini API error: ${lastErrorText || 'ไม่สามารถเชื่อมต่อ Gemini API ได้ กรุณาตรวจสอบ API Key'}`);
+  }
+
+  const json = await response.json();
+  const textOutput = json.candidates?.[0]?.content?.parts?.[0]?.text;
+
+  if (!textOutput) {
+    throw new Error('Gemini API did not return text response.');
+  }
+
+  let cleanedText = textOutput.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+  const firstBrace = cleanedText.indexOf('{');
+  const lastBrace = cleanedText.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
+  }
+  return JSON.parse(cleanedText);
+}
+
 export interface TrainerContextData {
   userName: string;
   goal: string;

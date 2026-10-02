@@ -4,6 +4,7 @@ import { FoodLog, MealType } from '../types';
 import {
   resizeImageToMaxDimension,
   analyzeFoodImage,
+  analyzeFoodText,
   getDefaultGeminiApiKey,
   GeminiFoodItem,
 } from '../services/gemini';
@@ -224,6 +225,20 @@ export const FoodView: React.FC = () => {
   const [manualPotassium, setManualPotassium] = useState<number | ''>('');
   const [manualNote, setManualNote] = useState('');
 
+  // AI Text Food Search & Add State
+  const [showAiTextModal, setShowAiTextModal] = useState(false);
+  const [aiTextQuery, setAiTextQuery] = useState('');
+  const [aiTextNote, setAiTextNote] = useState('');
+  const [aiTextMeal, setAiTextMeal] = useState<MealType>('lunch');
+  const [aiTextUserId, setAiTextUserId] = useState<'primary' | 'partner'>(activeProfileKey);
+  const [isAiTextSearching, setIsAiTextSearching] = useState(false);
+  const [aiTextError, setAiTextError] = useState<string | null>(null);
+  const [aiTextItems, setAiTextItems] = useState<GeminiFoodItem[]>([]);
+  const [baseAiTextItems, setBaseAiTextItems] = useState<GeminiFoodItem[]>([]);
+  const [aiTextMultiplier, setAiTextMultiplier] = useState<number>(1.0);
+  const [aiTextAiNotes, setAiTextAiNotes] = useState<string>('');
+  const [isSubmittingAiText, setIsSubmittingAiText] = useState(false);
+
   // Edit Food Modal State
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
@@ -438,6 +453,123 @@ export const FoodView: React.FC = () => {
     });
   };
 
+  // Start AI Text Search & Calculation
+  const handleStartAiTextSearch = async () => {
+    if (!aiTextQuery.trim()) return;
+
+    if (!effectiveGeminiKey) {
+      setApiKeyInput(getDefaultGeminiApiKey());
+      setShowApiKeyModal(true);
+      return;
+    }
+
+    setIsAiTextSearching(true);
+    setAiTextError(null);
+
+    try {
+      const response = await analyzeFoodText({
+        query: aiTextQuery.trim(),
+        userNotes: aiTextNote.trim() || undefined,
+        apiKey: effectiveGeminiKey,
+      });
+
+      if (!response.items || response.items.length === 0) {
+        throw new Error('ไม่พบข้อมูลอาหารจากข้อความที่ระบุ กรุณาลองใหม่อีกครั้ง');
+      }
+
+      setAiTextItems(response.items);
+      setBaseAiTextItems(response.items);
+      setAiTextMultiplier(1.0);
+      setAiTextAiNotes(response.notes || '');
+    } catch (err: any) {
+      console.error('AI Text Search error:', err);
+      setAiTextError(err.message || 'เกิดข้อผิดพลาดในการวิเคราะห์อาหารด้วย AI');
+    } finally {
+      setIsAiTextSearching(false);
+    }
+  };
+
+  // Apply portion multiplier to AI Text items
+  const handleApplyAiTextMultiplier = (factor: number) => {
+    setAiTextMultiplier(factor);
+    setAiTextItems(
+      baseAiTextItems.map((item) => ({
+        ...item,
+        grams: Math.round(item.grams * factor),
+        kcal: Math.round(item.kcal * factor),
+        protein_g: Math.round(item.protein_g * factor * 10) / 10,
+        carb_g: Math.round(item.carb_g * factor * 10) / 10,
+        fat_g: Math.round(item.fat_g * factor * 10) / 10,
+        fiber_g: typeof item.fiber_g === 'number' ? Math.round(item.fiber_g * factor * 10) / 10 : undefined,
+        sugar_g: typeof item.sugar_g === 'number' ? Math.round(item.sugar_g * factor * 10) / 10 : undefined,
+        sodium_mg: typeof item.sodium_mg === 'number' ? Math.round(item.sodium_mg * factor) : undefined,
+      }))
+    );
+  };
+
+  // Update item field in AI Text modal
+  const handleUpdateAiTextItem = (index: number, field: keyof GeminiFoodItem, value: any) => {
+    setAiTextItems((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  // Delete item from AI Text modal
+  const handleDeleteAiTextItem = (index: number) => {
+    setAiTextItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Confirm and save AI Text items to food log
+  const handleConfirmAiTextFood = async () => {
+    if (isSubmittingAiText || aiTextItems.length === 0) return;
+    setIsSubmittingAiText(true);
+
+    const nowTime = new Date().toLocaleTimeString('th-TH', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    const itemsToSave = [...aiTextItems];
+    const userNoteToSave = [aiTextQuery.trim(), aiTextNote.trim()].filter(Boolean).join(' | ');
+
+    try {
+      for (const item of itemsToSave) {
+        await addFoodLog({
+          date: selectedDate,
+          time: nowTime,
+          meal: aiTextMeal,
+          name: item.name,
+          grams: Number(item.grams) || 0,
+          kcal: Number(item.kcal) || 0,
+          protein_g: Number(item.protein_g) || 0,
+          carb_g: Number(item.carb_g) || 0,
+          fat_g: Number(item.fat_g) || 0,
+          fiber_g: typeof item.fiber_g === 'number' ? item.fiber_g : (item.fiber_g ? Number(item.fiber_g) : undefined),
+          sugar_g: typeof item.sugar_g === 'number' ? item.sugar_g : (item.sugar_g ? Number(item.sugar_g) : undefined),
+          sodium_mg: typeof item.sodium_mg === 'number' ? item.sodium_mg : (item.sodium_mg ? Number(item.sodium_mg) : undefined),
+          micros: item.micros,
+          source: 'ai',
+          confidence: item.confidence ?? 0.9,
+          user_id: aiTextUserId,
+          note: userNoteToSave || undefined,
+        });
+      }
+
+      setShowAiTextModal(false);
+      setAiTextQuery('');
+      setAiTextNote('');
+      setAiTextItems([]);
+      setBaseAiTextItems([]);
+    } catch (err: any) {
+      console.error('Error saving AI text food items:', err);
+      setAiTextError(err.message || 'เกิดข้อผิดพลาดในการบันทึกอาหาร');
+    } finally {
+      setIsSubmittingAiText(false);
+    }
+  };
+
   // Handle Manual Add with micronutrients
   const handleSaveManual = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -542,8 +674,8 @@ export const FoodView: React.FC = () => {
         </button>
       </div>
 
-      {/* Quick Access Buttons: 1) Food Database & 2) AI Chat */}
-      <div className="grid grid-cols-2 gap-2.5">
+      {/* Quick Access Buttons: 1) Food Database, 2) AI Text Search & 3) AI Trainer Chat */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         {/* Quick Food Database */}
         <button
           type="button"
@@ -558,6 +690,32 @@ export const FoodView: React.FC = () => {
               ตารางโภชนาการด่วน
             </h4>
             <span className="text-[10px] text-pink-500 font-bold">เช็กแคล & เมนูไทย</span>
+          </div>
+        </button>
+
+        {/* AI Text Food Search & Add */}
+        <button
+          type="button"
+          onClick={() => {
+            if (!effectiveGeminiKey) {
+              setApiKeyInput(getDefaultGeminiApiKey());
+              setShowApiKeyModal(true);
+              return;
+            }
+            setAiTextUserId(selectedUserKey);
+            setShowAiTextModal(true);
+          }}
+          className="p-3 rounded-2xl bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 hover:from-purple-100/80 hover:via-pink-100/80 hover:to-rose-100/80 border border-purple-200/80 text-left transition active:scale-98 shadow-xs flex items-center gap-2.5 cursor-pointer group"
+        >
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition">
+            <Sparkles size={16} className="animate-pulse" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="text-xs font-black text-purple-900 truncate flex items-center gap-1">
+              <span>พิมพ์สั่ง AI คำนวณ</span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-200/80 text-purple-800 font-bold">ใหม่ ✨</span>
+            </h4>
+            <span className="text-[10px] text-purple-600 font-bold">พิมพ์ชื่อเมนูหาแคลอรี่</span>
           </div>
         </button>
 
@@ -1175,8 +1333,8 @@ export const FoodView: React.FC = () => {
 
 
 
-      {/* Action Buttons: Camera / Gallery / Quick Food DB / Manual Add */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Action Buttons: Camera / Gallery / AI Text Search / Quick Food DB / Manual Add */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
         {/* Camera Hidden Input */}
         <input
           type="file"
@@ -1242,6 +1400,35 @@ export const FoodView: React.FC = () => {
             <span className="text-sm font-bold block">อัปโหลดจากอัลบั้ม</span>
             <span className="text-[10px] text-slate-400 font-normal block">
               เลือกรูปจากคลังภาพ / ไฟล์
+            </span>
+          </div>
+        </button>
+
+        {/* AI Text Search & Calculate Button */}
+        <button
+          onClick={() => {
+            if (!effectiveGeminiKey) {
+              setApiKeyInput(getDefaultGeminiApiKey());
+              setShowApiKeyModal(true);
+              return;
+            }
+            setAiTextUserId(selectedUserKey);
+            setShowAiTextModal(true);
+          }}
+          className="p-4 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 hover:from-purple-600 hover:via-indigo-600 hover:to-pink-600 text-white font-bold flex items-center justify-center gap-3 shadow-sm shadow-purple-200/50 active:scale-[0.98] transition group cursor-pointer"
+        >
+          <div className="w-9 h-9 rounded-xl bg-white/20 text-white flex items-center justify-center group-hover:scale-110 transition shrink-0">
+            <Sparkles size={20} className="animate-pulse" />
+          </div>
+          <div className="text-left">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-bold block">พิมพ์สั่ง AI ค้นหา</span>
+              <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-white/25 text-white">
+                แคล & สารอาหาร
+              </span>
+            </div>
+            <span className="text-[10px] text-white/90 font-normal block">
+              พิมพ์ชื่อเมนู → AI คำนวณให้ทันที
             </span>
           </div>
         </button>
@@ -1817,6 +2004,451 @@ export const FoodView: React.FC = () => {
                 ยกเลิก
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Text Food Search & Add Modal */}
+      {showAiTextModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+          <div className="relative w-full max-w-lg max-h-[92vh] bg-white border border-purple-200 rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-purple-100 bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center shadow-xs">
+                  <Sparkles size={18} className="animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-800 text-base flex items-center gap-1.5">
+                    <span>พิมพ์สั่ง AI คำนวณอาหาร</span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                      Smart AI
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    พิมพ์ชื่อเมนูไทย/เทศ → AI ประมาณการกรัม แคลอรี และสารอาหารให้อัตโนมัติ
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowAiTextModal(false);
+                  setAiTextError(null);
+                }}
+                className="w-7 h-7 rounded-full bg-white hover:bg-purple-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs border border-purple-200 transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 overflow-y-auto space-y-4 text-xs">
+              {/* Profile & Meal Picker */}
+              <div className="p-3 bg-purple-50/50 rounded-2xl border border-purple-100 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-600">บันทึกลงโปรไฟล์:</span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setAiTextUserId('primary')}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                        aiTextUserId === 'primary'
+                          ? 'bg-sky-500 text-white shadow-2xs'
+                          : 'bg-white text-slate-600 border border-slate-200 hover:bg-sky-50'
+                      }`}
+                    >
+                      <img src={getUserAvatar('primary')} className="w-3.5 h-3.5 rounded-full object-cover" />
+                      <span>แม็กนั่ม</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAiTextUserId('partner')}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                        aiTextUserId === 'partner'
+                          ? 'bg-pink-500 text-white shadow-2xs'
+                          : 'bg-white text-slate-600 border border-slate-200 hover:bg-pink-50'
+                      }`}
+                    >
+                      <img src={getUserAvatar('partner')} className="w-3.5 h-3.5 rounded-full object-cover" />
+                      <span>มะนาว</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[11px] font-bold text-slate-600 block mb-1">เลือกมื้ออาหาร:</span>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {(['breakfast', 'lunch', 'dinner', 'snack'] as MealType[]).map((meal) => (
+                      <button
+                        key={meal}
+                        type="button"
+                        onClick={() => setAiTextMeal(meal)}
+                        className={`py-1.5 rounded-xl text-xs font-bold capitalize transition ${
+                          aiTextMeal === meal
+                            ? 'bg-purple-600 text-white shadow-2xs'
+                            : 'bg-white text-slate-600 border border-purple-200/70 hover:bg-purple-100/50'
+                        }`}
+                      >
+                        {meal === 'breakfast'
+                          ? 'มื้อเช้า'
+                          : meal === 'lunch'
+                          ? 'กลางวัน'
+                          : meal === 'dinner'
+                          ? 'มื้อเย็น'
+                          : 'ของว่าง'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Mode A: Input Query (Before Analysis or Searching New) */}
+              {aiTextItems.length === 0 ? (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      พิมพ์ชื่ออาหาร หรือ เมนูที่ทาน *
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={aiTextQuery}
+                      onChange={(e) => setAiTextQuery(e.target.value)}
+                      placeholder="เช่น ข้าวมันไก่พิเศษไม่เอาหนัง + ไข่ต้ม 2 ฟอง หรือ สเต็กแซลมอนย่าง 150g กับข้าวกล้องและบรอกโคลี..."
+                      className="w-full px-3.5 py-2.5 bg-purple-50/30 border border-purple-200 rounded-2xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-400 focus:bg-white transition resize-none"
+                    />
+                  </div>
+
+                  {/* Suggestion Chips */}
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] font-bold text-slate-500">แตะเพื่อใส่เมนูด่วน:</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {[
+                        'ข้าวมันไก่พิเศษไม่เอาหนัง',
+                        'ข้าวกะเพราหมูสับไข่ดาว',
+                        'สลัดอกไก่ + ไข่ต้ม 2 ฟอง',
+                        'ก๋วยเตี๋ยวเส้นเล็กเนื้อน้ำตก',
+                        'ชาไทยหวานน้อย 25%',
+                        'แซลมอนย่างซีอิ๊ว 150g กับข้าวกล้อง',
+                        'เวย์โปรตีน 1 สกู๊ป ผสมนมจืด 200ml',
+                        'ไข่ต้ม 2 ฟอง + กล้วยหอม 1 ลูก',
+                      ].map((dish) => (
+                        <button
+                          key={dish}
+                          type="button"
+                          onClick={() =>
+                            setAiTextQuery((prev) => (prev ? `${prev} + ${dish}` : dish))
+                          }
+                          className="px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 text-[11px] font-medium transition active:scale-95 cursor-pointer"
+                        >
+                          + {dish}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Optional Custom Note */}
+                  <div className="space-y-1.5 pt-1">
+                    <label className="block text-[11px] font-bold text-slate-600">
+                      หมายเหตุเพิ่มเติมให้ AI (เช่น กินครึ่งเดียว, ไม่ซดน้ำซุป):
+                    </label>
+                    <input
+                      type="text"
+                      value={aiTextNote}
+                      onChange={(e) => setAiTextNote(e.target.value)}
+                      placeholder="เช่น กินแค่ 50%, ใช้น้ำมันมะกอกน้อย, ไม่ใส่น้ำตาล..."
+                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-purple-300 focus:bg-white transition"
+                    />
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {[
+                        'กินแค่ครึ่งเดียว (50%)',
+                        'ไม่เอาหนังและมัน',
+                        'ไม่ซดน้ำซุป',
+                        'ข้าวครึ่งทัพพี',
+                        'หวานน้อยมาก',
+                      ].map((note) => (
+                        <button
+                          key={note}
+                          type="button"
+                          onClick={() =>
+                            setAiTextNote((prev) => (prev ? `${prev}, ${note}` : note))
+                          }
+                          className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-medium"
+                        >
+                          + {note}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Error Alert */}
+                  {aiTextError && (
+                    <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle size={15} className="shrink-0 text-rose-500" />
+                        <span>{aiTextError}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAiTextError(null)}
+                        className="text-slate-400 hover:text-rose-700"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Submit Button */}
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={handleStartAiTextSearch}
+                      disabled={isAiTextSearching || !aiTextQuery.trim()}
+                      className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 hover:from-purple-600 hover:via-indigo-600 hover:to-pink-600 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-purple-200/50 transition active:scale-98 cursor-pointer"
+                    >
+                      {isAiTextSearching ? (
+                        <>
+                          <Sparkles size={16} className="animate-spin" />
+                          <span>AI กำลังค้นหาข้อมูลและคำนวณแคลอรี... ⚡</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles size={16} />
+                          <span>ค้นหาและคำนวณด้วย AI ✨</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Mode B: Display Results and Allow Editing */
+                <div className="space-y-4 animate-fadeIn">
+                  {/* Notes from AI */}
+                  {aiTextAiNotes && (
+                    <div className="p-2.5 rounded-xl bg-purple-50/80 border border-purple-200/70 text-[11px] text-purple-900 flex items-start gap-2">
+                      <Sparkles size={14} className="shrink-0 text-purple-500 mt-0.5" />
+                      <span>{aiTextAiNotes}</span>
+                    </div>
+                  )}
+
+                  {/* Portion Multipliers */}
+                  <div className="p-3 rounded-2xl bg-purple-50/50 border border-purple-200/70 space-y-1.5">
+                    <span className="text-[11px] font-bold text-slate-700 block">
+                      🍽️ ปรับสัดส่วนจานด่วน (คำนวณใหม่ทันที):
+                    </span>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {[
+                        { factor: 0.5, label: '0.5x (ครึ่งจาน)' },
+                        { factor: 0.75, label: '0.75x (3/4 จาน)' },
+                        { factor: 1.0, label: '1.0x (เต็มจาน)' },
+                        { factor: 1.5, label: '1.5x (จานใหญ่)' },
+                      ].map((p) => (
+                        <button
+                          key={p.factor}
+                          type="button"
+                          onClick={() => handleApplyAiTextMultiplier(p.factor)}
+                          className={`py-1.5 rounded-xl font-bold text-[11px] transition active:scale-95 ${
+                            aiTextMultiplier === p.factor
+                              ? 'bg-purple-600 text-white shadow-2xs'
+                              : 'bg-white text-slate-600 border border-purple-200/70 hover:bg-purple-100'
+                          }`}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Total Nutrients Summary Card */}
+                  <div className="p-3 bg-gradient-to-r from-pink-50 to-purple-50 rounded-2xl border border-pink-200 flex items-center justify-around text-center">
+                    <div>
+                      <span className="text-[10px] text-pink-600 font-bold block">พลังงานรวม</span>
+                      <span className="text-base font-black text-pink-600">
+                        {aiTextItems.reduce((sum, item) => sum + (item.kcal || 0), 0)} kcal
+                      </span>
+                    </div>
+                    <div className="h-6 w-px bg-pink-200" />
+                    <div>
+                      <span className="text-[10px] text-sky-600 font-bold block">โปรตีน</span>
+                      <span className="text-xs font-black text-sky-700">
+                        {Math.round(aiTextItems.reduce((sum, item) => sum + (item.protein_g || 0), 0) * 10) / 10}g
+                      </span>
+                    </div>
+                    <div className="h-6 w-px bg-pink-200" />
+                    <div>
+                      <span className="text-[10px] text-amber-600 font-bold block">คาร์บ</span>
+                      <span className="text-xs font-black text-amber-700">
+                        {Math.round(aiTextItems.reduce((sum, item) => sum + (item.carb_g || 0), 0) * 10) / 10}g
+                      </span>
+                    </div>
+                    <div className="h-6 w-px bg-pink-200" />
+                    <div>
+                      <span className="text-[10px] text-rose-600 font-bold block">ไขมัน</span>
+                      <span className="text-xs font-black text-rose-700">
+                        {Math.round(aiTextItems.reduce((sum, item) => sum + (item.fat_g || 0), 0) * 10) / 10}g
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Editable Items */}
+                  <div className="space-y-3">
+                    <span className="text-xs font-bold text-slate-700 block">
+                      รายการอาหาร ({aiTextItems.length} รายการ - แก้ไขตัวเลขได้):
+                    </span>
+                    {aiTextItems.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-purple-50/40 p-3.5 rounded-2xl border border-purple-200/70 space-y-2.5"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <input
+                            type="text"
+                            value={item.name}
+                            onChange={(e) => handleUpdateAiTextItem(idx, 'name', e.target.value)}
+                            className="bg-white border border-purple-200/80 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 flex-1"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAiTextItem(idx)}
+                            className="text-slate-400 hover:text-rose-500 p-1 rounded-lg transition"
+                            title="ลบรายการนี้"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-4 gap-2 text-xs">
+                          <div>
+                            <span className="text-[10px] text-slate-500 font-bold block mb-0.5">กรัม (g)</span>
+                            <input
+                              type="number"
+                              value={item.grams === 0 ? '' : item.grams}
+                              onChange={(e) =>
+                                handleUpdateAiTextItem(idx, 'grams', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
+                              }
+                              className="w-full bg-white border border-purple-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-pink-600 font-bold block mb-0.5">พลังงาน (kcal)</span>
+                            <input
+                              type="number"
+                              value={item.kcal === 0 ? '' : item.kcal}
+                              onChange={(e) =>
+                                handleUpdateAiTextItem(idx, 'kcal', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
+                              }
+                              className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-black text-pink-600"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-sky-700 font-bold block mb-0.5">โปรตีน (g)</span>
+                            <input
+                              type="number"
+                              value={item.protein_g === 0 ? '' : item.protein_g}
+                              onChange={(e) =>
+                                handleUpdateAiTextItem(idx, 'protein_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
+                              }
+                              className="w-full bg-white border border-sky-200 rounded-lg px-1.5 py-1 text-center font-bold text-sky-700"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-amber-700 font-bold block mb-0.5">คาร์บ (g)</span>
+                            <input
+                              type="number"
+                              value={item.carb_g === 0 ? '' : item.carb_g}
+                              onChange={(e) =>
+                                handleUpdateAiTextItem(idx, 'carb_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
+                              }
+                              className="w-full bg-white border border-amber-200 rounded-lg px-1.5 py-1 text-center font-bold text-amber-700"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-xs pt-1 border-t border-purple-100">
+                          <div>
+                            <span className="text-[10px] text-rose-600 font-bold block mb-0.5">ไขมัน (g)</span>
+                            <input
+                              type="number"
+                              value={item.fat_g === 0 ? '' : item.fat_g}
+                              onChange={(e) =>
+                                handleUpdateAiTextItem(idx, 'fat_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
+                              }
+                              className="w-full bg-white border border-rose-200 rounded-lg px-1.5 py-1 text-center font-bold text-rose-600"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-amber-700 font-bold block mb-0.5">โซเดียม (mg)</span>
+                            <input
+                              type="number"
+                              value={item.sodium_mg ?? ''}
+                              onChange={(e) =>
+                                handleUpdateAiTextItem(idx, 'sodium_mg', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
+                              }
+                              className="w-full bg-white border border-slate-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-emerald-700 font-bold block mb-0.5">ไฟเบอร์ (g)</span>
+                            <input
+                              type="number"
+                              value={item.fiber_g ?? ''}
+                              onChange={(e) =>
+                                handleUpdateAiTextItem(idx, 'fiber_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
+                              }
+                              className="w-full bg-white border border-emerald-200 rounded-lg px-1.5 py-1 text-center font-bold text-emerald-700"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Reset / Search another query button */}
+                  <div className="flex items-center justify-between pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAiTextItems([]);
+                        setBaseAiTextItems([]);
+                        setAiTextAiNotes('');
+                      }}
+                      className="text-xs text-purple-600 hover:text-purple-800 font-bold flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>← พิมพ์ค้นหาใหม่อีกรอบ</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer (When results are ready) */}
+            {aiTextItems.length > 0 && (
+              <div className="p-4 border-t border-purple-100 bg-purple-50/60 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleConfirmAiTextFood}
+                  disabled={isSubmittingAiText}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-500 hover:from-purple-700 hover:via-indigo-700 hover:to-pink-600 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer"
+                >
+                  <CheckCircle2 size={16} />
+                  <span>
+                    {isSubmittingAiText
+                      ? 'กำลังบันทึก...'
+                      : `บันทึกลงโปรไฟล์ของ ${aiTextUserId === 'partner' ? 'มะนาว' : 'แม็กนั่ม'} (${aiTextItems.length} รายการ)`}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAiTextModal(false);
+                    setAiTextItems([]);
+                    setBaseAiTextItems([]);
+                  }}
+                  className="py-2.5 px-4 rounded-xl bg-white hover:bg-purple-100 text-slate-600 border border-purple-200/70 text-xs font-bold transition"
+                >
+                  ยกเลิก
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
