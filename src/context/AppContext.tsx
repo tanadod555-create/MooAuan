@@ -732,6 +732,56 @@ const DEFAULT_TODAY_FOOD_LOGS: FoodLog[] = [
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// ==================== SYNC & TOMBSTONE TRACKING ====================
+export const getDeletedIds = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem('ft_deleted_ids');
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+};
+
+export const markDeletedId = (id: string) => {
+  if (!id) return;
+  try {
+    const set = getDeletedIds();
+    set.add(id);
+    const arr = Array.from(set).slice(-500);
+    localStorage.setItem('ft_deleted_ids', JSON.stringify(arr));
+    removePendingSyncId(id);
+  } catch {}
+};
+
+export const getPendingSyncIds = (): Set<string> => {
+  try {
+    const raw = localStorage.getItem('ft_pending_sync_ids');
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch {
+    return new Set();
+  }
+};
+
+export const addPendingSyncId = (id: string) => {
+  if (!id) return;
+  try {
+    const set = getPendingSyncIds();
+    set.add(id);
+    localStorage.setItem('ft_pending_sync_ids', JSON.stringify(Array.from(set)));
+  } catch {}
+};
+
+export const removePendingSyncId = (id: string) => {
+  if (!id) return;
+  try {
+    const set = getPendingSyncIds();
+    if (set.has(id)) {
+      set.delete(id);
+      localStorage.setItem('ft_pending_sync_ids', JSON.stringify(Array.from(set)));
+    }
+  } catch {}
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Profiles
   const [activeProfileKey, setActiveProfileKey] = useState<'primary' | 'partner'>(() => {
@@ -836,17 +886,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ];
     }
 
-    // Merge default today food logs from Google Sheet if not already present
-    const existingIds = new Set(list.map(l => l.log_id));
-    DEFAULT_TODAY_FOOD_LOGS.forEach(defLog => {
-      if (!existingIds.has(defLog.log_id)) {
-        list.push(defLog);
-        existingIds.add(defLog.log_id);
-      } else if (defLog.log_id === 'log_1790840905402_1q37') {
-        // Guarantee lemon tea is assigned to partner (Manow)
-        list = list.map(l => l.log_id === 'log_1790840905402_1q37' ? { ...l, user_id: 'partner', user_name: 'มะนาว (Manow)' } : l);
-      }
-    });
+    // Merge default today food logs from Google Sheet ONCE on first initialization
+    const alreadySeededFood = localStorage.getItem('ft_food_seeded');
+    if (!alreadySeededFood) {
+      const existingIds = new Set(list.map(l => l.log_id));
+      DEFAULT_TODAY_FOOD_LOGS.forEach(defLog => {
+        if (!existingIds.has(defLog.log_id)) {
+          list.push(defLog);
+          existingIds.add(defLog.log_id);
+        } else if (defLog.log_id === 'log_1790840905402_1q37') {
+          // Guarantee lemon tea is assigned to partner (Manow)
+          list = list.map(l => l.log_id === 'log_1790840905402_1q37' ? { ...l, user_id: 'partner', user_name: 'มะนาว (Manow)' } : l);
+        }
+      });
+      localStorage.setItem('ft_food_seeded', '1');
+    }
 
     return list;
   });
@@ -965,12 +1019,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setIsFirebaseConnected(true);
       setFirebaseError(null);
 
-      // 1. Food Logs Real-time listener (Safely merges cloud with local uncommitted items)
+      // 1. Food Logs Real-time listener (Safely merges cloud with pending local items, respects deletions)
       const unsubFood = subscribeToFoodLogs(
         db,
         (logs) => {
-          if (logs && logs.length > 0) {
-            const sanitizedLogs = logs.map((l) => {
+          const deletedIds = getDeletedIds();
+          const pendingSync = getPendingSyncIds();
+          const cloudIds = new Set((logs || []).map((l) => l.log_id));
+
+          // Remove confirmed cloud logs from pendingSync
+          logs?.forEach((l) => removePendingSyncId(l.log_id));
+
+          // If Cloud has documents that were deleted locally, purge them from Cloud
+          logs?.forEach((l) => {
+            if (deletedIds.has(l.log_id)) {
+              cloudDeleteFoodLog(db, l.log_id).catch(console.error);
+            }
+          });
+
+          const sanitizedLogs = (logs || [])
+            .filter((l) => !deletedIds.has(l.log_id))
+            .map((l) => {
               if (l.log_id === 'log_1790840905402_1q37' && l.user_id === 'primary') {
                 const fixed = { ...l, user_id: 'partner', user_name: 'มะนาว (Manow)' };
                 cloudSaveFoodLog(db, fixed).catch(console.error);
@@ -979,96 +1048,92 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               return l;
             });
 
-            setAllFoodLogs((prev) => {
-              const cloudIds = new Set(sanitizedLogs.map((l) => l.log_id));
-              // PRESERVE local items not yet in Cloud snapshot
-              const localUnsynced = prev.filter((p) => p.log_id && !cloudIds.has(p.log_id));
-              if (localUnsynced.length > 0) {
-                localUnsynced.forEach((item) => cloudSaveFoodLog(db, item).catch(console.error));
-              }
-              const merged = [...localUnsynced, ...sanitizedLogs];
-              merged.sort((a, b) => {
-                const timeA = `${a.date} ${a.time || '00:00'}`;
-                const timeB = `${b.date} ${b.time || '00:00'}`;
-                return timeB.localeCompare(timeA);
-              });
-              localStorage.setItem('ft_food_logs_unified', JSON.stringify(merged));
-              return merged;
+          setAllFoodLogs((prev) => {
+            // Keep local items ONLY if they were newly created offline/pending and not deleted
+            const localPending = prev.filter(
+              (p) => p.log_id && !deletedIds.has(p.log_id) && pendingSync.has(p.log_id) && !cloudIds.has(p.log_id)
+            );
+            localPending.forEach((item) => cloudSaveFoodLog(db, item).catch(console.error));
+
+            const merged = [...localPending, ...sanitizedLogs];
+            merged.sort((a, b) => {
+              const timeA = `${a.date} ${a.time || '00:00'}`;
+              const timeB = `${b.date} ${b.time || '00:00'}`;
+              return timeB.localeCompare(timeA);
             });
-          }
-          // Auto-sync: Check if local storage has food logs missing from Cloud
-          try {
-            const savedLocal = localStorage.getItem('ft_food_logs_unified');
-            if (savedLocal) {
-              const parsed: FoodLog[] = JSON.parse(savedLocal);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                const cloudIds = new Set((logs || []).map((l) => l.log_id));
-                const missing = parsed.filter((p) => p.log_id && !cloudIds.has(p.log_id));
-                missing.forEach((item) => cloudSaveFoodLog(db, item).catch(console.error));
-              }
-            }
-          } catch {}
+            localStorage.setItem('ft_food_logs_unified', JSON.stringify(merged));
+            return merged;
+          });
         },
         (err) => setFirebaseError(`Food Logs: ${err.message}`)
       );
 
-      // 2. Workout History Real-time listener (Safely merges cloud with local)
+      // 2. Workout History Real-time listener (Safely merges cloud with local, respects deletions)
       const unsubWorkouts = subscribeToWorkoutHistory(
         db,
         (workouts) => {
-          if (workouts && workouts.length > 0) {
-            setAllWorkoutHistory((prev) => {
-              const cloudIds = new Set(workouts.map((w) => w.session_id));
-              const localUnsynced = prev.filter((w) => w.session_id && !cloudIds.has(w.session_id));
-              if (localUnsynced.length > 0) {
-                localUnsynced.forEach((item) => cloudSaveWorkout(db, item).catch(console.error));
-              }
-              const merged = [...localUnsynced, ...workouts];
-              merged.sort((a, b) => {
-                const timeA = `${a.date} ${a.start_time || '00:00:00'}`;
-                const timeB = `${b.date} ${b.start_time || '00:00:00'}`;
-                return timeB.localeCompare(timeA);
-              });
-              localStorage.setItem('ft_history_unified', JSON.stringify(merged));
-              return merged;
-            });
-          }
-          // Auto-sync: Check if local storage has workouts missing from Cloud
-          try {
-            const savedLocal = localStorage.getItem('ft_history_unified');
-            if (savedLocal) {
-              const parsed: WorkoutSession[] = JSON.parse(savedLocal);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                const cloudIds = new Set((workouts || []).map((w) => w.session_id));
-                const missing = parsed.filter((p) => p.session_id && !cloudIds.has(p.session_id));
-                missing.forEach((item) => cloudSaveWorkout(db, item).catch(console.error));
-              }
+          const deletedIds = getDeletedIds();
+          const pendingSync = getPendingSyncIds();
+          const cloudIds = new Set((workouts || []).map((w) => w.session_id));
+
+          workouts?.forEach((w) => removePendingSyncId(w.session_id));
+          workouts?.forEach((w) => {
+            if (deletedIds.has(w.session_id)) {
+              cloudDeleteWorkout(db, w.session_id).catch(console.error);
             }
-          } catch {}
+          });
+
+          const validWorkouts = (workouts || []).filter((w) => !deletedIds.has(w.session_id));
+
+          setAllWorkoutHistory((prev) => {
+            const localPending = prev.filter(
+              (p) => p.session_id && !deletedIds.has(p.session_id) && pendingSync.has(p.session_id) && !cloudIds.has(p.session_id)
+            );
+            localPending.forEach((item) => cloudSaveWorkout(db, item).catch(console.error));
+
+            const merged = [...localPending, ...validWorkouts];
+            merged.sort((a, b) => {
+              const timeA = `${a.date} ${a.start_time || '00:00:00'}`;
+              const timeB = `${b.date} ${b.start_time || '00:00:00'}`;
+              return timeB.localeCompare(timeA);
+            });
+            localStorage.setItem('ft_history_unified', JSON.stringify(merged));
+            return merged;
+          });
         },
         (err) => setFirebaseError(`Workout History: ${err.message}`)
       );
 
-      // 3. Body Metrics Real-time listener
+      // 3. Body Metrics Real-time listener (Unified with ft_metrics_unified, respects deletions)
       const unsubMetrics = subscribeToBodyMetrics(
         db,
         (metrics) => {
-          if (metrics && metrics.length > 0) {
-            setAllBodyMetrics(metrics);
-            localStorage.setItem('ft_metrics_v2', JSON.stringify(metrics));
-          }
-          // Auto-sync: Check if local storage has metrics missing from Cloud
-          try {
-            const savedLocal = localStorage.getItem('ft_metrics_v2');
-            if (savedLocal) {
-              const parsed: BodyMetric[] = JSON.parse(savedLocal);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                const cloudIds = new Set((metrics || []).map((m) => m.id || m.date));
-                const missing = parsed.filter((p) => (p.id || p.date) && !cloudIds.has(p.id || p.date));
-                missing.forEach((item) => cloudSaveBodyMetric(db, item).catch(console.error));
-              }
+          const deletedIds = getDeletedIds();
+          const pendingSync = getPendingSyncIds();
+          const cloudIds = new Set((metrics || []).map((m) => m.id || m.date));
+
+          metrics?.forEach((m) => removePendingSyncId(m.id || m.date));
+          metrics?.forEach((m) => {
+            const id = m.id || m.date;
+            if (deletedIds.has(id)) {
+              cloudDeleteBodyMetric(db, id).catch(console.error);
             }
-          } catch {}
+          });
+
+          const validMetrics = (metrics || []).filter((m) => !deletedIds.has(m.id || m.date));
+
+          setAllBodyMetrics((prev) => {
+            const localPending = prev.filter((p) => {
+              const id = p.id || p.date;
+              return id && !deletedIds.has(id) && pendingSync.has(id) && !cloudIds.has(id);
+            });
+            localPending.forEach((item) => cloudSaveBodyMetric(db, item).catch(console.error));
+
+            const merged = [...localPending, ...validMetrics];
+            merged.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+            localStorage.setItem('ft_metrics_unified', JSON.stringify(merged));
+            return merged;
+          });
         },
         (err) => setFirebaseError(`Body Metrics: ${err.message}`)
       );
@@ -1084,18 +1149,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               return Array.from(baseMap.values());
             });
           }
-          // Auto-sync local custom exercises to cloud
-          try {
-            const savedCustoms = localStorage.getItem('ft_custom_exercises');
-            if (savedCustoms) {
-              const parsed: Exercise[] = JSON.parse(savedCustoms);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                const cloudIds = new Set((customs || []).map((c) => c.exercise_id));
-                const missing = parsed.filter((p) => p.exercise_id && !cloudIds.has(p.exercise_id));
-                missing.forEach((item) => cloudSaveCustomExercise(db, item).catch(console.error));
-              }
-            }
-          } catch {}
         },
         (err) => setFirebaseError(`Exercises: ${err.message}`)
       );
@@ -1110,39 +1163,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         (err) => setFirebaseError(`Profiles: ${err.message}`)
       );
 
-      // 6. Water Logs Real-time listener (Safely merges cloud with local)
+      // 6. Water Logs Real-time listener (Safely merges cloud with local, respects deletions)
       const unsubWater = subscribeToWaterLogs(
         db,
         (logs) => {
-          if (logs && logs.length > 0) {
-            setAllWaterLogs((prev) => {
-              const cloudIds = new Set(logs.map((w) => w.id));
-              const localUnsynced = prev.filter((w) => w.id && !cloudIds.has(w.id));
-              if (localUnsynced.length > 0) {
-                localUnsynced.forEach((item) => cloudSaveWaterLog(db, item).catch(console.error));
-              }
-              const merged = [...localUnsynced, ...logs];
-              merged.sort((a, b) => {
-                const timeA = `${a.date} ${a.time || '00:00'}`;
-                const timeB = `${b.date} ${b.time || '00:00'}`;
-                return timeB.localeCompare(timeA);
-              });
-              localStorage.setItem('ft_water_unified', JSON.stringify(merged));
-              return merged;
-            });
-          }
-          // Auto-sync: Check if local storage has water logs missing from Cloud
-          try {
-            const savedLocal = localStorage.getItem('ft_water_unified');
-            if (savedLocal) {
-              const parsed: WaterLog[] = JSON.parse(savedLocal);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                const cloudIds = new Set((logs || []).map((w) => w.id));
-                const missing = parsed.filter((p) => p.id && !cloudIds.has(p.id));
-                missing.forEach((item) => cloudSaveWaterLog(db, item).catch(console.error));
-              }
+          const deletedIds = getDeletedIds();
+          const pendingSync = getPendingSyncIds();
+          const cloudIds = new Set((logs || []).map((w) => w.id));
+
+          logs?.forEach((w) => removePendingSyncId(w.id));
+          logs?.forEach((w) => {
+            if (deletedIds.has(w.id)) {
+              cloudDeleteWaterLog(db, w.id).catch(console.error);
             }
-          } catch {}
+          });
+
+          const validWater = (logs || []).filter((w) => !deletedIds.has(w.id));
+
+          setAllWaterLogs((prev) => {
+            const localPending = prev.filter(
+              (p) => p.id && !deletedIds.has(p.id) && pendingSync.has(p.id) && !cloudIds.has(p.id)
+            );
+            localPending.forEach((item) => cloudSaveWaterLog(db, item).catch(console.error));
+
+            const merged = [...localPending, ...validWater];
+            merged.sort((a, b) => {
+              const timeA = `${a.date} ${a.time || '00:00'}`;
+              const timeB = `${b.date} ${b.time || '00:00'}`;
+              return timeB.localeCompare(timeA);
+            });
+            localStorage.setItem('ft_water_unified', JSON.stringify(merged));
+            return merged;
+          });
         },
         (err) => setFirebaseError(`Water Logs: ${err.message}`)
       );
@@ -1785,7 +1837,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       cardio: activeWorkout.cardio,
     };
 
-    setAllWorkoutHistory(prev => [finishedSession, ...prev]);
+    addPendingSyncId(finishedSession.session_id);
+    setAllWorkoutHistory(prev => {
+      const updated = [finishedSession, ...prev];
+      try {
+        localStorage.setItem('ft_history_unified', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     setActiveWorkout(null);
 
     // Award Big Coins for completing workout session & cardio!
@@ -1949,6 +2008,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       user_name: currentName,
     };
 
+    addPendingSyncId(newLog.log_id);
+
     // 1. Immediately update local state & localStorage synchronously
     setAllFoodLogs((prev) => {
       const updated = [newLog, ...prev.filter((l) => l.log_id !== newLog.log_id)];
@@ -2002,10 +2063,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteFoodLog = (log_id: string) => {
+    markDeletedId(log_id);
     setAllFoodLogs((prev) => {
       const updated = prev.filter((l) => l.log_id !== log_id);
       try {
         localStorage.setItem('ft_food_logs_unified', JSON.stringify(updated));
+        localStorage.setItem('ft_food_seeded', '1');
       } catch {}
       return updated;
     });
@@ -2079,6 +2142,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           user_name: currentName,
           note: params.userNote?.trim() || undefined,
         };
+        addPendingSyncId(newLog.log_id);
         savedLogs.push(newLog);
       }
 
@@ -2146,7 +2210,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       amount_ml,
     };
 
-    setAllWaterLogs(prev => [newLog, ...prev]);
+    addPendingSyncId(newLog.id);
+    setAllWaterLogs(prev => {
+      const updated = [newLog, ...prev];
+      try {
+        localStorage.setItem('ft_water_unified', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
 
     const db = firestoreDbRef.current || getFirestoreInstance();
     if (db) {
@@ -2155,7 +2226,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteWaterLog = (id: string) => {
-    setAllWaterLogs(prev => prev.filter(w => w.id !== id));
+    markDeletedId(id);
+    setAllWaterLogs(prev => {
+      const updated = prev.filter(w => w.id !== id);
+      try {
+        localStorage.setItem('ft_water_unified', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     const db = firestoreDbRef.current || getFirestoreInstance();
     if (db) {
       cloudDeleteWaterLog(db, id).catch(console.error);
@@ -2164,13 +2242,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addBodyMetric = async (metricData: Omit<BodyMetric, 'id'>) => {
     const currentName = activeProfileKey === 'partner' ? partnerProfile.name : primaryProfile.name;
+    const docId = 'metric_' + Date.now();
     const newMetric: BodyMetric = {
       ...metricData,
-      id: 'metric_' + Date.now(),
+      id: docId,
       user_id: activeProfileKey,
       user_name: currentName,
     };
-    setAllBodyMetrics(prev => [newMetric, ...prev]);
+    addPendingSyncId(docId);
+    setAllBodyMetrics(prev => {
+      const updated = [newMetric, ...prev];
+      try {
+        localStorage.setItem('ft_metrics_unified', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
 
     // Cloud Firestore Sync
     const db = firestoreDbRef.current || getFirestoreInstance();
@@ -2188,9 +2274,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteBodyMetric = (metricIdOrDate: string) => {
-    setAllBodyMetrics(prev =>
-      prev.filter(m => (m.id ? m.id !== metricIdOrDate : m.date !== metricIdOrDate))
-    );
+    markDeletedId(metricIdOrDate);
+    setAllBodyMetrics(prev => {
+      const updated = prev.filter(m => (m.id ? m.id !== metricIdOrDate : m.date !== metricIdOrDate));
+      try {
+        localStorage.setItem('ft_metrics_unified', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
     const db = firestoreDbRef.current || getFirestoreInstance();
     if (db) {
       cloudDeleteBodyMetric(db, metricIdOrDate).catch(console.error);
@@ -2199,8 +2290,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearAllBodyMetrics = () => {
     const currentMetrics = [...allBodyMetrics];
+    currentMetrics.forEach(m => markDeletedId(m.id || m.date));
     setAllBodyMetrics([]);
     localStorage.removeItem('ft_metrics_unified');
+    localStorage.removeItem('ft_metrics_v2');
     localStorage.removeItem('ft_metrics_primary');
     localStorage.removeItem('ft_metrics_partner');
     localStorage.setItem('ft_metrics_cleared_v2', 'true');

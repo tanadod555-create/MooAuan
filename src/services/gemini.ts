@@ -167,14 +167,10 @@ export async function analyzeFoodImage({
   }
 
   const candidateModels = [
-    'gemini-3.6-flash',
+    'gemini-2.5-flash',
     'gemini-2.5-flash-lite',
-    'gemini-3.5-flash',
-    'gemini-3.1-flash-lite',
-    'gemini-flash-latest',
-    'gemini-3.8-flash',
-    'gemini-3.7-flash',
-    'gemini-pro-latest',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
   ];
 
   const promptText = userNotes && userNotes.trim()
@@ -236,8 +232,13 @@ export async function analyzeFoodImage({
     throw new Error('Gemini API did not return text response.');
   }
 
-  // Parse JSON response cleanly
-  const cleanedText = textOutput.replace(/```json\n?|\n?```/g, '').trim();
+  // Parse JSON response cleanly and extract JSON block
+  let cleanedText = textOutput.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+  const firstBrace = cleanedText.indexOf('{');
+  const lastBrace = cleanedText.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleanedText = cleanedText.substring(firstBrace, lastBrace + 1);
+  }
   return JSON.parse(cleanedText);
 }
 
@@ -305,14 +306,10 @@ export async function chatWithTrainer({
   }
 
   const candidateModels = [
-    'gemini-3.6-flash',
+    'gemini-2.5-flash',
     'gemini-2.5-flash-lite',
-    'gemini-3.5-flash',
-    'gemini-3.1-flash-lite',
-    'gemini-flash-latest',
-    'gemini-3.8-flash',
-    'gemini-3.7-flash',
-    'gemini-pro-latest',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
   ];
 
   // Build daily context summary
