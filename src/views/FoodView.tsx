@@ -675,21 +675,23 @@ export const FoodView: React.FC = () => {
       </div>
 
       {/* Quick Access Buttons: 1) Food Database, 2) AI Text Search & 3) AI Trainer Chat */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
         {/* Quick Food Database */}
         <button
           type="button"
           onClick={() => setShowFoodDbModal(true)}
-          className="p-3 rounded-2xl bg-white hover:bg-pink-50 border border-pink-200 text-left transition active:scale-98 shadow-xs flex items-center gap-2.5 cursor-pointer"
+          className="p-2 sm:p-3 rounded-2xl bg-white hover:bg-pink-50 border border-pink-200 text-center sm:text-left transition active:scale-95 shadow-2xs flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5 cursor-pointer min-h-[56px] sm:min-h-0"
         >
-          <div className="w-8 h-8 rounded-xl bg-pink-100 text-rose-500 flex items-center justify-center shrink-0">
-            <BookOpen size={16} />
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-pink-100 text-rose-500 flex items-center justify-center shrink-0">
+            <BookOpen size={15} />
           </div>
-          <div className="min-w-0 flex-1">
-            <h4 className="text-xs font-black text-slate-800 truncate">
-              ตารางโภชนาการด่วน
+          <div className="min-w-0 flex-1 w-full">
+            <h4 className="text-[11px] sm:text-xs font-black text-slate-800 truncate">
+              ตารางแคลด่วน
             </h4>
-            <span className="text-[10px] text-pink-500 font-bold">เช็กแคล & เมนูไทย</span>
+            <span className="text-[9px] sm:text-[10px] text-pink-500 font-bold block truncate">
+              เช็กแคล & เมนูไทย
+            </span>
           </div>
         </button>
 
@@ -705,17 +707,18 @@ export const FoodView: React.FC = () => {
             setAiTextUserId(selectedUserKey);
             setShowAiTextModal(true);
           }}
-          className="p-3 rounded-2xl bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 hover:from-purple-100/80 hover:via-pink-100/80 hover:to-rose-100/80 border border-purple-200/80 text-left transition active:scale-98 shadow-xs flex items-center gap-2.5 cursor-pointer group"
+          className="p-2 sm:p-3 rounded-2xl bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 hover:from-purple-100/80 hover:via-pink-100/80 hover:to-rose-100/80 border border-purple-200/80 text-center sm:text-left transition active:scale-95 shadow-2xs flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5 cursor-pointer group min-h-[56px] sm:min-h-0"
         >
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition">
-            <Sparkles size={16} className="animate-pulse" />
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition">
+            <Sparkles size={15} className="animate-pulse" />
           </div>
-          <div className="min-w-0 flex-1">
-            <h4 className="text-xs font-black text-purple-900 truncate flex items-center gap-1">
-              <span>พิมพ์สั่ง AI คำนวณ</span>
-              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-purple-200/80 text-purple-800 font-bold">ใหม่ ✨</span>
+          <div className="min-w-0 flex-1 w-full">
+            <h4 className="text-[11px] sm:text-xs font-black text-purple-900 truncate">
+              พิมพ์สั่ง AI ✨
             </h4>
-            <span className="text-[10px] text-purple-600 font-bold">พิมพ์ชื่อเมนูหาแคลอรี่</span>
+            <span className="text-[9px] sm:text-[10px] text-purple-600 font-bold block truncate">
+              หาแคลอัตโนมัติ
+            </span>
           </div>
         </button>
 
@@ -723,16 +726,18 @@ export const FoodView: React.FC = () => {
         <button
           type="button"
           onClick={() => setShowAiTrainerModal(true)}
-          className="p-3 rounded-2xl bg-white hover:bg-rose-50 border border-pink-200 text-left transition active:scale-98 shadow-xs flex items-center gap-2.5 cursor-pointer"
+          className="p-2 sm:p-3 rounded-2xl bg-white hover:bg-rose-50 border border-pink-200 text-center sm:text-left transition active:scale-95 shadow-2xs flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5 cursor-pointer min-h-[56px] sm:min-h-0"
         >
-          <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-            <Bot size={16} />
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+            <Bot size={15} />
           </div>
-          <div className="min-w-0 flex-1">
-            <h4 className="text-xs font-black text-slate-800 truncate">
-              โค้ช AI วิเคราะห์
+          <div className="min-w-0 flex-1 w-full">
+            <h4 className="text-[11px] sm:text-xs font-black text-slate-800 truncate">
+              โค้ช AI
             </h4>
-            <span className="text-[10px] text-rose-500 font-bold">ปรึกษาเมนู & สารอาหาร</span>
+            <span className="text-[9px] sm:text-[10px] text-rose-500 font-bold block truncate">
+              ปรึกษาอาหาร
+            </span>
           </div>
         </button>
       </div>
@@ -1334,7 +1339,7 @@ export const FoodView: React.FC = () => {
 
 
       {/* Action Buttons: Camera / Gallery / AI Text Search / Quick Food DB / Manual Add */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3">
         {/* Camera Hidden Input */}
         <input
           type="file"
@@ -1365,15 +1370,15 @@ export const FoodView: React.FC = () => {
             cameraInputRef.current?.click();
           }}
           disabled={isFoodScanning}
-          className={`p-4 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold flex items-center justify-center gap-3 shadow-sm shadow-pink-200/50 active:scale-[0.98] transition group cursor-pointer ${
+          className={`p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold flex items-center justify-center gap-2.5 sm:gap-3 shadow-sm shadow-pink-200/50 active:scale-[0.98] transition group cursor-pointer min-h-[58px] ${
             isFoodScanning ? 'opacity-70 cursor-not-allowed' : ''
           }`}
         >
-          <Camera size={22} className={`stroke-[2.5] ${isFoodScanning ? 'animate-pulse' : ''}`} />
-          <div className="text-left">
-            <span className="text-sm font-bold block">{isFoodScanning ? 'กำลังสแกน...' : 'ถ่ายรูปอาหาร'}</span>
-            <span className="text-[10px] text-white/90 font-normal block">
-              {isFoodScanning ? 'วิเคราะห์ในเบื้องหลัง' : 'เปิดกล้องถ่ายสด → AI วิเคราะห์'}
+          <Camera size={20} className={`stroke-[2.5] shrink-0 ${isFoodScanning ? 'animate-pulse' : ''}`} />
+          <div className="text-left min-w-0">
+            <span className="text-xs sm:text-sm font-bold block truncate">{isFoodScanning ? 'กำลังสแกน...' : 'ถ่ายรูปอาหาร'}</span>
+            <span className="text-[9px] sm:text-[10px] text-white/90 font-normal block truncate">
+              {isFoodScanning ? 'วิเคราะห์เบื้องหลัง' : 'กล้องถ่ายสด → AI'}
             </span>
           </div>
         </button>
@@ -1389,22 +1394,22 @@ export const FoodView: React.FC = () => {
             galleryInputRef.current?.click();
           }}
           disabled={isFoodScanning}
-          className={`p-4 rounded-2xl bg-white/90 hover:bg-pink-50/70 border border-pink-200/70 text-slate-700 font-bold flex items-center justify-center gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer ${
+          className={`p-3 sm:p-4 rounded-2xl bg-white/90 hover:bg-pink-50/70 border border-pink-200/70 text-slate-700 font-bold flex items-center justify-center gap-2.5 sm:gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer min-h-[58px] ${
             isFoodScanning ? 'opacity-70 cursor-not-allowed' : ''
           }`}
         >
-          <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center group-hover:scale-110 transition">
-            <Upload size={18} />
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
+            <Upload size={16} />
           </div>
-          <div className="text-left">
-            <span className="text-sm font-bold block">อัปโหลดจากอัลบั้ม</span>
-            <span className="text-[10px] text-slate-400 font-normal block">
-              เลือกรูปจากคลังภาพ / ไฟล์
+          <div className="text-left min-w-0">
+            <span className="text-xs sm:text-sm font-bold block truncate">อัปโหลดรูป</span>
+            <span className="text-[9px] sm:text-[10px] text-slate-400 font-normal block truncate">
+              จากคลังภาพ / ไฟล์
             </span>
           </div>
         </button>
 
-        {/* AI Text Search & Calculate Button */}
+        {/* AI Text Search & Calculate Button (Full-width hero on mobile!) */}
         <button
           onClick={() => {
             if (!effectiveGeminiKey) {
@@ -1415,19 +1420,19 @@ export const FoodView: React.FC = () => {
             setAiTextUserId(selectedUserKey);
             setShowAiTextModal(true);
           }}
-          className="p-4 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 hover:from-purple-600 hover:via-indigo-600 hover:to-pink-600 text-white font-bold flex items-center justify-center gap-3 shadow-sm shadow-purple-200/50 active:scale-[0.98] transition group cursor-pointer"
+          className="col-span-2 sm:col-span-1 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 hover:from-purple-600 hover:via-indigo-600 hover:to-pink-600 text-white font-bold flex items-center justify-center gap-3 shadow-sm shadow-purple-200/50 active:scale-[0.98] transition group cursor-pointer min-h-[58px]"
         >
-          <div className="w-9 h-9 rounded-xl bg-white/20 text-white flex items-center justify-center group-hover:scale-110 transition shrink-0">
-            <Sparkles size={20} className="animate-pulse" />
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/20 text-white flex items-center justify-center group-hover:scale-110 transition shrink-0">
+            <Sparkles size={18} className="animate-pulse" />
           </div>
-          <div className="text-left">
+          <div className="text-left min-w-0">
             <div className="flex items-center gap-1.5">
-              <span className="text-sm font-bold block">พิมพ์สั่ง AI ค้นหา</span>
-              <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-white/25 text-white">
+              <span className="text-xs sm:text-sm font-bold block truncate">พิมพ์สั่ง AI ค้นหา</span>
+              <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-white/25 text-white shrink-0">
                 แคล & สารอาหาร
               </span>
             </div>
-            <span className="text-[10px] text-white/90 font-normal block">
+            <span className="text-[9px] sm:text-[10px] text-white/90 font-normal block truncate">
               พิมพ์ชื่อเมนู → AI คำนวณให้ทันที
             </span>
           </div>
@@ -1436,20 +1441,17 @@ export const FoodView: React.FC = () => {
         {/* Quick Food Database Reference Button */}
         <button
           onClick={() => setShowFoodDbModal(true)}
-          className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100/80 hover:to-teal-100/80 border border-emerald-200/80 text-slate-800 font-bold flex items-center justify-center gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer"
+          className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100/80 hover:to-teal-100/80 border border-emerald-200/80 text-slate-800 font-bold flex items-center justify-center gap-2.5 sm:gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer min-h-[58px]"
         >
-          <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition">
-            <BookOpen size={18} />
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
+            <BookOpen size={16} />
           </div>
-          <div className="text-left">
+          <div className="text-left min-w-0">
             <div className="flex items-center gap-1">
-              <span className="text-sm font-bold block text-slate-800">ตารางอาหารด่วน</span>
-              <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-emerald-200 text-emerald-800">
-                ไฟเบอร์
-              </span>
+              <span className="text-xs sm:text-sm font-bold block text-slate-800 truncate">ตารางอาหารด่วน</span>
             </div>
-            <span className="text-[10px] text-slate-500 font-normal block">
-              ไข่, ไก่, ข้าว, กะเพรา + แตะลงมื้อ
+            <span className="text-[9px] sm:text-[10px] text-slate-500 font-normal block truncate">
+              แตะเมนูลงมื้อทันที
             </span>
           </div>
         </button>
@@ -1457,15 +1459,15 @@ export const FoodView: React.FC = () => {
         {/* Manual Add Button */}
         <button
           onClick={() => setShowManualModal(true)}
-          className="p-4 rounded-2xl bg-white/90 hover:bg-pink-50/70 border border-pink-200/70 text-slate-700 font-bold flex items-center justify-center gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer"
+          className="p-3 sm:p-4 rounded-2xl bg-white/90 hover:bg-pink-50/70 border border-pink-200/70 text-slate-700 font-bold flex items-center justify-center gap-2.5 sm:gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer min-h-[58px]"
         >
-          <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center group-hover:scale-110 transition">
-            <Plus size={18} />
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
+            <Plus size={16} />
           </div>
-          <div className="text-left">
-            <span className="text-sm font-bold block">กรอกรายการเอง</span>
-            <span className="text-[10px] text-slate-400 font-normal block">
-              พิมพ์แคลอรี่ & Micro nutrients
+          <div className="text-left min-w-0">
+            <span className="text-xs sm:text-sm font-bold block truncate">กรอกรายการเอง</span>
+            <span className="text-[9px] sm:text-[10px] text-slate-400 font-normal block truncate">
+              ใส่แคล & สารอาหารเอง
             </span>
           </div>
         </button>
@@ -1631,9 +1633,9 @@ export const FoodView: React.FC = () => {
 
       {/* Photo Preview & Note Modal (Appears immediately AFTER taking or uploading a photo) */}
       {showPhotoNoteModal && pendingPhoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-md bg-white border border-pink-200 rounded-3xl overflow-hidden shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-pink-100">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-md bg-white border-t sm:border border-pink-200 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92dvh] sm:max-h-[85vh] overflow-y-auto pb-[max(1.25rem,env(safe-area-inset-bottom))] overscroll-contain">
+            <div className="flex items-center justify-between pb-3 border-b border-pink-100 shrink-0">
               <div className="flex items-center gap-2">
                 <Camera size={18} className="text-pink-500" />
                 <div>
@@ -1646,7 +1648,7 @@ export const FoodView: React.FC = () => {
                   setShowPhotoNoteModal(false);
                   setPendingPhoto(null);
                 }}
-                className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs cursor-pointer"
               >
                 ✕
               </button>
@@ -1673,7 +1675,7 @@ export const FoodView: React.FC = () => {
                     key={meal}
                     type="button"
                     onClick={() => setSelectedMeal(meal)}
-                    className={`py-1.5 rounded-xl text-xs font-bold capitalize transition cursor-pointer ${
+                    className={`py-2 rounded-xl text-xs font-bold capitalize transition cursor-pointer min-h-[38px] ${
                       selectedMeal === meal
                         ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
                         : 'bg-pink-50/60 text-slate-600 hover:bg-pink-100 border border-pink-200/70'
@@ -1714,7 +1716,7 @@ export const FoodView: React.FC = () => {
                 placeholder="เช่น กินแค่ครึ่งเดียว (50%), ไม่กินผัก, ไม่เอาหนัง, ไม่ซดน้ำซุป, ข้าวครึ่งทัพพี..."
                 value={aiUserNote}
                 onChange={(e) => setAiUserNote(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-pink-50/40 border border-pink-200/70 rounded-2xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-pink-300 focus:bg-white transition"
+                className="w-full px-3.5 py-2.5 bg-pink-50/40 border border-pink-200/70 rounded-2xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-pink-300 focus:bg-white transition text-base sm:text-xs min-h-[38px]"
               />
 
               {/* Quick Chips */}
@@ -1745,7 +1747,7 @@ export const FoodView: React.FC = () => {
                           setAiUserNote((prev) => (prev ? `${prev}, ${chip.text}` : chip.text));
                         }
                       }}
-                      className={`px-2.5 py-1 rounded-xl transition active:scale-95 font-medium cursor-pointer ${
+                      className={`px-2.5 py-1.5 rounded-xl transition active:scale-95 font-medium cursor-pointer min-h-[32px] flex items-center ${
                         isSelected
                           ? 'bg-pink-200 text-slate-800 border border-pink-300 shadow-2xs'
                           : 'bg-pink-50/70 hover:bg-pink-100 text-slate-600 border border-pink-200/60'
@@ -1759,21 +1761,21 @@ export const FoodView: React.FC = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-2 flex items-center gap-2">
+            <div className="pt-2 flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => {
                   setShowPhotoNoteModal(false);
                   setPendingPhoto(null);
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs transition cursor-pointer"
+                className="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs transition cursor-pointer min-h-[44px]"
               >
                 ยกเลิก / ถ่ายใหม่
               </button>
               <button
                 type="button"
                 onClick={handleStartAnalysis}
-                className="flex-[2] py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-95 cursor-pointer"
+                className="flex-[2] py-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-95 cursor-pointer min-h-[44px]"
               >
                 <Sparkles size={15} />
                 <span>ส่งให้ AI วิเคราะห์ภาพนี้</span>
@@ -1785,10 +1787,10 @@ export const FoodView: React.FC = () => {
 
       {/* AI Food Analysis Result Modal */}
       {showAiResultModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-lg max-h-[92vh] bg-white border border-pink-200 rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-lg max-h-[92dvh] sm:max-h-[85vh] bg-white border-t sm:border border-pink-200 rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             {/* Header */}
-            <div className="p-4 border-b border-pink-100 bg-pink-50/60 flex items-center justify-between">
+            <div className="p-4 border-b border-pink-100 bg-pink-50/60 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2">
                 <Sparkles size={18} className="text-pink-500" />
                 <div>
@@ -1798,14 +1800,14 @@ export const FoodView: React.FC = () => {
               </div>
               <button
                 onClick={() => setShowAiResultModal(false)}
-                className="w-7 h-7 rounded-full bg-white hover:bg-pink-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs border border-pink-200/70"
+                className="w-8 h-8 rounded-full bg-white hover:bg-pink-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs border border-pink-200/70 cursor-pointer shrink-0"
               >
                 ✕
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-4 overflow-y-auto space-y-4 text-xs">
+            <div className="p-4 overflow-y-auto space-y-4 text-xs overscroll-contain">
               {/* Preview Image */}
               {previewImage && (
                 <div className="w-full h-40 rounded-2xl overflow-hidden bg-pink-50 relative border border-pink-100">
@@ -1836,7 +1838,7 @@ export const FoodView: React.FC = () => {
                       key={p.factor}
                       type="button"
                       onClick={() => handleApplyPortionMultiplier(p.factor)}
-                      className={`py-1.5 rounded-xl font-bold text-[11px] transition active:scale-95 ${
+                      className={`py-2 rounded-xl font-bold text-[11px] transition active:scale-95 min-h-[38px] ${
                         portionMultiplier === p.factor
                           ? 'bg-pink-300 text-slate-800 border border-pink-400 shadow-2xs'
                           : 'bg-white text-slate-600 border border-pink-200/70 hover:bg-pink-100'
@@ -1857,7 +1859,7 @@ export const FoodView: React.FC = () => {
                       key={meal}
                       type="button"
                       onClick={() => setSelectedMeal(meal)}
-                      className={`py-2 rounded-xl text-xs font-bold capitalize transition ${
+                      className={`py-2 rounded-xl text-xs font-bold capitalize transition min-h-[38px] ${
                         selectedMeal === meal
                           ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
                           : 'bg-pink-50/60 text-slate-600 hover:bg-pink-100 border border-pink-200/70'
@@ -1884,9 +1886,9 @@ export const FoodView: React.FC = () => {
                         type="text"
                         value={item.name}
                         onChange={(e) => handleUpdateAiItem(idx, 'name', e.target.value)}
-                        className="bg-white border border-pink-200/80 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 flex-1"
+                        className="bg-white border border-pink-200/80 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 flex-1 min-h-[38px]"
                       />
-                      <span className="text-[10px] text-pink-600 font-bold bg-pink-100/70 px-2 py-0.5 rounded border border-pink-200/60">
+                      <span className="text-[10px] text-pink-600 font-bold bg-pink-100/70 px-2 py-0.5 rounded border border-pink-200/60 shrink-0">
                         แม่นยำ {Math.round((item.confidence || 0.8) * 100)}%
                       </span>
                     </div>
@@ -1896,44 +1898,48 @@ export const FoodView: React.FC = () => {
                         <span className="text-[10px] text-slate-500 font-semibold block mb-0.5">กรัม (g)</span>
                         <input
                           type="number"
+                          inputMode="decimal"
                           value={item.grams === 0 ? '' : item.grams}
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'grams', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1.5 text-center font-bold text-slate-700 min-h-[36px]"
                         />
                       </div>
                       <div>
                         <span className="text-[10px] text-pink-600 font-bold block mb-0.5">kcal</span>
                         <input
                           type="number"
+                          inputMode="decimal"
                           value={item.kcal === 0 ? '' : item.kcal}
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'kcal', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-pink-600"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1.5 text-center font-bold text-pink-600 min-h-[36px]"
                         />
                       </div>
                       <div>
                         <span className="text-[10px] text-sky-700 font-bold block mb-0.5">โปรตีน (g)</span>
                         <input
                           type="number"
+                          inputMode="decimal"
                           value={item.protein_g === 0 ? '' : item.protein_g}
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'protein_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-sky-700"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1.5 text-center font-bold text-sky-700 min-h-[36px]"
                         />
                       </div>
                       <div>
                         <span className="text-[10px] text-amber-700 font-bold block mb-0.5">คาร์บ (g)</span>
                         <input
                           type="number"
+                          inputMode="decimal"
                           value={item.carb_g === 0 ? '' : item.carb_g}
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'carb_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-amber-700"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1.5 text-center font-bold text-amber-700 min-h-[36px]"
                         />
                       </div>
                     </div>
@@ -1943,33 +1949,36 @@ export const FoodView: React.FC = () => {
                         <span className="text-[10px] text-rose-600 font-bold block mb-0.5">ไขมัน (g)</span>
                         <input
                           type="number"
+                          inputMode="decimal"
                           value={item.fat_g === 0 ? '' : item.fat_g}
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'fat_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-rose-600"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1.5 text-center font-bold text-rose-600 min-h-[36px]"
                         />
                       </div>
                       <div>
                         <span className="text-[10px] text-amber-700 font-bold block mb-0.5">โซเดียม (mg)</span>
                         <input
                           type="number"
+                          inputMode="decimal"
                           value={item.sodium_mg ?? ''}
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'sodium_mg', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1.5 text-center font-bold text-slate-700 min-h-[36px]"
                         />
                       </div>
                       <div>
                         <span className="text-[10px] text-emerald-700 font-bold block mb-0.5">ไฟเบอร์ (g)</span>
                         <input
                           type="number"
+                          inputMode="decimal"
                           value={item.fiber_g ?? ''}
                           onChange={(e) =>
                             handleUpdateAiItem(idx, 'fiber_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                           }
-                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700"
+                          className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1.5 text-center font-bold text-emerald-700 min-h-[36px]"
                         />
                       </div>
                     </div>
@@ -1985,11 +1994,11 @@ export const FoodView: React.FC = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-pink-100 bg-pink-50/60 flex items-center gap-3">
+            <div className="p-4 border-t border-pink-100 bg-pink-50/60 flex items-center gap-3 shrink-0">
               <button
                 onClick={handleConfirmAiFood}
                 disabled={isSubmittingAi}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition"
+                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition min-h-[44px] cursor-pointer"
               >
                 <CheckCircle2 size={16} />
                 {isSubmittingAi ? 'กำลังบันทึก...' : `บันทึกลงโปรไฟล์ของ ${activeTargetProfile.name}`}
@@ -1999,7 +2008,7 @@ export const FoodView: React.FC = () => {
                   setShowAiResultModal(false);
                   setAiUserNote('');
                 }}
-                className="py-2.5 px-4 rounded-xl bg-white hover:bg-pink-100 text-slate-600 border border-pink-200/70 text-xs font-bold"
+                className="py-3 px-4 rounded-xl bg-white hover:bg-pink-100 text-slate-600 border border-pink-200/70 text-xs font-bold min-h-[44px] cursor-pointer"
               >
                 ยกเลิก
               </button>
@@ -2010,12 +2019,12 @@ export const FoodView: React.FC = () => {
 
       {/* AI Text Food Search & Add Modal */}
       {showAiTextModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-lg max-h-[92vh] bg-white border border-purple-200 rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-lg max-h-[92dvh] sm:max-h-[85vh] bg-white border-t sm:border border-purple-200 rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl pb-[max(0.75rem,env(safe-area-inset-bottom))]">
             {/* Modal Header */}
-            <div className="p-4 border-b border-purple-100 bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 flex items-center justify-between">
+            <div className="p-4 border-b border-purple-100 bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center shadow-xs">
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center shadow-xs shrink-0">
                   <Sparkles size={18} className="animate-pulse" />
                 </div>
                 <div>
@@ -2035,14 +2044,14 @@ export const FoodView: React.FC = () => {
                   setShowAiTextModal(false);
                   setAiTextError(null);
                 }}
-                className="w-7 h-7 rounded-full bg-white hover:bg-purple-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs border border-purple-200 transition"
+                className="w-8 h-8 rounded-full bg-white hover:bg-purple-100 text-slate-400 hover:text-slate-600 flex items-center justify-center text-xs border border-purple-200 transition cursor-pointer shrink-0"
               >
                 ✕
               </button>
             </div>
 
             {/* Modal Body */}
-            <div className="p-4 overflow-y-auto space-y-4 text-xs">
+            <div className="p-4 overflow-y-auto space-y-4 text-xs overscroll-contain">
               {/* Profile & Meal Picker */}
               <div className="p-3 bg-purple-50/50 rounded-2xl border border-purple-100 space-y-2.5">
                 <div className="flex items-center justify-between">
@@ -2051,25 +2060,25 @@ export const FoodView: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setAiTextUserId('primary')}
-                      className={`px-2.5 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 min-h-[38px] ${
                         aiTextUserId === 'primary'
                           ? 'bg-sky-500 text-white shadow-2xs'
                           : 'bg-white text-slate-600 border border-slate-200 hover:bg-sky-50'
                       }`}
                     >
-                      <img src={getUserAvatar('primary')} className="w-3.5 h-3.5 rounded-full object-cover" />
+                      <img src={getUserAvatar('primary')} className="w-4 h-4 rounded-full object-cover" />
                       <span>แม็กนั่ม</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => setAiTextUserId('partner')}
-                      className={`px-2.5 py-1 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 min-h-[38px] ${
                         aiTextUserId === 'partner'
                           ? 'bg-pink-500 text-white shadow-2xs'
                           : 'bg-white text-slate-600 border border-slate-200 hover:bg-pink-50'
                       }`}
                     >
-                      <img src={getUserAvatar('partner')} className="w-3.5 h-3.5 rounded-full object-cover" />
+                      <img src={getUserAvatar('partner')} className="w-4 h-4 rounded-full object-cover" />
                       <span>มะนาว</span>
                     </button>
                   </div>
@@ -2083,7 +2092,7 @@ export const FoodView: React.FC = () => {
                         key={meal}
                         type="button"
                         onClick={() => setAiTextMeal(meal)}
-                        className={`py-1.5 rounded-xl text-xs font-bold capitalize transition ${
+                        className={`py-2 rounded-xl text-xs font-bold capitalize transition min-h-[38px] ${
                           aiTextMeal === meal
                             ? 'bg-purple-600 text-white shadow-2xs'
                             : 'bg-white text-slate-600 border border-purple-200/70 hover:bg-purple-100/50'
@@ -2114,7 +2123,7 @@ export const FoodView: React.FC = () => {
                       value={aiTextQuery}
                       onChange={(e) => setAiTextQuery(e.target.value)}
                       placeholder="เช่น ข้าวมันไก่พิเศษไม่เอาหนัง + ไข่ต้ม 2 ฟอง หรือ สเต็กแซลมอนย่าง 150g กับข้าวกล้องและบรอกโคลี..."
-                      className="w-full px-3.5 py-2.5 bg-purple-50/30 border border-purple-200 rounded-2xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-400 focus:bg-white transition resize-none"
+                      className="w-full px-3.5 py-2.5 bg-purple-50/30 border border-purple-200 rounded-2xl text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-400 focus:bg-white transition resize-none text-base sm:text-xs"
                     />
                   </div>
 
@@ -2138,7 +2147,7 @@ export const FoodView: React.FC = () => {
                           onClick={() =>
                             setAiTextQuery((prev) => (prev ? `${prev} + ${dish}` : dish))
                           }
-                          className="px-2.5 py-1 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 text-[11px] font-medium transition active:scale-95 cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200/80 text-[11px] font-medium transition active:scale-95 cursor-pointer min-h-[34px] flex items-center"
                         >
                           + {dish}
                         </button>
@@ -2156,7 +2165,7 @@ export const FoodView: React.FC = () => {
                       value={aiTextNote}
                       onChange={(e) => setAiTextNote(e.target.value)}
                       placeholder="เช่น กินแค่ 50%, ใช้น้ำมันมะกอกน้อย, ไม่ใส่น้ำตาล..."
-                      className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-purple-300 focus:bg-white transition"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-purple-300 focus:bg-white transition text-base sm:text-xs"
                     />
                     <div className="flex items-center gap-1.5 flex-wrap">
                       {[
@@ -2172,7 +2181,7 @@ export const FoodView: React.FC = () => {
                           onClick={() =>
                             setAiTextNote((prev) => (prev ? `${prev}, ${note}` : note))
                           }
-                          className="px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-medium"
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-medium min-h-[30px] flex items-center"
                         >
                           + {note}
                         </button>
@@ -2203,7 +2212,7 @@ export const FoodView: React.FC = () => {
                       type="button"
                       onClick={handleStartAiTextSearch}
                       disabled={isAiTextSearching || !aiTextQuery.trim()}
-                      className="w-full py-3 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 hover:from-purple-600 hover:via-indigo-600 hover:to-pink-600 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-purple-200/50 transition active:scale-98 cursor-pointer"
+                      className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 hover:from-purple-600 hover:via-indigo-600 hover:to-pink-600 disabled:opacity-50 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md shadow-purple-200/50 transition active:scale-98 cursor-pointer min-h-[48px]"
                     >
                       {isAiTextSearching ? (
                         <>
@@ -2246,7 +2255,7 @@ export const FoodView: React.FC = () => {
                           key={p.factor}
                           type="button"
                           onClick={() => handleApplyAiTextMultiplier(p.factor)}
-                          className={`py-1.5 rounded-xl font-bold text-[11px] transition active:scale-95 ${
+                          className={`py-2 rounded-xl font-bold text-[11px] transition active:scale-95 min-h-[38px] ${
                             aiTextMultiplier === p.factor
                               ? 'bg-purple-600 text-white shadow-2xs'
                               : 'bg-white text-slate-600 border border-purple-200/70 hover:bg-purple-100'
@@ -2304,15 +2313,15 @@ export const FoodView: React.FC = () => {
                             type="text"
                             value={item.name}
                             onChange={(e) => handleUpdateAiTextItem(idx, 'name', e.target.value)}
-                            className="bg-white border border-purple-200/80 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-700 flex-1"
+                            className="bg-white border border-purple-200/80 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 flex-1 min-h-[38px]"
                           />
                           <button
                             type="button"
                             onClick={() => handleDeleteAiTextItem(idx)}
-                            className="text-slate-400 hover:text-rose-500 p-1 rounded-lg transition"
+                            className="text-slate-400 hover:text-rose-500 p-2 rounded-lg transition min-h-[38px] min-w-[38px] flex items-center justify-center cursor-pointer"
                             title="ลบรายการนี้"
                           >
-                            <Trash2 size={15} />
+                            <Trash2 size={16} />
                           </button>
                         </div>
 
@@ -2321,44 +2330,48 @@ export const FoodView: React.FC = () => {
                             <span className="text-[10px] text-slate-500 font-bold block mb-0.5">กรัม (g)</span>
                             <input
                               type="number"
+                              inputMode="decimal"
                               value={item.grams === 0 ? '' : item.grams}
                               onChange={(e) =>
                                 handleUpdateAiTextItem(idx, 'grams', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                               }
-                              className="w-full bg-white border border-purple-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700"
+                              className="w-full bg-white border border-purple-200 rounded-lg px-1.5 py-1.5 text-center font-bold text-slate-700 min-h-[36px]"
                             />
                           </div>
                           <div>
                             <span className="text-[10px] text-pink-600 font-bold block mb-0.5">พลังงาน (kcal)</span>
                             <input
                               type="number"
+                              inputMode="decimal"
                               value={item.kcal === 0 ? '' : item.kcal}
                               onChange={(e) =>
                                 handleUpdateAiTextItem(idx, 'kcal', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                               }
-                              className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1 text-center font-black text-pink-600"
+                              className="w-full bg-white border border-pink-200 rounded-lg px-1.5 py-1.5 text-center font-black text-pink-600 min-h-[36px]"
                             />
                           </div>
                           <div>
                             <span className="text-[10px] text-sky-700 font-bold block mb-0.5">โปรตีน (g)</span>
                             <input
                               type="number"
+                              inputMode="decimal"
                               value={item.protein_g === 0 ? '' : item.protein_g}
                               onChange={(e) =>
                                 handleUpdateAiTextItem(idx, 'protein_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                               }
-                              className="w-full bg-white border border-sky-200 rounded-lg px-1.5 py-1 text-center font-bold text-sky-700"
+                              className="w-full bg-white border border-sky-200 rounded-lg px-1.5 py-1.5 text-center font-bold text-sky-700 min-h-[36px]"
                             />
                           </div>
                           <div>
                             <span className="text-[10px] text-amber-700 font-bold block mb-0.5">คาร์บ (g)</span>
                             <input
                               type="number"
+                              inputMode="decimal"
                               value={item.carb_g === 0 ? '' : item.carb_g}
                               onChange={(e) =>
                                 handleUpdateAiTextItem(idx, 'carb_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                               }
-                              className="w-full bg-white border border-amber-200 rounded-lg px-1.5 py-1 text-center font-bold text-amber-700"
+                              className="w-full bg-white border border-amber-200 rounded-lg px-1.5 py-1.5 text-center font-bold text-amber-700 min-h-[36px]"
                             />
                           </div>
                         </div>
@@ -2368,33 +2381,36 @@ export const FoodView: React.FC = () => {
                             <span className="text-[10px] text-rose-600 font-bold block mb-0.5">ไขมัน (g)</span>
                             <input
                               type="number"
+                              inputMode="decimal"
                               value={item.fat_g === 0 ? '' : item.fat_g}
                               onChange={(e) =>
                                 handleUpdateAiTextItem(idx, 'fat_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                               }
-                              className="w-full bg-white border border-rose-200 rounded-lg px-1.5 py-1 text-center font-bold text-rose-600"
+                              className="w-full bg-white border border-rose-200 rounded-lg px-1.5 py-1.5 text-center font-bold text-rose-600 min-h-[36px]"
                             />
                           </div>
                           <div>
                             <span className="text-[10px] text-amber-700 font-bold block mb-0.5">โซเดียม (mg)</span>
                             <input
                               type="number"
+                              inputMode="decimal"
                               value={item.sodium_mg ?? ''}
                               onChange={(e) =>
                                 handleUpdateAiTextItem(idx, 'sodium_mg', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                               }
-                              className="w-full bg-white border border-slate-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700"
+                              className="w-full bg-white border border-slate-200 rounded-lg px-1.5 py-1.5 text-center font-bold text-slate-700 min-h-[36px]"
                             />
                           </div>
                           <div>
                             <span className="text-[10px] text-emerald-700 font-bold block mb-0.5">ไฟเบอร์ (g)</span>
                             <input
                               type="number"
+                              inputMode="decimal"
                               value={item.fiber_g ?? ''}
                               onChange={(e) =>
                                 handleUpdateAiTextItem(idx, 'fiber_g', e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))
                               }
-                              className="w-full bg-white border border-emerald-200 rounded-lg px-1.5 py-1 text-center font-bold text-emerald-700"
+                              className="w-full bg-white border border-emerald-200 rounded-lg px-1.5 py-1.5 text-center font-bold text-emerald-700 min-h-[36px]"
                             />
                           </div>
                         </div>
@@ -2411,7 +2427,7 @@ export const FoodView: React.FC = () => {
                         setBaseAiTextItems([]);
                         setAiTextAiNotes('');
                       }}
-                      className="text-xs text-purple-600 hover:text-purple-800 font-bold flex items-center gap-1 cursor-pointer"
+                      className="text-xs text-purple-600 hover:text-purple-800 font-bold flex items-center gap-1 cursor-pointer min-h-[38px]"
                     >
                       <span>← พิมพ์ค้นหาใหม่อีกรอบ</span>
                     </button>
@@ -2422,12 +2438,12 @@ export const FoodView: React.FC = () => {
 
             {/* Modal Footer (When results are ready) */}
             {aiTextItems.length > 0 && (
-              <div className="p-4 border-t border-purple-100 bg-purple-50/60 flex items-center gap-3">
+              <div className="p-4 border-t border-purple-100 bg-purple-50/60 flex items-center gap-3 shrink-0">
                 <button
                   type="button"
                   onClick={handleConfirmAiTextFood}
                   disabled={isSubmittingAiText}
-                  className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-500 hover:from-purple-700 hover:via-indigo-700 hover:to-pink-600 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer"
+                  className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-500 hover:from-purple-700 hover:via-indigo-700 hover:to-pink-600 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition cursor-pointer min-h-[44px]"
                 >
                   <CheckCircle2 size={16} />
                   <span>
@@ -2443,7 +2459,7 @@ export const FoodView: React.FC = () => {
                     setAiTextItems([]);
                     setBaseAiTextItems([]);
                   }}
-                  className="py-2.5 px-4 rounded-xl bg-white hover:bg-purple-100 text-slate-600 border border-purple-200/70 text-xs font-bold transition"
+                  className="py-3 px-4 rounded-xl bg-white hover:bg-purple-100 text-slate-600 border border-purple-200/70 text-xs font-bold transition min-h-[44px]"
                 >
                   ยกเลิก
                 </button>
@@ -2455,21 +2471,21 @@ export const FoodView: React.FC = () => {
 
       {/* Manual Entry Modal (With Micronutrients) */}
       {showManualModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-md bg-white border border-pink-200 rounded-3xl overflow-hidden shadow-2xl p-5 sm:p-6">
-            <div className="flex items-center justify-between pb-3 border-b border-pink-100">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-md max-h-[92dvh] sm:max-h-[85vh] bg-white border-t sm:border border-pink-200 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl p-5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-pink-100 shrink-0">
               <div className="flex items-center gap-2">
                 <UtensilsCrossed size={18} className="text-pink-500" />
                 <h3 className="font-bold text-slate-700 text-base">
                   กรอกข้อมูลอาหาร ({activeTargetProfile.name})
                 </h3>
               </div>
-              <button onClick={() => setShowManualModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setShowManualModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg">
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveManual} className="space-y-4 mt-4 text-xs max-h-[75vh] overflow-y-auto pr-1">
+            <form onSubmit={handleSaveManual} className="space-y-4 mt-4 text-xs overflow-y-auto pr-1 flex-1 overscroll-contain">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">ชื่ออาหาร *</label>
                 <input
@@ -2478,7 +2494,7 @@ export const FoodView: React.FC = () => {
                   placeholder="เช่น อกไก่ย่าง ข้าวกล้อง สลัดแซลมอน"
                   value={manualName}
                   onChange={(e) => setManualName(e.target.value)}
-                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-pink-300 focus:bg-white"
+                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-pink-300 focus:bg-white min-h-[38px] text-base sm:text-xs"
                 />
               </div>
 
@@ -2488,7 +2504,7 @@ export const FoodView: React.FC = () => {
                   <select
                     value={manualMeal}
                     onChange={(e) => setManualMeal(e.target.value as MealType)}
-                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-pink-300 font-bold"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-pink-300 font-bold min-h-[38px]"
                   >
                     <option value="breakfast">มื้อเช้า</option>
                     <option value="lunch">มื้อกลางวัน</option>
@@ -2500,10 +2516,11 @@ export const FoodView: React.FC = () => {
                   <label className="block font-bold text-slate-700 mb-1">ปริมาณ (กรัม)</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={manualGrams}
                     placeholder="200"
                     onChange={(e) => setManualGrams(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 font-bold focus:outline-none focus:border-pink-300"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 font-bold focus:outline-none focus:border-pink-300 min-h-[38px]"
                   />
                 </div>
               </div>
@@ -2513,21 +2530,23 @@ export const FoodView: React.FC = () => {
                   <label className="block font-bold text-pink-600 mb-1">พลังงาน (kcal) *</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     required
                     value={manualKcal}
                     placeholder="350"
                     onChange={(e) => setManualKcal(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-pink-600 font-black focus:outline-none focus:border-pink-300 text-sm"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-pink-600 font-black focus:outline-none focus:border-pink-300 text-sm min-h-[38px]"
                   />
                 </div>
                 <div>
                   <label className="block font-bold text-sky-700 mb-1">โปรตีน (g)</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={manualProtein}
                     placeholder="25"
                     onChange={(e) => setManualProtein(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-sky-700 font-bold focus:outline-none focus:border-pink-300"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-sky-700 font-bold focus:outline-none focus:border-pink-300 min-h-[38px]"
                   />
                 </div>
               </div>
@@ -2537,20 +2556,22 @@ export const FoodView: React.FC = () => {
                   <label className="block font-bold text-amber-700 mb-1">คาร์โบไฮเดรต (g)</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={manualCarb}
                     placeholder="40"
                     onChange={(e) => setManualCarb(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-amber-700 font-bold focus:outline-none focus:border-pink-300"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-amber-700 font-bold focus:outline-none focus:border-pink-300 min-h-[38px]"
                   />
                 </div>
                 <div>
                   <label className="block font-bold text-rose-600 mb-1">ไขมัน (g)</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={manualFat}
                     placeholder="10"
                     onChange={(e) => setManualFat(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-rose-600 font-bold focus:outline-none focus:border-pink-300"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-rose-600 font-bold focus:outline-none focus:border-pink-300 min-h-[38px]"
                   />
                 </div>
               </div>
@@ -2565,30 +2586,33 @@ export const FoodView: React.FC = () => {
                     <label className="block text-[11px] font-bold text-amber-700 mb-1">โซเดียม (mg)</label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={manualSodium}
                       placeholder="0"
                       onChange={(e) => setManualSodium(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold min-h-[36px]"
                     />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-emerald-700 mb-1">ไฟเบอร์ (g)</label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={manualFiber}
                       placeholder="0"
                       onChange={(e) => setManualFiber(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold min-h-[36px]"
                     />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-rose-600 mb-1">น้ำตาล (g)</label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={manualSugar}
                       placeholder="0"
                       onChange={(e) => setManualSugar(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold min-h-[36px]"
                     />
                   </div>
                 </div>
@@ -2598,40 +2622,44 @@ export const FoodView: React.FC = () => {
                     <label className="block text-[10px] font-bold text-slate-500 mb-0.5">Vit C (mg)</label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={manualVitC}
                       placeholder="0"
                       onChange={(e) => setManualVitC(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                      className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs min-h-[36px]"
                     />
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 mb-0.5">เหล็ก (mg)</label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={manualIron}
                       placeholder="0"
                       onChange={(e) => setManualIron(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                      className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs min-h-[36px]"
                     />
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 mb-0.5">แคลเซียม</label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={manualCalcium}
                       placeholder="0"
                       onChange={(e) => setManualCalcium(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                      className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs min-h-[36px]"
                     />
                   </div>
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 mb-0.5">โพแทสเซียม</label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={manualPotassium}
                       placeholder="0"
                       onChange={(e) => setManualPotassium(e.target.value === '' ? '' : (parseFloat(e.target.value) || 0))}
-                      className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-lg px-1.5 py-1 text-center font-bold text-slate-700 text-xs min-h-[36px]"
                     />
                   </div>
                 </div>
@@ -2648,7 +2676,7 @@ export const FoodView: React.FC = () => {
                   placeholder="เช่น กินแค่ครึ่งเดียว (50%), ไม่กินผัก, ไม่เอาหนัง, ข้าวครึ่งทัพพี..."
                   value={manualNote}
                   onChange={(e) => setManualNote(e.target.value)}
-                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-pink-300 focus:bg-white"
+                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-pink-300 focus:bg-white min-h-[38px] text-base sm:text-xs"
                 />
                 <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
                   {[
@@ -2663,7 +2691,7 @@ export const FoodView: React.FC = () => {
                       onClick={() => {
                         setManualNote((prev) => (prev ? `${prev}, ${chip.text}` : chip.text));
                       }}
-                      className="px-2 py-0.5 rounded-lg bg-pink-50 hover:bg-pink-100 text-slate-600 border border-pink-200/60 cursor-pointer"
+                      className="px-2 py-1 rounded-lg bg-pink-50 hover:bg-pink-100 text-slate-600 border border-pink-200/60 cursor-pointer min-h-[30px] flex items-center"
                     >
                       {chip.label}
                     </button>
@@ -2671,17 +2699,17 @@ export const FoodView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-3 border-t border-pink-100">
+              <div className="pt-3 flex items-center justify-end gap-3 border-t border-pink-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowManualModal(false)}
-                  className="px-4 py-2 rounded-xl bg-pink-50/70 hover:bg-pink-100 text-slate-600 border border-pink-200/70 font-bold"
+                  className="px-4 py-2.5 rounded-xl bg-pink-50/70 hover:bg-pink-100 text-slate-600 border border-pink-200/70 font-bold min-h-[44px]"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold shadow-xs"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold shadow-xs min-h-[44px] cursor-pointer"
                 >
                   บันทึกอาหาร
                 </button>
@@ -2693,19 +2721,19 @@ export const FoodView: React.FC = () => {
 
       {/* Edit Food Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="relative w-full max-w-md bg-white border border-pink-200 rounded-3xl overflow-hidden shadow-2xl p-5 sm:p-6">
-            <div className="flex items-center justify-between pb-3 border-b border-pink-100">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-md max-h-[92dvh] sm:max-h-[85vh] bg-white border-t sm:border border-pink-200 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl p-5 sm:p-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-pink-100 shrink-0">
               <div className="flex items-center gap-2">
                 <Edit2 size={18} className="text-pink-500" />
                 <h3 className="font-bold text-slate-700 text-base">แก้ไขรายการอาหาร</h3>
               </div>
-              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setShowEditModal(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg">
                 <X size={18} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-4 mt-4 text-xs max-h-[75vh] overflow-y-auto pr-1">
+            <form onSubmit={handleSaveEdit} className="space-y-4 mt-4 text-xs overflow-y-auto pr-1 flex-1 overscroll-contain">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">ชื่ออาหาร *</label>
                 <input
@@ -2713,7 +2741,7 @@ export const FoodView: React.FC = () => {
                   required
                   value={editForm.name}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-pink-300 focus:bg-white font-bold"
+                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-pink-300 focus:bg-white font-bold min-h-[38px] text-base sm:text-xs"
                 />
               </div>
 
@@ -2725,7 +2753,7 @@ export const FoodView: React.FC = () => {
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, meal: e.target.value as MealType }))
                     }
-                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-pink-300 font-bold"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:border-pink-300 font-bold min-h-[38px]"
                   >
                     <option value="breakfast">มื้อเช้า</option>
                     <option value="lunch">มื้อกลางวัน</option>
@@ -2737,6 +2765,7 @@ export const FoodView: React.FC = () => {
                   <label className="block font-bold text-slate-700 mb-1">ปริมาณ (กรัม)</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={editForm.grams}
                     placeholder="200"
                     onChange={(e) =>
@@ -2745,7 +2774,7 @@ export const FoodView: React.FC = () => {
                         grams: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                       }))
                     }
-                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 font-bold focus:outline-none focus:border-pink-300"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-slate-700 font-bold focus:outline-none focus:border-pink-300 min-h-[38px]"
                   />
                 </div>
               </div>
@@ -2755,6 +2784,7 @@ export const FoodView: React.FC = () => {
                   <label className="block font-bold text-pink-600 mb-1">พลังงาน (kcal) *</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     required
                     value={editForm.kcal}
                     placeholder="350"
@@ -2764,13 +2794,14 @@ export const FoodView: React.FC = () => {
                         kcal: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                       }))
                     }
-                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-pink-600 font-black focus:outline-none focus:border-pink-300 text-sm"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-pink-600 font-black focus:outline-none focus:border-pink-300 text-sm min-h-[38px]"
                   />
                 </div>
                 <div>
                   <label className="block font-bold text-sky-700 mb-1">โปรตีน (g)</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={editForm.protein_g}
                     placeholder="25"
                     onChange={(e) =>
@@ -2779,7 +2810,7 @@ export const FoodView: React.FC = () => {
                         protein_g: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                       }))
                     }
-                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-sky-700 font-bold focus:outline-none focus:border-pink-300"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-sky-700 font-bold focus:outline-none focus:border-pink-300 min-h-[38px]"
                   />
                 </div>
               </div>
@@ -2789,6 +2820,7 @@ export const FoodView: React.FC = () => {
                   <label className="block font-bold text-amber-700 mb-1">คาร์โบไฮเดรต (g)</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={editForm.carb_g}
                     placeholder="40"
                     onChange={(e) =>
@@ -2797,13 +2829,14 @@ export const FoodView: React.FC = () => {
                         carb_g: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                       }))
                     }
-                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-amber-700 font-bold focus:outline-none focus:border-pink-300"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-amber-700 font-bold focus:outline-none focus:border-pink-300 min-h-[38px]"
                   />
                 </div>
                 <div>
                   <label className="block font-bold text-rose-600 mb-1">ไขมัน (g)</label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={editForm.fat_g}
                     placeholder="10"
                     onChange={(e) =>
@@ -2812,7 +2845,7 @@ export const FoodView: React.FC = () => {
                         fat_g: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                       }))
                     }
-                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-rose-600 font-bold focus:outline-none focus:border-pink-300"
+                    className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-rose-600 font-bold focus:outline-none focus:border-pink-300 min-h-[38px]"
                   />
                 </div>
               </div>
@@ -2827,6 +2860,7 @@ export const FoodView: React.FC = () => {
                     <label className="block text-[11px] font-bold text-amber-700 mb-1">โซเดียม (mg)</label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={editForm.sodium_mg}
                       placeholder="0"
                       onChange={(e) =>
@@ -2835,13 +2869,14 @@ export const FoodView: React.FC = () => {
                           sodium_mg: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                         }))
                       }
-                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold min-h-[36px]"
                     />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-emerald-700 mb-1">ไฟเบอร์ (g)</label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={editForm.fiber_g}
                       placeholder="0"
                       onChange={(e) =>
@@ -2850,13 +2885,14 @@ export const FoodView: React.FC = () => {
                           fiber_g: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                         }))
                       }
-                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold min-h-[36px]"
                     />
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-rose-600 mb-1">น้ำตาล (g)</label>
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={editForm.sugar_g}
                       placeholder="0"
                       onChange={(e) =>
@@ -2865,7 +2901,7 @@ export const FoodView: React.FC = () => {
                           sugar_g: e.target.value === '' ? '' : (parseFloat(e.target.value) || 0),
                         }))
                       }
-                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold"
+                      className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-2.5 py-1.5 text-slate-700 font-bold min-h-[36px]"
                     />
                   </div>
                 </div>
@@ -2882,21 +2918,21 @@ export const FoodView: React.FC = () => {
                   placeholder="เช่น กินแค่ครึ่งเดียว (50%), ไม่กินผัก, ไม่เอาหนัง..."
                   value={editForm.note}
                   onChange={(e) => setEditForm((prev) => ({ ...prev, note: e.target.value }))}
-                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-pink-300 focus:bg-white"
+                  className="w-full bg-pink-50/40 border border-pink-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none focus:border-pink-300 focus:bg-white min-h-[38px] text-base sm:text-xs"
                 />
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-3 border-t border-pink-100">
+              <div className="pt-3 flex items-center justify-end gap-3 border-t border-pink-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 rounded-xl bg-pink-50/70 hover:bg-pink-100 text-slate-600 border border-pink-200/70 font-bold"
+                  className="px-4 py-2.5 rounded-xl bg-pink-50/70 hover:bg-pink-100 text-slate-600 border border-pink-200/70 font-bold min-h-[44px]"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold shadow-xs"
+                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold shadow-xs min-h-[44px] cursor-pointer"
                 >
                   บันทึกการแก้ไข
                 </button>
