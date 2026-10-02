@@ -41,7 +41,7 @@ export interface Collectible {
   y: number;
   width: number;
   height: number;
-  type: 'coin' | 'boba' | 'star_magnet' | 'shield';
+  type: 'coin' | 'boba' | 'star_magnet' | 'shield' | 'potion_blast';
   value: number;
   collected?: boolean;
 }

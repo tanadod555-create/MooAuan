@@ -16,40 +16,45 @@ import {
   play8BitFeverJingle,
 } from './gameAudio';
 import { loadPiggySaveData, recordHighScore, awardCoins } from '../../services/piggyGameService';
-import { Trophy, Coins, RotateCcw, Shield, Zap } from 'lucide-react';
+import { Trophy, Coins, RotateCcw, Shield, Zap, Sparkles, Flame } from 'lucide-react';
 
 // ──────────────────────────────────────────────
-// COOKIE-RUN BALANCED PHYSICS CONSTANTS
+// COOKIE-RUN BALANCED PHYSICS & SIZES
 // ──────────────────────────────────────────────
-const CANVAS_W = 560;
-const CANVAS_H = 315;
-const FLOOR_Y = 236;               // Aligned with the wooden track in game_bg.jpg
-const PLAYER_X = 85;               // Fixed X position of player
+const CANVAS_W = 640;
+const CANVAS_H = 360;
+const FLOOR_Y = 278;               // Ground track position in game_bg.jpg
+const PLAYER_X = 95;               // Fixed X position
 
-// Snappy yet controllable Cookie Run physics
-const JUMP_VELOCITY = -12.5;       // Initial jump impulse
-const DOUBLE_JUMP_VELOCITY = -10.5;// Second mid-air jump
-const GRAVITY_ASCENDING = 0.52;    // Smooth float on the way up
-const GRAVITY_DESCENDING = 0.95;   // Snappy gravity on the way down
-const MAX_FALL_SPEED = 14;         // Max falling speed
-const COYOTE_TIME = 6;             // Grace period for jumping right after ledge
+// Cookie Run jump physics (scaled for larger 640x360 canvas)
+const JUMP_VELOCITY = -14.2;       // Jump impulse
+const DOUBLE_JUMP_VELOCITY = -12.0;// Second jump impulse
+const GRAVITY_ASCENDING = 0.58;    // Ascending float
+const GRAVITY_DESCENDING = 1.05;   // Snappy descent
+const MAX_FALL_SPEED = 16;         // Terminal velocity
+const COYOTE_TIME = 6;             // Coyote time frames
+
+// Character Dimensions (Large & clearly visible!)
+const CHAR_NORMAL_W = 74;
+const CHAR_NORMAL_H = 70;
+const CHAR_SLIDE_W = 96;
+const CHAR_SLIDE_H = 46;
+const CHAR_BLAST_W = 120;
+const CHAR_BLAST_H = 114;
 
 // Squash & Stretch
-const SQUASH_LAND = 0.75;          // Y scale when landing
-const STRETCH_JUMP = 1.25;         // Y scale when jumping
-const SQUASH_RECOVER_SPEED = 0.14; // Speed to recover normal shape
+const SQUASH_LAND = 0.72;
+const STRETCH_JUMP = 1.28;
+const SQUASH_RECOVER_SPEED = 0.15;
 
-// Slide duration
-const SLIDE_DURATION = 32;         // ~0.53 seconds
+// Speed Progression (Smooth, enjoyable, responsive)
+const INITIAL_SPEED = 3.6;
+const MAX_SPEED = 7.2;
+const SPEED_INCREASE = 0.0003;
 
-// Balanced Speed Progression (Smooth, not overwhelming)
-const INITIAL_SPEED = 3.4;         // Relaxed starting speed
-const MAX_SPEED = 6.8;             // Max cap
-const SPEED_INCREASE = 0.0003;     // Very gradual increase
-
-// Screen shake
-const SHAKE_INTENSITY = 7;
-const SHAKE_DURATION = 12;
+// Screen Shake
+const SHAKE_INTENSITY = 8;
+const SHAKE_DURATION = 14;
 
 interface LoadedAssets {
   bg: HTMLImageElement | null;
@@ -64,6 +69,8 @@ interface LoadedAssets {
   donut: HTMLImageElement | null;
   dumbbell: HTMLImageElement | null;
   barbellHigh: HTMLImageElement | null;
+  blast: HTMLImageElement | null;
+  magnet: HTMLImageElement | null;
 }
 
 interface PiggyRunCanvasProps {
@@ -73,6 +80,7 @@ interface PiggyRunCanvasProps {
 
 export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, character }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   // Game UI States
   const [isPlaying, setIsPlaying] = useState(false);
@@ -84,6 +92,12 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
   const [feverProgress, setFeverProgress] = useState(0);
   const [hasShield, setHasShield] = useState(false);
   const [hasMagnet, setHasMagnet] = useState(false);
+  const [hasBlast, setHasBlast] = useState(false);
+  const [blastTimerLeft, setBlastTimerLeft] = useState(0);
+
+  // Touch UI feedback
+  const [isSlideActive, setIsSlideActive] = useState(false);
+  const [isJumpActive, setIsJumpActive] = useState(false);
 
   // Loaded Sprite Assets Ref
   const assetsRef = useRef<LoadedAssets>({
@@ -99,6 +113,8 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
     donut: null,
     dumbbell: null,
     barbellHigh: null,
+    blast: null,
+    magnet: null,
   });
 
   // Game State Ref
@@ -118,17 +134,17 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
     } as PlayerSkills,
     player: {
       x: PLAYER_X,
-      y: FLOOR_Y - 46,
-      width: 46,
-      height: 46,
-      baseY: FLOOR_Y - 46,
+      y: FLOOR_Y - CHAR_NORMAL_H,
+      width: CHAR_NORMAL_W,
+      height: CHAR_NORMAL_H,
+      baseY: FLOOR_Y - CHAR_NORMAL_H,
       vy: 0,
       isGrounded: true,
       isJumping: false,
       jumpCount: 0,
       isSliding: false,
+      slideHolding: false,
       slideTimer: 0,
-      animTimer: 0,
       invulnerableTimer: 0,
       coyoteTimer: 0,
       scaleX: 1,
@@ -146,6 +162,10 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
       isActive: false,
       timer: 0,
     },
+    blast: {
+      isActive: false,
+      timer: 0,
+    },
     shieldCount: 0,
     obstacles: [] as Obstacle[],
     collectibles: [] as Collectible[],
@@ -159,14 +179,14 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
     jumpBufferTimer: 0,
   });
 
-  // Preload all real image assets
+  // Preload all clean transparent assets
   useEffect(() => {
     const loadImage = (src: string): Promise<HTMLImageElement> => {
       return new Promise((resolve) => {
         const img = new Image();
         img.src = src;
         img.onload = () => resolve(img);
-        img.onerror = () => resolve(img); // Avoid blocking
+        img.onerror = () => resolve(img);
       });
     };
 
@@ -183,7 +203,9 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
       loadImage('./mascots/game_item_donut.png'),
       loadImage('./mascots/game_item_dumbbell.png'),
       loadImage('./mascots/game_item_barbell_high.png'),
-    ]).then(([bg, manowRun, manowJump, manowSlide, magnumRun, magnumJump, magnumSlide, coin, boba, donut, dumbbell, barbellHigh]) => {
+      loadImage('./mascots/game_item_blast.png'),
+      loadImage('./mascots/game_item_magnet.png'),
+    ]).then(([bg, manowRun, manowJump, manowSlide, magnumRun, magnumJump, magnumSlide, coin, boba, donut, dumbbell, barbellHigh, blast, magnet]) => {
       assetsRef.current = {
         bg,
         manowRun,
@@ -197,6 +219,8 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
         donut,
         dumbbell,
         barbellHigh,
+        blast,
+        magnet,
       };
     });
   }, []);
@@ -230,6 +254,7 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
     g.player.isJumping = false;
     g.player.jumpCount = 0;
     g.player.isSliding = false;
+    g.player.slideHolding = false;
     g.player.slideTimer = 0;
     g.player.invulnerableTimer = 0;
     g.player.coyoteTimer = 0;
@@ -245,6 +270,9 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
 
     g.magnet.isActive = false;
     g.magnet.timer = 0;
+
+    g.blast.isActive = false;
+    g.blast.timer = 0;
 
     g.shieldCount = saved.skills.shieldLevel > 0 ? 1 : 0;
 
@@ -265,17 +293,21 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
     setIsFever(false);
     setHasShield(g.shieldCount > 0);
     setHasMagnet(false);
+    setHasBlast(false);
   }, [character]);
 
-  // Jump Control
-  const handleJump = useCallback(() => {
+  // Jump Action
+  const doJump = useCallback(() => {
     const g = gameStateRef.current;
     if (!g.isPlaying || g.isGameOver) {
       initNewGame();
       return;
     }
 
+    // Cancel slide when jumping
     g.player.isSliding = false;
+    g.player.slideHolding = false;
+    setIsSlideActive(false);
 
     // Ground or Coyote Time Jump
     if (g.player.isGrounded || g.player.coyoteTimer > 0) {
@@ -292,14 +324,14 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
       g.player.targetScaleY = 1;
 
       // Jump dust puff
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 7; i++) {
         g.particles.push({
-          x: g.player.x + 22,
+          x: g.player.x + 30,
           y: FLOOR_Y - 2,
-          vx: (Math.random() - 0.7) * 3,
-          vy: -Math.random() * 2.5 - 0.5,
+          vx: (Math.random() - 0.7) * 3.5,
+          vy: -Math.random() * 3 - 1,
           color: '#e2e8f0',
-          size: 3 + Math.random() * 2,
+          size: 3 + Math.random() * 3,
           life: 0,
           maxLife: 16,
         });
@@ -307,6 +339,8 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
 
       play8BitJump();
       g.jumpBuffered = false;
+      setIsJumpActive(true);
+      setTimeout(() => setIsJumpActive(false), 120);
       return;
     }
 
@@ -316,69 +350,146 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
       g.player.jumpCount = 2;
 
       g.player.scaleX = 0.85;
-      g.player.scaleY = 1.15;
+      g.player.scaleY = 1.2;
       g.player.targetScaleX = 1;
       g.player.targetScaleY = 1;
 
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 12; i++) {
         g.particles.push({
-          x: g.player.x + 22,
-          y: g.player.y + 35,
-          vx: (Math.random() - 0.5) * 5,
-          vy: Math.random() * 3 + 1,
+          x: g.player.x + 35,
+          y: g.player.y + 50,
+          vx: (Math.random() - 0.5) * 6,
+          vy: Math.random() * 4 + 1,
           color: i % 2 === 0 ? '#ffd700' : '#fbbf24',
-          size: 3,
+          size: 3.5,
           life: 0,
-          maxLife: 18,
+          maxLife: 20,
         });
       }
 
       play8BitDoubleJump();
       g.jumpBuffered = false;
+      setIsJumpActive(true);
+      setTimeout(() => setIsJumpActive(false), 120);
       return;
     }
 
-    // Input buffer for snappy responsiveness
+    // Input buffer
     g.jumpBuffered = true;
     g.jumpBufferTimer = 8;
   }, [initNewGame]);
 
-  // Slide Control
-  const handleSlide = useCallback(() => {
+  // Slide Start Action (Left screen press / hold)
+  const startSlide = useCallback(() => {
     const g = gameStateRef.current;
     if (!g.isPlaying || g.isGameOver) return;
 
     if (g.player.isGrounded) {
       g.player.isSliding = true;
-      g.player.slideTimer = SLIDE_DURATION;
+      g.player.slideHolding = true;
+      g.player.slideTimer = 40; // minimum slide frames
 
-      g.player.scaleX = 1.2;
-      g.player.scaleY = 0.7;
-      g.player.targetScaleX = 1.1;
-      g.player.targetScaleY = 0.8;
+      g.player.scaleX = 1.25;
+      g.player.scaleY = 0.65;
+      g.player.targetScaleX = 1.15;
+      g.player.targetScaleY = 0.75;
 
+      setIsSlideActive(true);
       play8BitSlide();
     } else if (!g.player.isGrounded) {
-      // Cookie Run Mid-air Fast Slam
-      g.player.vy = MAX_FALL_SPEED * 0.9;
+      // Cookie Run Mid-air Fast Slam Drop!
+      g.player.vy = MAX_FALL_SPEED * 0.95;
+      setIsSlideActive(true);
     }
   }, []);
 
-  // Keyboard Shortcuts
+  // Slide Release Action (Left screen touch up)
+  const endSlide = useCallback(() => {
+    const g = gameStateRef.current;
+    g.player.slideHolding = false;
+    setIsSlideActive(false);
+  }, []);
+
+  // Touch Screen Handler for Fullscreen Control (Left = Slide, Right = Jump)
+  const handleTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      const touchX = touch.clientX - rect.left;
+
+      if (touchX < rect.width * 0.48) {
+        // Left Side: SLIDE
+        startSlide();
+      } else {
+        // Right Side: JUMP
+        doJump();
+      }
+    }
+  }, [doJump, startSlide]);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      const touchX = touch.clientX - rect.left;
+
+      if (touchX < rect.width * 0.48) {
+        endSlide();
+      }
+    }
+  }, [endSlide]);
+
+  // Pointer/Mouse Handlers for Desktop Click Zones
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'touch') return; // Handled by Touch events
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+
+    if (clickX < rect.width * 0.48) {
+      startSlide();
+    } else {
+      doJump();
+    }
+  }, [doJump, startSlide]);
+
+  const handlePointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType === 'touch') return;
+    endSlide();
+  }, [endSlide]);
+
+  // Keyboard controls
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
         e.preventDefault();
-        handleJump();
+        doJump();
       } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
         e.preventDefault();
-        handleSlide();
+        startSlide();
+      }
+    };
+
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+        endSlide();
       }
     };
 
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [handleJump, handleSlide]);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [doJump, startSlide, endSlide]);
 
   // ──────────────────────────────────────────────
   // MAIN GAME ENGINE LOOP
@@ -400,7 +511,7 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
 
       ctx.clearRect(0, 0, W, H);
 
-      // Screen Shake
+      // Screen Shake Transform
       let shakeX = 0;
       let shakeY = 0;
       if (g.screenShake > 0) {
@@ -414,7 +525,6 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
 
       // ── 1. RENDER BACKGROUND IMAGE ──
       if (assets.bg && assets.bg.complete && assets.bg.naturalWidth > 0) {
-        // Seamless scrolling 16:9 pixel background
         const bgW = W;
         const bgH = H;
         const scrollX = -(g.bgOffset % bgW);
@@ -422,7 +532,6 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
         ctx.drawImage(assets.bg, scrollX, 0, bgW, bgH);
         ctx.drawImage(assets.bg, scrollX + bgW, 0, bgW, bgH);
       } else {
-        // Fallback cozy gradient while loading
         const grad = ctx.createLinearGradient(0, 0, 0, H);
         grad.addColorStop(0, '#fce7f3');
         grad.addColorStop(0.7, '#fed7aa');
@@ -431,16 +540,26 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
         ctx.fillRect(0, 0, W, H);
       }
 
-      // Fever Mode Rainbow Overlay
+      // Fever Rainbow Filter Overlay
       if (g.fever.isActive) {
         ctx.save();
-        ctx.globalAlpha = 0.18;
+        ctx.globalAlpha = 0.22;
         const rainbow = ctx.createLinearGradient(0, 0, W, 0);
         rainbow.addColorStop(0, '#ec4899');
-        rainbow.addColorStop(0.3, '#fbbf24');
-        rainbow.addColorStop(0.6, '#38bdf8');
-        rainbow.addColorStop(1, '#a855f7');
+        rainbow.addColorStop(0.25, '#fbbf24');
+        rainbow.addColorStop(0.5, '#38bdf8');
+        rainbow.addColorStop(0.75, '#a855f7');
+        rainbow.addColorStop(1, '#f43f5e');
         ctx.fillStyle = rainbow;
+        ctx.fillRect(0, 0, W, H);
+        ctx.restore();
+      }
+
+      // Giant Blast Mode Golden Shockwave
+      if (g.blast.isActive) {
+        ctx.save();
+        ctx.globalAlpha = 0.12 + Math.sin(g.frameCount * 0.3) * 0.08;
+        ctx.fillStyle = '#fef08a';
         ctx.fillRect(0, 0, W, H);
         ctx.restore();
       }
@@ -448,10 +567,10 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
       // ── 2. UPDATE GAME DYNAMICS ──
       if (g.isPlaying && !g.isGameOver) {
         g.distance += g.speed * 0.1;
-        g.score += Math.floor(g.speed * 0.2);
-        g.bgOffset += g.speed * 0.8;
+        g.score += Math.floor(g.speed * 0.25);
+        g.bgOffset += g.speed * 0.9;
 
-        // Controlled speed progression
+        // Controlled speed scaling
         if (g.speed < MAX_SPEED) {
           g.speed += SPEED_INCREASE;
         }
@@ -462,6 +581,16 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
           if (g.magnet.timer <= 0) {
             g.magnet.isActive = false;
             setHasMagnet(false);
+          }
+        }
+
+        // Giant Blast Powerup Timer
+        if (g.blast.isActive) {
+          g.blast.timer--;
+          setBlastTimerLeft(Math.ceil(g.blast.timer / 60));
+          if (g.blast.timer <= 0) {
+            g.blast.isActive = false;
+            setHasBlast(false);
           }
         }
 
@@ -504,14 +633,14 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
             p.targetScaleY = 1;
 
             // Landing dust
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 6; i++) {
               g.particles.push({
-                x: p.x + 12 + Math.random() * 20,
+                x: p.x + 20 + Math.random() * 30,
                 y: FLOOR_Y - 2,
-                vx: (Math.random() - 0.5) * 3,
-                vy: -Math.random() * 2 - 0.5,
+                vx: (Math.random() - 0.5) * 3.5,
+                vy: -Math.random() * 2.5 - 0.5,
                 color: '#cbd5e1',
-                size: 3 + Math.random() * 2,
+                size: 3 + Math.random() * 3,
                 life: 0,
                 maxLife: 14,
               });
@@ -537,30 +666,61 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
         p.scaleX += (p.targetScaleX - p.scaleX) * SQUASH_RECOVER_SPEED;
         p.scaleY += (p.targetScaleY - p.scaleY) * SQUASH_RECOVER_SPEED;
 
-        // Slide countdown
+        // Slide countdown & holding state
         if (p.isSliding) {
-          p.slideTimer--;
-          if (p.slideTimer <= 0) {
+          if (p.slideTimer > 0) p.slideTimer--;
+          if (!p.slideHolding && p.slideTimer <= 0) {
             p.isSliding = false;
             p.scaleX = 1;
             p.scaleY = 1;
+          }
+
+          // Slide spark trail
+          if (p.isGrounded && Math.random() < 0.6) {
+            g.particles.push({
+              x: p.x + 10,
+              y: FLOOR_Y - 4,
+              vx: -g.speed * 0.6 + (Math.random() - 0.5) * 2,
+              vy: -Math.random() * 1.5 - 0.5,
+              color: Math.random() < 0.5 ? '#f59e0b' : '#fbbf24',
+              size: 3,
+              life: 0,
+              maxLife: 10,
+            });
           }
         }
 
         // Running dust trail
         if (p.isGrounded && !p.isSliding) {
           p.dustTimer++;
-          if (p.dustTimer >= 6) {
+          if (p.dustTimer >= 5) {
             p.dustTimer = 0;
             g.particles.push({
-              x: p.x + 4,
+              x: p.x + 8,
               y: FLOOR_Y - 2,
-              vx: -g.speed * 0.4 + (Math.random() - 0.5),
-              vy: -Math.random() * 1.2,
+              vx: -g.speed * 0.45 + (Math.random() - 0.5),
+              vy: -Math.random() * 1.4,
               color: '#94a3b8',
-              size: 3,
+              size: 3.5,
               life: 0,
               maxLife: 12,
+            });
+          }
+        }
+
+        // Giant Blast Footstep shockwaves
+        if (g.blast.isActive && p.isGrounded && g.frameCount % 8 === 0) {
+          g.screenShake = 3;
+          for (let i = 0; i < 5; i++) {
+            g.particles.push({
+              x: p.x + 30 + Math.random() * 40,
+              y: FLOOR_Y - 2,
+              vx: (Math.random() - 0.5) * 5,
+              vy: -Math.random() * 3 - 1,
+              color: '#fde047',
+              size: 4,
+              life: 0,
+              maxLife: 16,
             });
           }
         }
@@ -573,99 +733,161 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
 
         if (p.invulnerableTimer > 0) p.invulnerableTimer--;
 
-        // ── 3. SPAWN OBSTACLES & COLLECTIBLES ──
+        // ── 3. SPAWN OBSTACLES & COLLECTIBLES (ENHANCED FOR SLIDE & SKILLS) ──
         g.nextObstacleDist -= g.speed;
         if (g.nextObstacleDist <= 0) {
           if (g.fever.isActive) {
-            // Fever Rainbow Gold Rush: Golden arc waves
-            for (let c = 0; c < 6; c++) {
+            // Golden Fever Wave: Golden arc waves + bonus boba
+            for (let c = 0; c < 7; c++) {
               g.collectibles.push({
-                x: W + c * 30,
-                y: FLOOR_Y - 55 - Math.sin(c * 0.6) * 32,
-                width: 22,
-                height: 22,
+                x: W + c * 32,
+                y: FLOOR_Y - 60 - Math.sin(c * 0.65) * 36,
+                width: 32,
+                height: 32,
                 type: 'coin',
                 value: 1,
               });
             }
-            g.nextObstacleDist = 85;
+            g.nextObstacleDist = 80;
           } else {
             const rand = Math.random();
-            if (rand < 0.5) {
-              // Low Obstacle: Donut or Dumbbell (Must JUMP)
-              const isDonut = Math.random() < 0.55;
+
+            if (rand < 0.48) {
+              // ⛓️ HIGH OVERHEAD BARBELL (MUST SLIDE UNDER!)
               g.obstacles.push({
                 x: W + 10,
-                y: FLOOR_Y - (isDonut ? 34 : 28),
-                width: isDonut ? 34 : 38,
-                height: isDonut ? 34 : 28,
-                type: isDonut ? 'donut' : 'dumbbell',
-                isHigh: false,
-              });
-            } else {
-              // High Hanging Barbell (Must SLIDE)
-              g.obstacles.push({
-                x: W + 10,
-                y: FLOOR_Y - 72,
-                width: 52,
-                height: 38,
+                y: FLOOR_Y - 84,
+                width: 90,
+                height: 65,
                 type: 'barbell_high',
                 isHigh: true,
               });
-            }
 
-            // Coin row beside obstacle
-            const coinY = FLOOR_Y - (Math.random() < 0.5 ? 45 : 75);
-            for (let c = 0; c < 3; c++) {
-              g.collectibles.push({
-                x: W + 90 + c * 28,
-                y: coinY,
-                width: 20,
-                height: 20,
-                type: 'coin',
-                value: 1,
+              // 🪙 Rewarding low coin row under the hanging barbell!
+              for (let c = 0; c < 3; c++) {
+                g.collectibles.push({
+                  x: W + 20 + c * 30,
+                  y: FLOOR_Y - 34,
+                  width: 30,
+                  height: 30,
+                  type: 'coin',
+                  value: 1,
+                });
+              }
+            } else if (rand < 0.82) {
+              // 🍩 / 🏋️ LOW GROUND OBSTACLE (MUST JUMP OVER!)
+              const isDonut = Math.random() < 0.55;
+              g.obstacles.push({
+                x: W + 10,
+                y: FLOOR_Y - (isDonut ? 50 : 42),
+                width: isDonut ? 50 : 58,
+                height: isDonut ? 50 : 42,
+                type: isDonut ? 'donut' : 'dumbbell',
+                isHigh: false,
               });
+
+              // Arching coins over the ground obstacle
+              for (let c = 0; c < 3; c++) {
+                g.collectibles.push({
+                  x: W + 15 + c * 28,
+                  y: FLOOR_Y - 95 - Math.sin((c / 2) * Math.PI) * 20,
+                  width: 30,
+                  height: 30,
+                  type: 'coin',
+                  value: 1,
+                });
+              }
+            } else {
+              // ⚡ COMBO: LOW OBSTACLE FOLLOWED BY HIGH BARBELL (JUMP THEN SLIDE!)
+              g.obstacles.push({
+                x: W + 10,
+                y: FLOOR_Y - 48,
+                width: 48,
+                height: 48,
+                type: 'donut',
+                isHigh: false,
+              });
+              g.obstacles.push({
+                x: W + 160,
+                y: FLOOR_Y - 84,
+                width: 90,
+                height: 65,
+                type: 'barbell_high',
+                isHigh: true,
+              });
+
+              for (let c = 0; c < 3; c++) {
+                g.collectibles.push({
+                  x: W + 170 + c * 30,
+                  y: FLOOR_Y - 34,
+                  width: 30,
+                  height: 30,
+                  type: 'coin',
+                  value: 1,
+                });
+              }
             }
 
-            // Boba Tea Powerup (Fever charger)
-            if (Math.random() < 0.35) {
+            // 🧋 Boba Milk Tea (Charges Fever)
+            if (Math.random() < 0.32) {
               g.collectibles.push({
-                x: W + 195,
-                y: FLOOR_Y - 58,
-                width: 26,
-                height: 30,
+                x: W + 220,
+                y: FLOOR_Y - 65,
+                width: 40,
+                height: 44,
                 type: 'boba',
                 value: 5,
               });
             }
 
-            g.nextObstacleDist = Math.max(80, 160 - g.speed * 6);
+            // ⭐ Rare Special In-Game Powerup Spawner
+            if (Math.random() < 0.16) {
+              const pTypeRand = Math.random();
+              const pType: 'potion_blast' | 'star_magnet' | 'shield' =
+                pTypeRand < 0.4 ? 'potion_blast' : pTypeRand < 0.75 ? 'star_magnet' : 'shield';
+
+              g.collectibles.push({
+                x: W + 270,
+                y: FLOOR_Y - 65,
+                width: 44,
+                height: 44,
+                type: pType,
+                value: 0,
+              });
+            }
+
+            g.nextObstacleDist = Math.max(90, 175 - g.speed * 6);
           }
         }
 
-        // Magnet attraction radius
-        const magnetRadius = g.magnet.isActive ? 170 + g.skills.magnetLevel * 30 : 0;
+        // Magnet / Blast attraction radius
+        const magnetRadius = g.blast.isActive
+          ? 320
+          : g.magnet.isActive
+          ? 220 + g.skills.magnetLevel * 35
+          : 0;
 
         // ── 4. UPDATE & COLLECT ITEMS ──
         for (let i = g.collectibles.length - 1; i >= 0; i--) {
           const item = g.collectibles[i];
           item.x -= g.speed;
 
+          // Magnet Attraction
           if (magnetRadius > 0 && !item.collected) {
-            const dx = g.player.x + 22 - item.x;
-            const dy = g.player.y + 20 - item.y;
+            const dx = g.player.x + 35 - item.x;
+            const dy = g.player.y + 30 - item.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < magnetRadius) {
-              item.x += (dx / dist) * 9;
-              item.y += (dy / dist) * 9;
+              item.x += (dx / dist) * (g.blast.isActive ? 14 : 10);
+              item.y += (dy / dist) * (g.blast.isActive ? 14 : 10);
             }
           }
 
           // Hitbox
           const px = g.player.x;
-          const py = g.player.isSliding ? g.player.y + 18 : g.player.y;
-          const pw = g.player.width;
-          const ph = g.player.isSliding ? 24 : g.player.height;
+          const py = g.player.isSliding ? g.player.y + 24 : g.player.y;
+          const pw = g.blast.isActive ? CHAR_BLAST_W : g.player.width;
+          const ph = g.player.isSliding ? CHAR_SLIDE_H : g.player.height;
 
           if (
             !item.collected &&
@@ -707,23 +929,61 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
                 life: 32,
                 color: '#ec4899',
               });
+            } else if (item.type === 'potion_blast') {
+              // 🚀 GIANT BLAST MODE!
+              play8BitPowerup();
+              g.blast.isActive = true;
+              g.blast.timer = 360; // 6 seconds
+              setHasBlast(true);
+              setBlastTimerLeft(6);
+              g.screenShake = 10;
+              g.scorePopups.push({
+                x: item.x,
+                y: item.y,
+                text: '⭐ ร่างยักษ์ชนแหลก!',
+                life: 45,
+                color: '#fde047',
+              });
+            } else if (item.type === 'star_magnet') {
+              play8BitPowerup();
+              g.magnet.isActive = true;
+              g.magnet.timer = 360 + g.skills.magnetLevel * 50;
+              setHasMagnet(true);
+              g.scorePopups.push({
+                x: item.x,
+                y: item.y,
+                text: '🧲 แม่เหล็กดูดเหรียญ!',
+                life: 35,
+                color: '#38bdf8',
+              });
+            } else if (item.type === 'shield') {
+              play8BitPowerup();
+              g.shieldCount = Math.min(2, g.shieldCount + 1);
+              setHasShield(true);
+              g.scorePopups.push({
+                x: item.x,
+                y: item.y,
+                text: '🛡️ เกราะฟองสบู่ +1',
+                life: 35,
+                color: '#38bdf8',
+              });
             }
 
-            for (let p = 0; p < 6; p++) {
+            for (let p = 0; p < 8; p++) {
               g.particles.push({
-                x: item.x + 10,
-                y: item.y + 10,
-                vx: (Math.random() - 0.5) * 6,
-                vy: (Math.random() - 0.5) * 6,
-                color: item.type === 'coin' ? '#ffd700' : '#f472b6',
-                size: 3,
+                x: item.x + item.width / 2,
+                y: item.y + item.height / 2,
+                vx: (Math.random() - 0.5) * 7,
+                vy: (Math.random() - 0.5) * 7,
+                color: item.type === 'potion_blast' ? '#fde047' : item.type === 'coin' ? '#ffd700' : '#f472b6',
+                size: 3.5,
                 life: 0,
-                maxLife: 14,
+                maxLife: 16,
               });
             }
           }
 
-          if (item.x < -50 || item.collected) {
+          if (item.x < -60 || item.collected) {
             g.collectibles.splice(i, 1);
           }
         }
@@ -733,57 +993,69 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
           const obs = g.obstacles[i];
           obs.x -= g.speed;
 
-          // Fair collision box
+          // Precise collision box
+          const isBlast = g.blast.isActive;
+          const pw = isBlast ? CHAR_BLAST_W : g.player.width - 16;
+          const ph = g.player.isSliding ? CHAR_SLIDE_H - 12 : (isBlast ? CHAR_BLAST_H : g.player.height - 12);
           const px = g.player.x + 8;
-          const py = g.player.isSliding ? g.player.y + 22 : g.player.y + 6;
-          const pw = g.player.width - 16;
-          const ph = g.player.isSliding ? 20 : g.player.height - 10;
+          const py = g.player.isSliding ? g.player.y + 24 : g.player.y + 6;
 
+          // Check AABB collision
           if (
-            px < obs.x + obs.width - 8 &&
-            px + pw > obs.x + 8 &&
-            py < obs.y + obs.height - 6 &&
-            py + ph > obs.y + 6
+            px < obs.x + obs.width - 10 &&
+            px + pw > obs.x + 10 &&
+            py < obs.y + obs.height - 8 &&
+            py + ph > obs.y + 8
           ) {
-            if (g.fever.isActive) {
-              // Destroy obstacle in Fever Mode!
+            // In Giant Blast or Fever Mode: SMASH EVERYTHING!
+            if (g.blast.isActive || g.fever.isActive) {
               play8BitCoin();
-              g.score += 100;
-              for (let p = 0; p < 14; p++) {
+              g.score += 150;
+              g.screenShake = 8;
+              g.scorePopups.push({
+                x: obs.x,
+                y: obs.y,
+                text: '💥 +150',
+                life: 25,
+                color: '#fbbf24',
+              });
+
+              for (let p = 0; p < 18; p++) {
                 g.particles.push({
                   x: obs.x + obs.width / 2,
                   y: obs.y + obs.height / 2,
-                  vx: (Math.random() - 0.5) * 9,
-                  vy: (Math.random() - 0.5) * 9,
-                  color: '#fbbf24',
-                  size: 4,
+                  vx: (Math.random() - 0.5) * 12,
+                  vy: (Math.random() - 0.5) * 12,
+                  color: ['#fbbf24', '#f59e0b', '#ef4444', '#ffffff'][p % 4],
+                  size: 4 + Math.random() * 3,
                   life: 0,
-                  maxLife: 20,
+                  maxLife: 22,
                 });
               }
               g.obstacles.splice(i, 1);
               continue;
             }
 
+            // Normal collision check
             if (g.player.invulnerableTimer <= 0) {
               if (g.shieldCount > 0) {
-                // Shield absorbs crash
+                // Shield absorbs collision
                 g.shieldCount--;
                 g.player.invulnerableTimer = 60;
                 setHasShield(g.shieldCount > 0);
                 play8BitCrash();
                 g.screenShake = SHAKE_DURATION;
 
-                for (let p = 0; p < 16; p++) {
+                for (let p = 0; p < 18; p++) {
                   g.particles.push({
-                    x: g.player.x + 22,
-                    y: g.player.y + 20,
-                    vx: (Math.random() - 0.5) * 9,
-                    vy: (Math.random() - 0.5) * 9,
+                    x: g.player.x + 30,
+                    y: g.player.y + 30,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
                     color: '#38bdf8',
                     size: 4,
                     life: 0,
-                    maxLife: 24,
+                    maxLife: 25,
                   });
                 }
               } else {
@@ -793,16 +1065,16 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
                 play8BitCrash();
                 g.screenShake = SHAKE_DURATION * 2;
 
-                for (let p = 0; p < 22; p++) {
+                for (let p = 0; p < 25; p++) {
                   g.particles.push({
-                    x: g.player.x + 22,
-                    y: g.player.y + 20,
-                    vx: (Math.random() - 0.5) * 11,
-                    vy: (Math.random() - 0.5) * 11,
+                    x: g.player.x + 35,
+                    y: g.player.y + 30,
+                    vx: (Math.random() - 0.5) * 13,
+                    vy: (Math.random() - 0.5) * 13,
                     color: ['#ef4444', '#f97316', '#fbbf24', '#ffffff'][p % 4],
-                    size: 4,
+                    size: 4.5,
                     life: 0,
-                    maxLife: 28,
+                    maxLife: 30,
                   });
                 }
 
@@ -816,7 +1088,7 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
             }
           }
 
-          if (obs.x < -70) {
+          if (obs.x < -100) {
             g.obstacles.splice(i, 1);
           }
         }
@@ -827,27 +1099,42 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
         setFeverProgress(g.fever.isActive ? (g.fever.timer / 360) * 100 : g.fever.meter);
       }
 
-      // ── 6. RENDER COLLECTIBLES (REAL IMAGES) ──
+      // ── 6. RENDER COLLECTIBLES ──
       g.collectibles.forEach((item) => {
         if (item.collected) return;
+        const hover = Math.sin(g.frameCount * 0.15 + item.x * 0.05) * 3;
+
         if (item.type === 'coin') {
           if (assets.coin && assets.coin.complete && assets.coin.naturalWidth > 0) {
-            const coinHover = Math.sin(g.frameCount * 0.15 + item.x * 0.05) * 3;
-            ctx.drawImage(assets.coin, item.x, item.y + coinHover, item.width, item.height);
-          } else {
-            ctx.fillStyle = '#ffd700';
-            ctx.beginPath();
-            ctx.arc(item.x + 10, item.y + 10, 8, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.drawImage(assets.coin, item.x, item.y + hover, item.width, item.height);
           }
         } else if (item.type === 'boba') {
           if (assets.boba && assets.boba.complete && assets.boba.naturalWidth > 0) {
-            ctx.drawImage(assets.boba, item.x, item.y, item.width, item.height);
+            ctx.drawImage(assets.boba, item.x, item.y + hover, item.width, item.height);
           }
+        } else if (item.type === 'potion_blast') {
+          if (assets.blast && assets.blast.complete && assets.blast.naturalWidth > 0) {
+            ctx.drawImage(assets.blast, item.x, item.y + hover, item.width, item.height);
+          }
+        } else if (item.type === 'star_magnet') {
+          if (assets.magnet && assets.magnet.complete && assets.magnet.naturalWidth > 0) {
+            ctx.drawImage(assets.magnet, item.x, item.y + hover, item.width, item.height);
+          }
+        } else if (item.type === 'shield') {
+          // Sparkling shield orb
+          ctx.save();
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.arc(item.x + 22, item.y + 22 + hover, 18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          ctx.restore();
         }
       });
 
-      // ── 7. RENDER OBSTACLES (REAL IMAGES) ──
+      // ── 7. RENDER OBSTACLES ──
       g.obstacles.forEach((obs) => {
         if (obs.type === 'donut') {
           if (assets.donut && assets.donut.complete && assets.donut.naturalWidth > 0) {
@@ -859,7 +1146,8 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
           }
         } else if (obs.type === 'barbell_high') {
           if (assets.barbellHigh && assets.barbellHigh.complete && assets.barbellHigh.naturalWidth > 0) {
-            ctx.drawImage(assets.barbellHigh, obs.x, obs.y - 12, obs.width, obs.height + 12);
+            // Chain from top down to the barbell
+            ctx.drawImage(assets.barbellHigh, obs.x, obs.y - 18, obs.width, obs.height + 18);
           }
         }
       });
@@ -868,24 +1156,38 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
       const p = g.player;
       const isBlinking = p.invulnerableTimer > 0 && Math.floor(p.invulnerableTimer / 4) % 2 === 0;
       const isManow = g.character === 'manow';
+      const isBlast = g.blast.isActive;
 
       if (!isBlinking) {
         ctx.save();
 
-        // Squash & Stretch Center Transform
-        const centerX = p.x + p.width / 2;
-        const bottomY = p.isSliding ? p.y + 24 : p.y + p.height;
+        const currentW = isBlast ? CHAR_BLAST_W : (p.isSliding ? CHAR_SLIDE_W : CHAR_NORMAL_W);
+        const currentH = isBlast ? CHAR_BLAST_H : (p.isSliding ? CHAR_SLIDE_H : CHAR_NORMAL_H);
+        const centerX = p.x + currentW / 2;
+        const bottomY = p.isSliding ? p.y + CHAR_SLIDE_H : p.y + currentH;
+
         ctx.translate(centerX, bottomY);
         ctx.scale(p.scaleX, p.scaleY);
         ctx.translate(-centerX, -bottomY);
+
+        // Giant Blast Rainbow Star Aura
+        if (isBlast) {
+          ctx.save();
+          ctx.strokeStyle = '#fde047';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(centerX, p.y + currentH / 2, currentH * 0.65 + Math.sin(g.frameCount * 0.25) * 4, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
 
         // Fever Golden Halo
         if (g.fever.isActive) {
           ctx.save();
           ctx.strokeStyle = '#fde047';
-          ctx.lineWidth = 3;
+          ctx.lineWidth = 3.5;
           ctx.beginPath();
-          ctx.arc(centerX, p.y + 20, 30, 0, Math.PI * 2);
+          ctx.arc(centerX, p.y + currentH / 2, 42, 0, Math.PI * 2);
           ctx.stroke();
           ctx.restore();
         }
@@ -894,9 +1196,9 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
         if (g.shieldCount > 0) {
           ctx.save();
           ctx.strokeStyle = '#38bdf8';
-          ctx.lineWidth = 3;
+          ctx.lineWidth = 3.5;
           ctx.beginPath();
-          ctx.arc(centerX, p.isSliding ? p.y + 14 : p.y + 22, 28, 0, Math.PI * 2);
+          ctx.arc(centerX, p.isSliding ? p.y + 20 : p.y + 35, 38, 0, Math.PI * 2);
           ctx.stroke();
           ctx.restore();
         }
@@ -921,13 +1223,15 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
           }
         }
 
-        // Draw the image sprite with cute running bounce
+        // Draw image sprite with cute running bounce
         if (currentSprite && currentSprite.complete && currentSprite.naturalWidth > 0) {
-          const runBounce = p.isGrounded && !p.isSliding ? Math.sin(g.frameCount * 0.3) * 2 : 0;
+          const runBounce = p.isGrounded && !p.isSliding ? Math.sin(g.frameCount * 0.3) * 2.5 : 0;
           if (p.isSliding) {
-            ctx.drawImage(currentSprite, p.x - 6, p.y + 8, p.width + 12, p.height - 12);
+            ctx.drawImage(currentSprite, p.x - 8, p.y + 20, CHAR_SLIDE_W, CHAR_SLIDE_H);
+          } else if (isBlast) {
+            ctx.drawImage(currentSprite, p.x - 15, p.y - 40 + runBounce, CHAR_BLAST_W, CHAR_BLAST_H);
           } else {
-            ctx.drawImage(currentSprite, p.x, p.y + runBounce, p.width, p.height);
+            ctx.drawImage(currentSprite, p.x, p.y + runBounce, CHAR_NORMAL_W, CHAR_NORMAL_H);
           }
         }
 
@@ -939,7 +1243,7 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
         const pt = g.particles[i];
         pt.x += pt.vx;
         pt.y += pt.vy;
-        pt.vy += 0.06;
+        pt.vy += 0.07;
         pt.life++;
 
         const alpha = Math.max(0, 1 - pt.life / pt.maxLife);
@@ -956,13 +1260,13 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
       // ── 10. RENDER FLOATING SCORE POPUPS ──
       for (let i = g.scorePopups.length - 1; i >= 0; i--) {
         const sp = g.scorePopups[i];
-        sp.y -= 1.2;
+        sp.y -= 1.3;
         sp.life--;
 
         const alpha = Math.max(0, sp.life / 28);
         ctx.globalAlpha = alpha;
         ctx.fillStyle = sp.color;
-        ctx.font = 'bold 13px monospace';
+        ctx.font = 'bold 14px monospace';
         ctx.textAlign = 'center';
         ctx.fillText(sp.text, sp.x, sp.y);
         ctx.globalAlpha = 1;
@@ -982,42 +1286,47 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
   }, []);
 
   return (
-    <div className="relative select-none flex flex-col items-center">
+    <div className="relative select-none flex flex-col items-center w-full max-w-[640px] mx-auto">
       {/* Top Game HUD Bar */}
       <div className="w-full flex items-center justify-between px-3 py-2 bg-slate-900 text-white rounded-t-3xl border-b border-slate-700 text-xs">
         {/* Score & High Score */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 font-bold text-amber-400">
-            <Trophy size={14} />
-            <span>{score}</span>
+            <Trophy size={15} />
+            <span className="text-sm font-mono">{score}</span>
           </div>
-          <span className="text-slate-400">|</span>
-          <div className="text-slate-300">
+          <span className="text-slate-500">|</span>
+          <div className="text-slate-300 text-[11px]">
             สถิติ: <span className="font-mono text-white">{highScore}</span>
           </div>
         </div>
 
-        {/* Coins & Status Badges */}
-        <div className="flex items-center gap-2">
+        {/* Active Buff Badges */}
+        <div className="flex items-center gap-1.5">
+          {hasBlast && (
+            <span className="flex items-center gap-1 text-[10px] bg-yellow-500/25 text-yellow-300 px-2 py-0.5 rounded-full border border-yellow-400 animate-pulse font-bold">
+              <Flame size={11} /> ยักษ์ ({blastTimerLeft}s)
+            </span>
+          )}
           {hasShield && (
-            <span className="flex items-center gap-0.5 text-[10px] bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full border border-sky-400">
-              <Shield size={10} /> เกราะ
+            <span className="flex items-center gap-1 text-[10px] bg-sky-500/20 text-sky-300 px-2 py-0.5 rounded-full border border-sky-400 font-bold">
+              <Shield size={11} /> เกราะ
             </span>
           )}
           {hasMagnet && (
-            <span className="flex items-center gap-0.5 text-[10px] bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full border border-red-400">
-              <Zap size={10} /> แม่เหล็ก
+            <span className="flex items-center gap-1 text-[10px] bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full border border-red-400 font-bold">
+              <Zap size={11} /> แม่เหล็ก
             </span>
           )}
-          <div className="flex items-center gap-1 font-black text-yellow-300 bg-yellow-400/20 px-2 py-0.5 rounded-full border border-yellow-400/40">
-            <Coins size={13} />
-            <span>+{runCoins}</span>
+          <div className="flex items-center gap-1 font-black text-yellow-300 bg-yellow-400/20 px-2.5 py-0.5 rounded-full border border-yellow-400/40">
+            <Coins size={14} />
+            <span className="font-mono text-xs">+{runCoins}</span>
           </div>
         </div>
       </div>
 
       {/* Fever Bar Indicator */}
-      <div className="w-full h-2 bg-slate-800 overflow-hidden">
+      <div className="w-full h-2.5 bg-slate-800 overflow-hidden">
         <div
           className={`h-full transition-all duration-150 ${
             isFever
@@ -1028,57 +1337,95 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
         />
       </div>
 
-      {/* Main Canvas Viewport */}
-      <div className="relative w-full max-w-[560px] aspect-[16/9] bg-slate-950 overflow-hidden shadow-inner">
+      {/* Main Viewport with Fullscreen Left/Right Touch Controls */}
+      <div
+        ref={containerRef}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        className="relative w-full aspect-[16/9] bg-slate-950 overflow-hidden shadow-2xl rounded-b-3xl touch-none cursor-pointer select-none"
+      >
         <canvas
           ref={canvasRef}
           width={CANVAS_W}
           height={CANVAS_H}
-          className="w-full h-full block cursor-pointer"
+          className="w-full h-full block"
           style={{ imageRendering: 'auto' }}
-          onClick={handleJump}
         />
 
-        {/* Start / Overlay Screen */}
+        {/* In-Game Sleek Touch Area Hints (Overlay at bottom) */}
+        {isPlaying && !isGameOver && (
+          <div className="absolute inset-x-0 bottom-2 px-3 flex justify-between pointer-events-none opacity-60">
+            <div
+              className={`px-3 py-1.5 rounded-xl text-[11px] font-black border transition-all ${
+                isSlideActive
+                  ? 'bg-amber-500 text-slate-900 border-amber-300 scale-105 opacity-100 shadow-lg'
+                  : 'bg-slate-900/60 text-slate-300 border-slate-700/50'
+              }`}
+            >
+              👈 กดซ้าย: สไลด์มุด
+            </div>
+            <div
+              className={`px-3 py-1.5 rounded-xl text-[11px] font-black border transition-all ${
+                isJumpActive
+                  ? 'bg-pink-500 text-white border-pink-300 scale-105 opacity-100 shadow-lg'
+                  : 'bg-slate-900/60 text-slate-300 border-slate-700/50'
+              }`}
+            >
+              กดขวา: กระโดด 👉
+            </div>
+          </div>
+        )}
+
+        {/* Start / Intro Screen */}
         {!isPlaying && !isGameOver && (
-          <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center text-white">
-            <div className="text-4xl mb-2 animate-bounce">🏃‍♀️🐷</div>
+          <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center text-white">
+            <div className="text-4xl mb-1.5 animate-bounce">🏃‍♀️🐷</div>
             <h3 className="text-2xl font-black bg-gradient-to-r from-pink-400 via-yellow-300 to-sky-400 bg-clip-text text-transparent">
               MooAuan Piggy Run!
             </h3>
-            <p className="text-xs text-slate-300 max-w-xs mt-1 mb-4">
-              วิ่งหลบโดนัทและบาร์เบล เก็บเหรียญทองและชานมไข่มุกเข้าสู่โหมดร่างทอง!
+            <p className="text-xs text-slate-300 max-w-xs mt-0.5 mb-3">
+              หลบโดนัทและบาร์เบล เก็บเหรียญ ชานมไข่มุก และขวดยาแปลงร่างยักษ์!
             </p>
 
             <div className="flex items-center gap-3">
               <button
-                onClick={initNewGame}
-                className="btn-candy-pink px-6 py-2.5 text-sm font-extrabold shadow-lg hover:scale-105 transition-all cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  initNewGame();
+                }}
+                className="btn-candy-pink px-6 py-2 text-sm font-extrabold shadow-lg hover:scale-105 transition-all cursor-pointer"
               >
                 🚀 เริ่มวิ่งเลย!
               </button>
               <button
-                onClick={onOpenShop}
-                className="btn-candy-yellow px-4 py-2.5 text-xs font-bold cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenShop();
+                }}
+                className="btn-candy-yellow px-4 py-2 text-xs font-bold cursor-pointer"
               >
                 🛍️ ร้านค้าสกิล
               </button>
             </div>
 
-            <p className="text-[11px] text-slate-400 mt-4">
-              💡 ควบคุม: แตะจอ / Spacebar เพื่อโดด, ลูกศรลง เพื่อสไลด์
-            </p>
+            <div className="mt-3 text-[11px] text-slate-300 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/60 flex items-center gap-2">
+              <span>🎮 <strong>แตะจอซ้าย</strong> = สไลด์มุด</span>
+              <span className="text-slate-500">|</span>
+              <span><strong>แตะจอขวา</strong> = กระโดด</span>
+            </div>
           </div>
         )}
 
         {/* Game Over Screen */}
         {isGameOver && (
-          <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-xs flex flex-col items-center justify-center p-6 text-center text-white animate-fade-in">
-            <div className="text-4xl mb-2">💥🐽</div>
+          <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center text-white animate-fade-in">
+            <div className="text-4xl mb-1">💥🐽</div>
             <h3 className="text-2xl font-black text-rose-400">ชนเข้าอย่างจัง!</h3>
-            <p className="text-xs text-slate-300 mt-0.5">แต่ได้เหรียญสะสมไปอัปเกรดสกิลเพิ่มนะ</p>
+            <p className="text-xs text-slate-300 mt-0.5">ได้เหรียญสะสมไปอัปเกรดสกิลเพิ่มนะ</p>
 
-            <div className="bg-slate-900/90 border border-slate-700 rounded-2xl p-4 my-3 w-64 shadow-md">
+            <div className="bg-slate-900/90 border border-slate-700 rounded-2xl p-3 my-2.5 w-60 shadow-md">
               <div className="flex justify-between text-xs text-slate-400 mb-1">
                 <span>คะแนนรอบนี้:</span>
                 <span className="font-bold text-white font-mono">{score}</span>
@@ -1091,38 +1438,27 @@ export const PiggyRunCanvas: React.FC<PiggyRunCanvasProps> = ({ onOpenShop, char
 
             <div className="flex items-center gap-3">
               <button
-                onClick={initNewGame}
-                className="btn-candy-pink px-6 py-2.5 text-xs font-black flex items-center gap-1.5 shadow-lg hover:scale-105 transition-all cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  initNewGame();
+                }}
+                className="btn-candy-pink px-5 py-2 text-xs font-black flex items-center gap-1.5 shadow-lg hover:scale-105 transition-all cursor-pointer"
               >
                 <RotateCcw size={14} />
                 <span>เล่นใหม่อีกรอบ</span>
               </button>
               <button
-                onClick={onOpenShop}
-                className="btn-candy-yellow px-4 py-2.5 text-xs font-bold cursor-pointer"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenShop();
+                }}
+                className="btn-candy-yellow px-4 py-2 text-xs font-bold cursor-pointer"
               >
                 🛍️ ไปอัปเกรดสกิล
               </button>
             </div>
           </div>
         )}
-      </div>
-
-      {/* Bottom Virtual Controls for Mobile */}
-      <div className="w-full flex items-center justify-between p-3 bg-slate-900 rounded-b-3xl border-t border-slate-700">
-        <button
-          onClick={handleSlide}
-          className="flex-1 mr-2 py-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 font-black text-sm rounded-2xl border border-slate-600 flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md cursor-pointer"
-        >
-          <span>⬇️ สไลด์มุด (SLIDE)</span>
-        </button>
-
-        <button
-          onClick={handleJump}
-          className="flex-1 ml-2 py-3 bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 active:from-pink-700 active:to-rose-700 text-white font-black text-sm rounded-2xl shadow-lg shadow-pink-500/30 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
-        >
-          <span>⬆️ กระโดด (JUMP)</span>
-        </button>
       </div>
     </div>
   );
