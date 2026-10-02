@@ -167,10 +167,14 @@ export async function analyzeFoodImage({
   }
 
   const candidateModels = [
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
+    'gemini-flash-lite-latest',
+    'gemini-3.5-flash-lite',
+    'gemini-3.5-flash',
+    'gemini-3.6-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-flash-latest',
+    'gemini-3.8-flash',
+    'gemini-3.7-flash',
   ];
 
   const promptText = userNotes && userNotes.trim()
@@ -197,28 +201,37 @@ export async function analyzeFoodImage({
     },
   };
 
+  const defaultKey = getDefaultGeminiApiKey();
+  const keysToTry = [activeKey];
+  if (defaultKey && defaultKey !== activeKey) {
+    keysToTry.push(defaultKey);
+  }
+
   let response: Response | null = null;
   let lastErrorText = '';
 
-  for (const model of candidateModels) {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
-    try {
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      });
+  for (const currentKey of keysToTry) {
+    for (const model of candidateModels) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`;
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
 
-      if (res.ok) {
-        response = res;
-        break;
-      } else {
-        lastErrorText = await res.text();
-        console.warn(`Model ${model} returned ${res.status}`);
+        if (res.ok) {
+          response = res;
+          break;
+        } else {
+          lastErrorText = await res.text();
+          console.warn(`Model ${model} returned ${res.status}`);
+        }
+      } catch (err: any) {
+        lastErrorText = err.message;
       }
-    } catch (err: any) {
-      lastErrorText = err.message;
     }
+    if (response && response.ok) break;
   }
 
   if (!response || !response.ok) {
@@ -306,10 +319,14 @@ export async function chatWithTrainer({
   }
 
   const candidateModels = [
-    'gemini-2.5-flash',
-    'gemini-2.5-flash-lite',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
+    'gemini-flash-lite-latest',
+    'gemini-3.5-flash-lite',
+    'gemini-3.5-flash',
+    'gemini-3.6-flash',
+    'gemini-3.1-flash-lite',
+    'gemini-flash-latest',
+    'gemini-3.8-flash',
+    'gemini-3.7-flash',
   ];
 
   // Build daily context summary
@@ -433,38 +450,47 @@ ${workoutsSummary}
     },
   };
 
+  const defaultKey = getDefaultGeminiApiKey();
+  const keysToTry = [activeKey];
+  if (defaultKey && defaultKey !== activeKey) {
+    keysToTry.push(defaultKey);
+  }
+
   let response: Response | null = null;
   let lastErrorText = '';
 
-  for (const model of candidateModels) {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
-    try {
-      // First attempt with top-level system_instruction
-      let res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBodyWithSystem),
-      });
-
-      // If system_instruction is not supported (HTTP 400), try fallback format
-      if (!res.ok && res.status === 400) {
-        res = await fetch(endpoint, {
+  for (const currentKey of keysToTry) {
+    for (const model of candidateModels) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`;
+      try {
+        // First attempt with top-level system_instruction
+        let res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBodyFallback),
+          body: JSON.stringify(requestBodyWithSystem),
         });
-      }
 
-      if (res.ok) {
-        response = res;
-        break;
-      } else {
-        lastErrorText = await res.text();
-        console.warn(`Model ${model} returned ${res.status}`);
+        // If system_instruction is not supported (HTTP 400), try fallback format
+        if (!res.ok && res.status === 400) {
+          res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestBodyFallback),
+          });
+        }
+
+        if (res.ok) {
+          response = res;
+          break;
+        } else {
+          lastErrorText = await res.text();
+          console.warn(`Model ${model} returned ${res.status}`);
+        }
+      } catch (err: any) {
+        lastErrorText = err.message;
       }
-    } catch (err: any) {
-      lastErrorText = err.message;
     }
+    if (response && response.ok) break;
   }
 
   if (!response || !response.ok) {

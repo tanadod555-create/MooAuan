@@ -185,7 +185,6 @@ export const FoodView: React.FC = () => {
   const effectiveGeminiKey = settings.geminiApiKey || getDefaultGeminiApiKey();
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState(effectiveGeminiKey);
-  const [analyzing, setAnalyzing] = useState(false);
   const [isSubmittingAi, setIsSubmittingAi] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -195,7 +194,6 @@ export const FoodView: React.FC = () => {
   const [aiNotes, setAiNotes] = useState<string>('');
   const [selectedMeal, setSelectedMeal] = useState<MealType>('lunch');
   const [showAiResultModal, setShowAiResultModal] = useState(false);
-  const [bgScanCompleted, setBgScanCompleted] = useState(false);
 
   // Photo Note Flow: Holds the captured photo so user can add notes BEFORE analyzing
   const [pendingPhoto, setPendingPhoto] = useState<{
@@ -1208,14 +1206,16 @@ export const FoodView: React.FC = () => {
             }
             cameraInputRef.current?.click();
           }}
-          disabled={analyzing}
-          className="p-4 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold flex items-center justify-center gap-3 shadow-sm shadow-pink-200/50 active:scale-[0.98] transition group cursor-pointer"
+          disabled={isFoodScanning}
+          className={`p-4 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold flex items-center justify-center gap-3 shadow-sm shadow-pink-200/50 active:scale-[0.98] transition group cursor-pointer ${
+            isFoodScanning ? 'opacity-70 cursor-not-allowed' : ''
+          }`}
         >
-          <Camera size={22} className="stroke-[2.5]" />
+          <Camera size={22} className={`stroke-[2.5] ${isFoodScanning ? 'animate-pulse' : ''}`} />
           <div className="text-left">
-            <span className="text-sm font-bold block">ถ่ายรูปอาหาร</span>
+            <span className="text-sm font-bold block">{isFoodScanning ? 'กำลังสแกน...' : 'ถ่ายรูปอาหาร'}</span>
             <span className="text-[10px] text-white/90 font-normal block">
-              เปิดกล้องถ่ายสด → AI วิเคราะห์
+              {isFoodScanning ? 'วิเคราะห์ในเบื้องหลัง' : 'เปิดกล้องถ่ายสด → AI วิเคราะห์'}
             </span>
           </div>
         </button>
@@ -1230,8 +1230,10 @@ export const FoodView: React.FC = () => {
             }
             galleryInputRef.current?.click();
           }}
-          disabled={analyzing}
-          className="p-4 rounded-2xl bg-white/90 hover:bg-pink-50/70 border border-pink-200/70 text-slate-700 font-bold flex items-center justify-center gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer"
+          disabled={isFoodScanning}
+          className={`p-4 rounded-2xl bg-white/90 hover:bg-pink-50/70 border border-pink-200/70 text-slate-700 font-bold flex items-center justify-center gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer ${
+            isFoodScanning ? 'opacity-70 cursor-not-allowed' : ''
+          }`}
         >
           <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center group-hover:scale-110 transition">
             <Upload size={18} />
