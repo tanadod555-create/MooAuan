@@ -17,6 +17,7 @@ import {
   Leaf,
 } from 'lucide-react';
 import { PigMascot } from '../ui/PigMascot';
+import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 
 interface AiTrainerModalProps {
   isOpen: boolean;
@@ -344,20 +345,8 @@ export const AiTrainerModal: React.FC<AiTrainerModalProps> = ({
                       : 'bg-white text-slate-800 border border-pink-200/80 rounded-tl-xs'
                   }`}
                 >
-                  {/* Message Content with simple Markdown rendering */}
-                  <div className="space-y-1.5 whitespace-pre-wrap font-sans">
-                    {msg.text.split('\n').map((line, i) => {
-                      if (line.startsWith('- ') || line.startsWith('* ')) {
-                        return (
-                          <div key={i} className="flex items-start gap-1.5 ml-1">
-                            <span className="text-rose-400 font-bold">•</span>
-                            <span>{renderFormattedLine(line.substring(2))}</span>
-                          </div>
-                        );
-                      }
-                      return <p key={i}>{renderFormattedLine(line)}</p>;
-                    })}
-                  </div>
+                  {/* Rich Markdown & Table Renderer */}
+                  <MarkdownRenderer content={msg.text} isUser={isUser} />
 
                   {/* Message Footer: Timestamp & Copy */}
                   <div
@@ -468,19 +457,3 @@ export const AiTrainerModal: React.FC<AiTrainerModalProps> = ({
   );
 };
 
-/**
- * Basic markdown parser helper for **bold** text
- */
-function renderFormattedLine(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*.*?\*\*)/g);
-  return parts.map((part, index) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return (
-        <strong key={index} className="font-black text-rose-600">
-          {part.slice(2, -2)}
-        </strong>
-      );
-    }
-    return part;
-  });
-}
