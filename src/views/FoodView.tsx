@@ -263,12 +263,15 @@ export const FoodView: React.FC = () => {
   const [selectedMeal, setSelectedMeal] = useState<MealType>('lunch');
   const [showAiResultModal, setShowAiResultModal] = useState(false);
 
-  // Photo Note Flow: Holds the captured photo so user can add notes BEFORE analyzing
-  const [pendingPhoto, setPendingPhoto] = useState<{
-    base64: string;
-    mimeType: string;
-    previewUrl: string;
-  } | null>(null);
+  // Photo Note Flow: Holds the captured photo(s) so user can add notes BEFORE analyzing
+  const [pendingPhotos, setPendingPhotos] = useState<
+    {
+      id: string;
+      base64: string;
+      mimeType: string;
+      previewUrl: string;
+    }[]
+  >([]);
   const [showPhotoNoteModal, setShowPhotoNoteModal] = useState(false);
 
   // Custom User Note for AI Prompt (เช่น กินแค่ครึ่งเดียว, ไม่กินผัก)
@@ -395,17 +398,30 @@ export const FoodView: React.FC = () => {
     setEditingLogId(null);
   };
 
-  // Step 1: User selects or captures a photo -> Open photo preview & note prompt dialog FIRST
+  // Step 1: User selects or captures photo(s) -> Open photo preview & note prompt dialog FIRST
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     try {
-      const { base64, mimeType } = await resizeImageToMaxDimension(file, 1024, 0.85);
-      const previewUrl = `data:${mimeType};base64,${base64}`;
-      setPreviewImage(previewUrl);
-      setPendingPhoto({ base64, mimeType, previewUrl });
-      setShowPhotoNoteModal(true); // Open note & photo preview modal immediately!
+      const newItems: { id: string; base64: string; mimeType: string; previewUrl: string }[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const { base64, mimeType } = await resizeImageToMaxDimension(file, 1024, 0.85);
+        const previewUrl = `data:${mimeType};base64,${base64}`;
+        newItems.push({
+          id: 'photo_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7) + '_' + i,
+          base64,
+          mimeType,
+          previewUrl,
+        });
+      }
+
+      if (newItems.length > 0) {
+        setPreviewImage(newItems[0].previewUrl);
+        setPendingPhotos((prev) => [...prev, ...newItems]);
+        setShowPhotoNoteModal(true); // Open note & photo preview modal immediately!
+      }
     } catch (err: any) {
       console.error(err);
       setAnalysisError('เกิดข้อผิดพลาดในการโหลดรูปภาพ');
@@ -415,22 +431,33 @@ export const FoodView: React.FC = () => {
     }
   };
 
+  const handleRemovePendingPhoto = (id: string) => {
+    setPendingPhotos((prev) => {
+      const updated = prev.filter((p) => p.id !== id);
+      if (updated.length === 0) {
+        setShowPhotoNoteModal(false);
+      }
+      return updated;
+    });
+  };
+
   // Step 2: User confirms note and clicks "Send to AI for analysis"
   const handleStartAnalysis = async () => {
-    if (!pendingPhoto) return;
+    if (pendingPhotos.length === 0) return;
 
-    const currentPhoto = pendingPhoto;
+    const photosToSend = [...pendingPhotos];
     const currentNote = aiUserNote;
 
     setShowPhotoNoteModal(false);
-    setPendingPhoto(null);
+    setPendingPhotos([]);
     setAiUserNote('');
     setAnalysisError(null);
 
     // Run global background scan in AppContext so navigating away or closing never loses progress
     startFoodScan({
-      base64Image: currentPhoto.base64,
-      mimeType: currentPhoto.mimeType,
+      base64Images: photosToSend.map((p) => ({ base64: p.base64, mimeType: p.mimeType })),
+      base64Image: photosToSend[0].base64,
+      mimeType: photosToSend[0].mimeType,
       targetUserId: selectedUserKey,
       targetDate: selectedDate,
       targetMeal: selectedMeal,
@@ -741,73 +768,7 @@ export const FoodView: React.FC = () => {
         </button>
       </div>
 
-      {/* Quick Access Buttons: 1) Food Database, 2) AI Text Search & 3) AI Trainer Chat */}
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5">
-        {/* Quick Food Database */}
-        <button
-          type="button"
-          onClick={() => setShowFoodDbModal(true)}
-          className="p-2 sm:p-3 rounded-2xl bg-white hover:bg-pink-50 border border-pink-200 text-center sm:text-left transition active:scale-95 shadow-2xs flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5 cursor-pointer min-h-[56px] sm:min-h-0"
-        >
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-pink-100 text-rose-500 flex items-center justify-center shrink-0">
-            <BookOpen size={15} />
-          </div>
-          <div className="min-w-0 flex-1 w-full">
-            <h4 className="text-[11px] sm:text-xs font-black text-slate-800 truncate">
-              ตารางแคลด่วน
-            </h4>
-            <span className="text-[9px] sm:text-[10px] text-pink-500 font-bold block truncate">
-              เช็กแคล & เมนูไทย
-            </span>
-          </div>
-        </button>
 
-        {/* AI Text Food Search & Add */}
-        <button
-          type="button"
-          onClick={() => {
-            if (!effectiveGeminiKey) {
-              setApiKeyInput(getDefaultGeminiApiKey());
-              setShowApiKeyModal(true);
-              return;
-            }
-            setAiTextUserId(selectedUserKey);
-            setShowAiTextModal(true);
-          }}
-          className="p-2 sm:p-3 rounded-2xl bg-gradient-to-r from-purple-50 via-pink-50 to-rose-50 hover:from-purple-100/80 hover:via-pink-100/80 hover:to-rose-100/80 border border-purple-200/80 text-center sm:text-left transition active:scale-95 shadow-2xs flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5 cursor-pointer group min-h-[56px] sm:min-h-0"
-        >
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center shrink-0 shadow-2xs group-hover:scale-105 transition">
-            <Sparkles size={15} className="animate-pulse" />
-          </div>
-          <div className="min-w-0 flex-1 w-full">
-            <h4 className="text-[11px] sm:text-xs font-black text-purple-900 truncate">
-              พิมพ์สั่ง AI ✨
-            </h4>
-            <span className="text-[9px] sm:text-[10px] text-purple-600 font-bold block truncate">
-              หาแคลอัตโนมัติ
-            </span>
-          </div>
-        </button>
-
-        {/* AI Trainer Chat */}
-        <button
-          type="button"
-          onClick={() => setShowAiTrainerModal(true)}
-          className="p-2 sm:p-3 rounded-2xl bg-white hover:bg-rose-50 border border-pink-200 text-center sm:text-left transition active:scale-95 shadow-2xs flex flex-col sm:flex-row items-center gap-1.5 sm:gap-2.5 cursor-pointer min-h-[56px] sm:min-h-0"
-        >
-          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-            <Bot size={15} />
-          </div>
-          <div className="min-w-0 flex-1 w-full">
-            <h4 className="text-[11px] sm:text-xs font-black text-slate-800 truncate">
-              โค้ช AI
-            </h4>
-            <span className="text-[9px] sm:text-[10px] text-rose-500 font-bold block truncate">
-              ปรึกษาอาหาร
-            </span>
-          </div>
-        </button>
-      </div>
 
       {/* Date Navigation & Search Controls */}
       <div className="p-3 bg-white/90 rounded-2xl border border-pink-200/70 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
@@ -1455,6 +1416,7 @@ export const FoodView: React.FC = () => {
         <input
           type="file"
           accept="image/*"
+          multiple
           ref={galleryInputRef}
           onChange={handlePhotoSelect}
           className="hidden"
@@ -1707,22 +1669,24 @@ export const FoodView: React.FC = () => {
       </div>
 
 
-      {/* Photo Preview & Note Modal (Appears immediately AFTER taking or uploading a photo) */}
-      {showPhotoNoteModal && pendingPhoto && (
+      {/* Photo Preview & Note Modal (Appears immediately AFTER taking or uploading photo(s)) */}
+      {showPhotoNoteModal && pendingPhotos.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
-          <div className="relative w-full max-w-md bg-white border-t sm:border border-pink-200 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92dvh] sm:max-h-[85vh] overflow-y-auto pb-[max(1.25rem,env(safe-area-inset-bottom))] overscroll-contain">
+          <div className="relative w-full max-w-lg bg-white border-t sm:border border-pink-200 rounded-t-3xl sm:rounded-3xl overflow-hidden shadow-2xl p-5 sm:p-6 space-y-4 max-h-[92dvh] sm:max-h-[85vh] overflow-y-auto pb-[max(1.25rem,env(safe-area-inset-bottom))] overscroll-contain">
             <div className="flex items-center justify-between pb-3 border-b border-pink-100 shrink-0">
               <div className="flex items-center gap-2">
                 <Camera size={18} className="text-pink-500" />
                 <div>
-                  <h3 className="font-bold text-slate-800 text-base">ระบุหมายเหตุให้ AI (รูปอาหาร)</h3>
+                  <h3 className="font-bold text-slate-800 text-base">
+                    ระบุหมายเหตุให้ AI (รูปอาหาร {pendingPhotos.length} รูป)
+                  </h3>
                   <p className="text-[11px] text-slate-500">บันทึกลงโปรไฟล์ของ {activeTargetProfile.name}</p>
                 </div>
               </div>
               <button
                 onClick={() => {
                   setShowPhotoNoteModal(false);
-                  setPendingPhoto(null);
+                  setPendingPhotos([]);
                 }}
                 className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center text-xs cursor-pointer"
               >
@@ -1730,16 +1694,80 @@ export const FoodView: React.FC = () => {
               </button>
             </div>
 
-            {/* Photo Preview */}
-            <div className="w-full h-44 rounded-2xl overflow-hidden bg-pink-50 relative border border-pink-100">
-              <img
-                src={pendingPhoto.previewUrl}
-                alt="Captured Food"
-                className="w-full h-full object-cover"
-              />
-              <span className="absolute bottom-2 left-2 px-2.5 py-1 rounded-lg bg-black/60 text-white text-[10px] font-semibold backdrop-blur-xs">
-                📸 รูปที่เพิ่งถ่าย/เลือก
-              </span>
+            {/* Photo Gallery Grid with Multi-Angle Support */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="block font-bold text-slate-700 text-xs">
+                  รูปอาหารที่เลือก ({pendingPhotos.length} รูป — ถ่ายหลายมุมได้):
+                </label>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => cameraInputRef.current?.click()}
+                    className="px-2.5 py-1 bg-pink-100/80 hover:bg-pink-200 text-pink-700 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer transition active:scale-95"
+                  >
+                    <Camera size={13} />
+                    <span>+ ถ่ายมุมเพิ่ม</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => galleryInputRef.current?.click()}
+                    className="px-2.5 py-1 bg-pink-50 hover:bg-pink-100 text-pink-600 border border-pink-200/70 rounded-xl text-[11px] font-bold flex items-center gap-1 cursor-pointer transition active:scale-95"
+                  >
+                    <Upload size={13} />
+                    <span>+ คลังรูป</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                {pendingPhotos.map((photo, idx) => (
+                  <div
+                    key={photo.id}
+                    className="relative h-28 sm:h-32 rounded-2xl overflow-hidden bg-pink-50 border border-pink-200/80 shadow-2xs group"
+                  >
+                    <img
+                      src={photo.previewUrl}
+                      alt={`Food Angle ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-md bg-black/60 text-white text-[9px] font-semibold backdrop-blur-xs">
+                      📸 มุมที่ {idx + 1}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePendingPhoto(photo.id)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 hover:bg-rose-600 text-white flex items-center justify-center text-[10px] transition cursor-pointer shadow-xs backdrop-blur-xs"
+                      title="ลบรูปนี้"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+
+                {/* Add more angle tile */}
+                <div className="h-28 sm:h-32 rounded-2xl border-2 border-dashed border-pink-200 hover:border-pink-300 bg-pink-50/30 hover:bg-pink-50/60 flex flex-col items-center justify-center p-2 text-center transition gap-1.5">
+                  <span className="text-[10px] font-bold text-slate-600">+ เพิ่มมุม/รูป</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      className="p-1.5 rounded-xl bg-white hover:bg-pink-100 text-pink-600 border border-pink-200 shadow-2xs cursor-pointer"
+                      title="ถ่ายมุมอื่นเพิ่ม"
+                    >
+                      <Camera size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => galleryInputRef.current?.click()}
+                      className="p-1.5 rounded-xl bg-white hover:bg-pink-100 text-pink-600 border border-pink-200 shadow-2xs cursor-pointer"
+                      title="เลือกรูปเพิ่มจากคลัง"
+                    >
+                      <Upload size={14} />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* Meal Selector */}
@@ -1769,7 +1797,7 @@ export const FoodView: React.FC = () => {
               </div>
             </div>
 
-            {/* AI Custom Prompt / Food Notes Section */}
+            {/* AI Custom Prompt / Food Notes Section (Expanded for easy typing) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
@@ -1787,12 +1815,12 @@ export const FoodView: React.FC = () => {
                 )}
               </div>
 
-              <input
-                type="text"
-                placeholder="เช่น กินแค่ครึ่งเดียว (50%), ไม่กินผัก, ไม่เอาหนัง, ไม่ซดน้ำซุป, ข้าวครึ่งทัพพี..."
+              <textarea
+                rows={3}
+                placeholder="พิมพ์หมายเหตุอาหาร เช่น กินแค่ครึ่งเดียว (50%), ไม่กินผัก, ไม่เอาหนัง/มัน, ไม่ซดน้ำซุป, ข้าวครึ่งทัพพี, ชามนี้มีอกไก่ประมาณ 150g..."
                 value={aiUserNote}
                 onChange={(e) => setAiUserNote(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-pink-50/40 border border-pink-200/70 rounded-2xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-pink-300 focus:bg-white transition text-base sm:text-xs min-h-[38px]"
+                className="w-full px-3.5 py-2.5 bg-pink-50/40 border border-pink-200/70 rounded-2xl text-xs text-slate-700 placeholder-slate-400 focus:outline-none focus:border-pink-300 focus:bg-white transition resize-y min-h-[76px]"
               />
 
               {/* Quick Chips */}
@@ -1842,11 +1870,11 @@ export const FoodView: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setShowPhotoNoteModal(false);
-                  setPendingPhoto(null);
+                  setPendingPhotos([]);
                 }}
                 className="flex-1 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs transition cursor-pointer min-h-[44px]"
               >
-                ยกเลิก / ถ่ายใหม่
+                ยกเลิก / ปิด
               </button>
               <button
                 type="button"
@@ -1854,7 +1882,7 @@ export const FoodView: React.FC = () => {
                 className="flex-[2] py-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition active:scale-95 cursor-pointer min-h-[44px]"
               >
                 <Sparkles size={15} />
-                <span>ส่งให้ AI วิเคราะห์ภาพนี้</span>
+                <span>ส่งให้ AI วิเคราะห์ ({pendingPhotos.length} รูป)</span>
               </button>
             </div>
           </div>

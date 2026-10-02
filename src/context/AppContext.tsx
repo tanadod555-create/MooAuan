@@ -116,8 +116,9 @@ interface AppContextType {
   foodScanResult: FoodLog[] | null;
   foodScanError: string | null;
   startFoodScan: (params: {
-    base64Image: string;
-    mimeType: string;
+    base64Image?: string;
+    mimeType?: string;
+    base64Images?: { base64: string; mimeType: string }[];
     targetUserId?: 'primary' | 'partner';
     targetDate?: string;
     targetMeal?: MealType;
@@ -2102,8 +2103,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [foodScanError, setFoodScanError] = useState<string | null>(null);
 
   const startFoodScan = async (params: {
-    base64Image: string;
-    mimeType: string;
+    base64Image?: string;
+    mimeType?: string;
+    base64Images?: { base64: string; mimeType: string }[];
     targetUserId?: 'primary' | 'partner';
     targetDate?: string;
     targetMeal?: MealType;
@@ -2122,6 +2124,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const result = await analyzeFoodImage({
         base64Image: params.base64Image,
         mimeType: params.mimeType,
+        base64Images: params.base64Images,
         apiKey: settings.geminiApiKey || getDefaultGeminiApiKey(),
         proxyUrl: settings.geminiProxyUrl,
         useProxy: settings.useProxy,

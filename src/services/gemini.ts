@@ -70,7 +70,11 @@ export async function resizeImageToMaxDimension(
   });
 }
 
-const SYSTEM_PROMPT = `You are a nutrition analysis assistant. Analyze the food photo.
+const SYSTEM_PROMPT = `You are an expert nutrition analysis assistant. Analyze the food photo(s).
+The user may provide one or multiple photos (e.g. different camera angles of the same meal, close-ups of specific items, or multiple dishes on the table).
+Synthesize all provided photos into an accurate unified nutritional breakdown:
+- If multiple photos show the SAME meal/dish from different angles or close-ups, DO NOT duplicate the dishes. Combine visual details from all angles for maximum portion and ingredient accuracy.
+- If multiple photos show DIFFERENT dishes or a multi-course meal, list each distinct food item.
 Return ONLY valid JSON matching this schema, no markdown codeblocks, no extra text:
 {
   "items": [
@@ -95,7 +99,7 @@ Return ONLY valid JSON matching this schema, no markdown codeblocks, no extra te
   ],
   "notes": "string"
 }
-Estimate portion sizes from visual cues. If unsure, lower confidence.`;
+Estimate portion sizes from visual cues and any user notes. If unsure, lower confidence.`;
 
 /**
  * Default built-in Gemini API Key (safely stored & decoded at runtime)
@@ -124,26 +128,40 @@ export const getDefaultGeminiApiKey = (): string => {
 export async function analyzeFoodImage({
   base64Image,
   mimeType,
+  base64Images,
   apiKey,
   proxyUrl,
   useProxy = false,
   userNotes,
 }: {
-  base64Image: string;
-  mimeType: string;
+  base64Image?: string;
+  mimeType?: string;
+  base64Images?: { base64: string; mimeType: string }[];
   apiKey?: string;
   proxyUrl?: string;
   useProxy?: boolean;
   userNotes?: string;
 }): Promise<GeminiAnalysisResponse> {
+  const imagesList: { base64: string; mimeType: string }[] = [];
+  if (base64Images && base64Images.length > 0) {
+    imagesList.push(...base64Images);
+  } else if (base64Image && mimeType) {
+    imagesList.push({ base64: base64Image, mimeType });
+  }
+
+  if (imagesList.length === 0) {
+    throw new Error('ไม่พบรูปภาพสำหรับวิเคราะห์อาหาร');
+  }
+
   if (useProxy && proxyUrl) {
     // Call via proxy (Cloudflare Worker or Apps Script)
     const response = await fetch(proxyUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        image: base64Image,
-        mimeType: mimeType,
+        image: imagesList[0].base64,
+        images: imagesList.map((img) => img.base64),
+        mimeType: imagesList[0].mimeType,
         userNotes: userNotes?.trim() || undefined,
       }),
     });
@@ -181,17 +199,19 @@ export async function analyzeFoodImage({
     ? `${SYSTEM_PROMPT}\n\nCRITICAL USER NOTES / CUSTOM CONTEXT (Strictly adjust portion size, exclude ingredients if requested, and compute nutrition accordingly): "${userNotes.trim()}"`
     : SYSTEM_PROMPT;
 
+  const imageParts = imagesList.map((img) => ({
+    inline_data: {
+      mime_type: img.mimeType,
+      data: img.base64,
+    },
+  }));
+
   const requestBody = {
     contents: [
       {
         parts: [
           { text: promptText },
-          {
-            inline_data: {
-              mime_type: mimeType,
-              data: base64Image,
-            },
-          },
+          ...imageParts,
         ],
       },
     ],
