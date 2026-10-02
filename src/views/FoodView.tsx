@@ -1339,7 +1339,8 @@ export const FoodView: React.FC = () => {
 
 
       {/* Action Buttons: Camera / Gallery / AI Text Search / Quick Food DB / Manual Add */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3">
+      {/* Action Buttons: Camera / Gallery / AI Text Search / Quick Food DB / Manual Add */}
+      <div className="grid grid-cols-5 gap-1.5 sm:gap-2.5">
         {/* Camera Hidden Input */}
         <input
           type="file"
@@ -1370,17 +1371,15 @@ export const FoodView: React.FC = () => {
             cameraInputRef.current?.click();
           }}
           disabled={isFoodScanning}
-          className={`p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-300 hover:from-pink-500 hover:to-rose-400 text-white font-bold flex items-center justify-center gap-2.5 sm:gap-3 shadow-sm shadow-pink-200/50 active:scale-[0.98] transition group cursor-pointer min-h-[58px] ${
+          className={`py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 text-white font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs shadow-pink-200/50 active:scale-95 transition group cursor-pointer min-h-[52px] ${
             isFoodScanning ? 'opacity-70 cursor-not-allowed' : ''
           }`}
+          title="ถ่ายรูปอาหาร (เปิดกล้องถ่ายสด → AI วิเคราะห์)"
         >
-          <Camera size={20} className={`stroke-[2.5] shrink-0 ${isFoodScanning ? 'animate-pulse' : ''}`} />
-          <div className="text-left min-w-0">
-            <span className="text-xs sm:text-sm font-bold block truncate">{isFoodScanning ? 'กำลังสแกน...' : 'ถ่ายรูปอาหาร'}</span>
-            <span className="text-[9px] sm:text-[10px] text-white/90 font-normal block truncate">
-              {isFoodScanning ? 'วิเคราะห์เบื้องหลัง' : 'กล้องถ่ายสด → AI'}
-            </span>
-          </div>
+          <Camera size={18} className={`stroke-[2.5] shrink-0 ${isFoodScanning ? 'animate-pulse' : ''}`} />
+          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">
+            {isFoodScanning ? 'สแกน...' : 'ถ่ายรูป'}
+          </span>
         </button>
 
         {/* Choose from Gallery / Files */}
@@ -1394,22 +1393,18 @@ export const FoodView: React.FC = () => {
             galleryInputRef.current?.click();
           }}
           disabled={isFoodScanning}
-          className={`p-3 sm:p-4 rounded-2xl bg-white/90 hover:bg-pink-50/70 border border-pink-200/70 text-slate-700 font-bold flex items-center justify-center gap-2.5 sm:gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer min-h-[58px] ${
+          className={`py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-white/95 hover:bg-pink-50/70 border border-pink-200/80 text-pink-600 font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs active:scale-95 transition group cursor-pointer min-h-[52px] ${
             isFoodScanning ? 'opacity-70 cursor-not-allowed' : ''
           }`}
+          title="อัปโหลดรูปจากคลังภาพ / ไฟล์"
         >
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
-            <Upload size={16} />
-          </div>
-          <div className="text-left min-w-0">
-            <span className="text-xs sm:text-sm font-bold block truncate">อัปโหลดรูป</span>
-            <span className="text-[9px] sm:text-[10px] text-slate-400 font-normal block truncate">
-              จากคลังภาพ / ไฟล์
-            </span>
-          </div>
+          <Upload size={17} className="shrink-0 group-hover:scale-110 transition" />
+          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">
+            คลังภาพ
+          </span>
         </button>
 
-        {/* AI Text Search & Calculate Button (Full-width hero on mobile!) */}
+        {/* AI Text Search & Calculate Button */}
         <button
           onClick={() => {
             if (!effectiveGeminiKey) {
@@ -1420,56 +1415,37 @@ export const FoodView: React.FC = () => {
             setAiTextUserId(selectedUserKey);
             setShowAiTextModal(true);
           }}
-          className="col-span-2 sm:col-span-1 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 hover:from-purple-600 hover:via-indigo-600 hover:to-pink-600 text-white font-bold flex items-center justify-center gap-3 shadow-sm shadow-purple-200/50 active:scale-[0.98] transition group cursor-pointer min-h-[58px]"
+          className="py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 hover:from-purple-600 hover:via-indigo-600 hover:to-pink-600 text-white font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs shadow-purple-200/50 active:scale-95 transition group cursor-pointer min-h-[52px]"
+          title="พิมพ์สั่ง AI ค้นหาแคลและสารอาหาร"
         >
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/20 text-white flex items-center justify-center group-hover:scale-110 transition shrink-0">
-            <Sparkles size={18} className="animate-pulse" />
-          </div>
-          <div className="text-left min-w-0">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs sm:text-sm font-bold block truncate">พิมพ์สั่ง AI ค้นหา</span>
-              <span className="text-[9px] font-black px-1.5 py-0.2 rounded-full bg-white/25 text-white shrink-0">
-                แคล & สารอาหาร
-              </span>
-            </div>
-            <span className="text-[9px] sm:text-[10px] text-white/90 font-normal block truncate">
-              พิมพ์ชื่อเมนู → AI คำนวณให้ทันที
-            </span>
-          </div>
+          <Sparkles size={17} className="animate-pulse shrink-0" />
+          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">
+            สั่ง AI
+          </span>
         </button>
 
         {/* Quick Food Database Reference Button */}
         <button
           onClick={() => setShowFoodDbModal(true)}
-          className="p-3 sm:p-4 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100/80 hover:to-teal-100/80 border border-emerald-200/80 text-slate-800 font-bold flex items-center justify-center gap-2.5 sm:gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer min-h-[58px]"
+          className="py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100/80 hover:to-teal-100/80 border border-emerald-200/80 text-emerald-800 font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs active:scale-95 transition group cursor-pointer min-h-[52px]"
+          title="เปิดตารางอาหารด่วน แตะลงมื้อทันที"
         >
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
-            <BookOpen size={16} />
-          </div>
-          <div className="text-left min-w-0">
-            <div className="flex items-center gap-1">
-              <span className="text-xs sm:text-sm font-bold block text-slate-800 truncate">ตารางอาหารด่วน</span>
-            </div>
-            <span className="text-[9px] sm:text-[10px] text-slate-500 font-normal block truncate">
-              แตะเมนูลงมื้อทันที
-            </span>
-          </div>
+          <BookOpen size={17} className="text-emerald-600 shrink-0 group-hover:scale-110 transition" />
+          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">
+            ตารางด่วน
+          </span>
         </button>
 
         {/* Manual Add Button */}
         <button
           onClick={() => setShowManualModal(true)}
-          className="p-3 sm:p-4 rounded-2xl bg-white/90 hover:bg-pink-50/70 border border-pink-200/70 text-slate-700 font-bold flex items-center justify-center gap-2.5 sm:gap-3 shadow-2xs active:scale-[0.98] transition group cursor-pointer min-h-[58px]"
+          className="py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-white/95 hover:bg-pink-50/70 border border-pink-200/80 text-slate-700 font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs active:scale-95 transition group cursor-pointer min-h-[52px]"
+          title="กรอกรายการและสารอาหารเอง"
         >
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition">
-            <Plus size={16} />
-          </div>
-          <div className="text-left min-w-0">
-            <span className="text-xs sm:text-sm font-bold block truncate">กรอกรายการเอง</span>
-            <span className="text-[9px] sm:text-[10px] text-slate-400 font-normal block truncate">
-              ใส่แคล & สารอาหารเอง
-            </span>
-          </div>
+          <Plus size={18} className="text-pink-500 shrink-0 group-hover:scale-110 transition" />
+          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">
+            กรอกเอง
+          </span>
         </button>
       </div>
 
