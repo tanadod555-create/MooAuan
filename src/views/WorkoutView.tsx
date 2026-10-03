@@ -188,6 +188,16 @@ export const WorkoutView: React.FC = () => {
   const [repsStep, setRepsStep] = useState<number>(1);
   const [showSessionDetails, setShowSessionDetails] = useState(false);
 
+  // Active Set Navigation Map (Horizontal Set Flow: One active set per exercise)
+  const [activeSetIdxMap, setActiveSetIdxMap] = useState<Record<string, number>>({});
+
+  const setActiveSetForExercise = (exerciseId: string, setIdx: number) => {
+    setActiveSetIdxMap((prev) => ({
+      ...prev,
+      [exerciseId]: setIdx,
+    }));
+  };
+
   // Exercise card accordion collapse state
   const [collapsedExercises, setCollapsedExercises] = useState<Record<string, boolean>>({});
 
@@ -656,274 +666,348 @@ export const WorkoutView: React.FC = () => {
                       )}
                     </div>
 
-                    {/* Set Navigation & Indicator Header */}
-                    <div className="px-3 sm:px-4 pt-2.5 pb-1.5 flex items-center justify-between gap-2 flex-wrap text-xs text-slate-500">
-                      <span className="font-bold text-slate-700">
-                        เซ็ต ({completedSetsCount}/{item.sets.length})
-                      </span>
-                      {/* Set Navigation Pills (Click to jump to set) */}
-                      <div className="flex items-center gap-1 overflow-x-auto py-0.5">
-                        {item.sets.map((s, sIdx) => (
-                          <button
-                            key={sIdx}
-                            type="button"
-                            onClick={() => {
-                              document
-                                .getElementById(`set-card-${item.exercise_id}-${sIdx}`)
-                                ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }}
-                            className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition active:scale-95 cursor-pointer flex items-center gap-1 border ${
-                              s.done
-                                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                                : 'bg-white text-slate-600 border-pink-200 hover:bg-pink-50'
-                            }`}
-                            title={`เซ็ต ${sIdx + 1}`}
-                          >
-                            {s.done ? <Check size={10} className="stroke-[3]" /> : null}
-                            <span>เซ็ต {sIdx + 1}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    {/* Horizontal Set Navigation Tabs & Active Set Card */}
+                    {(() => {
+                      const activeSetIdx = Math.min(
+                        item.sets.length - 1,
+                        Math.max(
+                          0,
+                          activeSetIdxMap[item.exercise_id] !== undefined
+                            ? activeSetIdxMap[item.exercise_id]
+                            : item.sets.findIndex((s) => !s.done) !== -1
+                            ? item.sets.findIndex((s) => !s.done)
+                            : 0
+                        )
+                      );
+                      const currentSet = item.sets[activeSetIdx] || item.sets[0];
 
-                    {/* Full-Width Sets List (Vertical Stack) */}
-                    <div className="p-3 sm:p-4 pt-1 space-y-3">
-                      {item.sets.map((set, setIdx) => (
-                        <div
-                          key={set.set_id || setIdx}
-                          id={`set-card-${item.exercise_id}-${setIdx}`}
-                          className={`w-full p-3.5 sm:p-4 rounded-3xl border transition-all ${
-                            set.done
-                              ? 'bg-rose-50/60 border-rose-200 shadow-2xs'
-                              : 'bg-white border-pink-200/90 shadow-xs'
-                          }`}
-                        >
-                          {/* Set Card Header */}
-                          <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-pink-100">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`px-2.5 py-1 rounded-xl text-xs font-black tracking-wide ${
-                                  set.done
-                                    ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-xs'
-                                    : 'bg-pink-100 text-pink-700'
-                                }`}
-                              >
-                                เซ็ตที่ {setIdx + 1}
+                      return (
+                        <div className="p-3 sm:p-4 pt-2 space-y-3">
+                          {/* Set Selection Header Pills */}
+                          <div className="flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-xs font-black text-slate-700">
+                                เซ็ต ({completedSetsCount}/{item.sets.length})
                               </span>
-                              {set.done && (
-                                <span className="text-[11px] font-bold text-rose-500 flex items-center gap-1">
-                                  <Check size={13} className="stroke-[3]" /> เสร็จแล้ว
-                                </span>
-                              )}
                             </div>
 
-                            {item.sets.length > 1 && (
+                            {/* Set Navigation Pills (Click to switch active set) */}
+                            <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-full">
+                              {item.sets.map((s, sIdx) => {
+                                const isSelected = sIdx === activeSetIdx;
+                                return (
+                                  <button
+                                    key={sIdx}
+                                    type="button"
+                                    onClick={() => setActiveSetForExercise(item.exercise_id, sIdx)}
+                                    className={`px-3 py-1 rounded-xl text-xs font-black transition-all active:scale-95 cursor-pointer flex items-center gap-1 border min-h-[32px] ${
+                                      isSelected
+                                        ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white border-rose-500 shadow-sm ring-2 ring-pink-300'
+                                        : s.done
+                                        ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100'
+                                        : 'bg-white text-slate-600 border-pink-200 hover:bg-pink-50'
+                                    }`}
+                                    title={`ไปที่เซ็ต ${sIdx + 1}`}
+                                  >
+                                    {s.done ? (
+                                      <Check
+                                        size={12}
+                                        className={isSelected ? 'text-white stroke-[3]' : 'text-emerald-600 stroke-[3]'}
+                                      />
+                                    ) : null}
+                                    <span>เซ็ต {sIdx + 1}</span>
+                                  </button>
+                                );
+                              })}
+
+                              {/* Quick + Add Set Pill */}
                               <button
                                 type="button"
-                                onClick={() => removeSetFromExercise(item.exercise_id, setIdx)}
-                                className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition active:scale-95 cursor-pointer"
-                                title="ลบเซ็ตนี้"
+                                onClick={() => {
+                                  addSetToExercise(item.exercise_id);
+                                  setActiveSetForExercise(item.exercise_id, item.sets.length);
+                                }}
+                                className="px-2.5 py-1 rounded-xl bg-pink-50 hover:bg-pink-100 text-rose-600 border border-pink-200 text-xs font-black flex items-center gap-0.5 transition active:scale-95 cursor-pointer min-h-[32px]"
+                                title="เพิ่มเซ็ตใหม่"
                               >
-                                <Trash2 size={15} />
+                                <Plus size={13} className="stroke-[3]" />
+                                <span>เซ็ต</span>
                               </button>
-                            )}
-                          </div>
-
-                          {/* Weight & Reps Stepper Controllers */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                            {/* 1. Weight (kg) Stepper */}
-                            <div className="bg-pink-50/50 rounded-2xl p-3 border border-pink-100/90 space-y-2">
-                              <div className="flex items-center justify-between px-1">
-                                <span className="text-xs font-bold text-slate-600">น้ำหนัก</span>
-                                <span className="text-sm font-black text-rose-600 font-mono">
-                                  {set.weight_kg} kg
-                                </span>
-                              </div>
-
-                              <div className="flex items-center justify-between gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const next = Math.max(
-                                      0,
-                                      Math.round(((set.weight_kg || 0) - weightStep) * 100) / 100
-                                    );
-                                    updateSet(item.exercise_id, setIdx, { weight_kg: next });
-                                  }}
-                                  className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
-                                >
-                                  <Minus size={20} className="stroke-[2.5]" />
-                                </button>
-
-                                <div className="flex-1 min-w-[70px]">
-                                  <input
-                                    type="number"
-                                    step="0.5"
-                                    min="0"
-                                    value={set.weight_kg === 0 ? '' : set.weight_kg}
-                                    placeholder="0"
-                                    onChange={(e) =>
-                                      updateSet(item.exercise_id, setIdx, {
-                                        weight_kg: parseFloat(e.target.value) || 0,
-                                      })
-                                    }
-                                    className="w-full h-12 text-center font-black font-mono text-xl text-slate-800 bg-white border-2 border-pink-200 rounded-2xl focus:outline-none focus:border-rose-400 shadow-inner"
-                                  />
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const next = Math.round(((set.weight_kg || 0) + weightStep) * 100) / 100;
-                                    updateSet(item.exercise_id, setIdx, { weight_kg: next });
-                                  }}
-                                  className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
-                                >
-                                  <Plus size={20} className="stroke-[2.5]" />
-                                </button>
-                              </div>
-
-                              {/* Weight Step Size Selector */}
-                              <div className="flex items-center justify-between gap-1 pt-0.5 px-0.5">
-                                <span className="text-[10px] font-bold text-slate-400">ปรับทีละ:</span>
-                                <div className="flex items-center gap-1.5 overflow-x-auto">
-                                  {[1, 1.25, 2.5, 5, 10].map((s) => (
-                                    <button
-                                      key={s}
-                                      type="button"
-                                      onClick={() => setWeightStep(s)}
-                                      className={`text-xs font-bold px-2 py-0.5 rounded-xl border transition cursor-pointer active:scale-95 min-h-[26px] ${
-                                        weightStep === s
-                                          ? 'bg-rose-500 text-white border-rose-500 shadow-2xs font-extrabold'
-                                          : 'bg-white hover:bg-pink-50 text-slate-600 border-pink-200'
-                                      }`}
-                                    >
-                                      ±{s}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* 2. Reps Stepper */}
-                            <div className="bg-pink-50/50 rounded-2xl p-3 border border-pink-100/90 space-y-2">
-                              <div className="flex items-center justify-between px-1">
-                                <span className="text-xs font-bold text-slate-600">จำนวนครั้ง</span>
-                                <span className="text-sm font-black text-rose-600 font-mono">
-                                  {set.reps} ครั้ง
-                                </span>
-                              </div>
-
-                              <div className="flex items-center justify-between gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const next = Math.max(0, (set.reps || 0) - repsStep);
-                                    updateSet(item.exercise_id, setIdx, { reps: next });
-                                  }}
-                                  className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
-                                >
-                                  <Minus size={20} className="stroke-[2.5]" />
-                                </button>
-
-                                <div className="flex-1 min-w-[70px]">
-                                  <input
-                                    type="number"
-                                    step="1"
-                                    min="0"
-                                    value={set.reps === 0 ? '' : set.reps}
-                                    placeholder="0"
-                                    onChange={(e) =>
-                                      updateSet(item.exercise_id, setIdx, {
-                                        reps: parseInt(e.target.value) || 0,
-                                      })
-                                    }
-                                    className="w-full h-12 text-center font-black font-mono text-xl text-slate-800 bg-white border-2 border-pink-200 rounded-2xl focus:outline-none focus:border-rose-400 shadow-inner"
-                                  />
-                                </div>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const next = (set.reps || 0) + repsStep;
-                                    updateSet(item.exercise_id, setIdx, { reps: next });
-                                  }}
-                                  className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
-                                >
-                                  <Plus size={20} className="stroke-[2.5]" />
-                                </button>
-                              </div>
-
-                              {/* Reps Step Size Selector */}
-                              <div className="flex items-center justify-between gap-1 pt-0.5 px-0.5">
-                                <span className="text-[10px] font-bold text-slate-400">ปรับทีละ:</span>
-                                <div className="flex items-center gap-1.5 overflow-x-auto">
-                                  {[1, 2, 5].map((s) => (
-                                    <button
-                                      key={s}
-                                      type="button"
-                                      onClick={() => setRepsStep(s)}
-                                      className={`text-xs font-bold px-2.5 py-0.5 rounded-xl border transition cursor-pointer active:scale-95 min-h-[26px] ${
-                                        repsStep === s
-                                          ? 'bg-rose-500 text-white border-rose-500 shadow-2xs font-extrabold'
-                                          : 'bg-white hover:bg-pink-50 text-slate-600 border-pink-200'
-                                      }`}
-                                    >
-                                      ±{s}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
                             </div>
                           </div>
 
-                          {/* Prominent Tactile Finish Set Button (Triggers Rest Timer) */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const newDone = !set.done;
-                              updateSet(item.exercise_id, setIdx, { done: newDone });
-                              if (newDone) {
-                                startRestTimer(standardRestSeconds);
-                              }
-                            }}
-                            className={`w-full py-3 px-4 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer shadow-md min-h-[48px] ${
-                              set.done
-                                ? 'bg-rose-100/90 hover:bg-rose-100 text-rose-800 border-2 border-rose-300'
-                                : 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-pink-200'
-                            }`}
-                          >
-                            {set.done ? (
-                              <>
-                                <Check size={18} className="stroke-[3] text-rose-600" />
-                                <span>
-                                  เซ็ต {setIdx + 1} เสร็จแล้ว ({set.weight_kg} kg × {set.reps})
-                                </span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center text-xs font-mono font-bold">
-                                  {setIdx + 1}
-                                </span>
-                                <span>
-                                  เสร็จเซ็ต {setIdx + 1} (พัก {standardRestSeconds}s ⏱️)
-                                </span>
-                              </>
-                            )}
-                          </button>
+                          {/* Active Single Set Card */}
+                          {currentSet && (
+                            <div
+                              key={currentSet.set_id || activeSetIdx}
+                              className={`w-full p-3.5 sm:p-4 rounded-3xl border transition-all ${
+                                currentSet.done
+                                  ? 'bg-rose-50/60 border-rose-200 shadow-2xs'
+                                  : 'bg-white border-pink-200/90 shadow-xs'
+                              }`}
+                            >
+                              {/* Set Card Header */}
+                              <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-pink-100">
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`px-2.5 py-1 rounded-xl text-xs font-black tracking-wide ${
+                                      currentSet.done
+                                        ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-xs'
+                                        : 'bg-pink-100 text-pink-700'
+                                    }`}
+                                  >
+                                    เซ็ตที่ {activeSetIdx + 1} จาก {item.sets.length}
+                                  </span>
+                                  {currentSet.done && (
+                                    <span className="text-[11px] font-bold text-rose-500 flex items-center gap-1">
+                                      <Check size={13} className="stroke-[3]" /> เสร็จแล้ว
+                                    </span>
+                                  )}
+                                </div>
+
+                                {item.sets.length > 1 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      removeSetFromExercise(item.exercise_id, activeSetIdx);
+                                      setActiveSetForExercise(
+                                        item.exercise_id,
+                                        Math.max(0, activeSetIdx - 1)
+                                      );
+                                    }}
+                                    className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition active:scale-95 cursor-pointer"
+                                    title="ลบเซ็ตนี้"
+                                  >
+                                    <Trash2 size={15} />
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Weight & Reps Stepper Controllers */}
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                {/* 1. Weight (kg) Stepper */}
+                                <div className="bg-pink-50/50 rounded-2xl p-3 border border-pink-100/90 space-y-2">
+                                  <div className="flex items-center justify-between px-1">
+                                    <span className="text-xs font-bold text-slate-600">น้ำหนัก</span>
+                                    <span className="text-sm font-black text-rose-600 font-mono">
+                                      {currentSet.weight_kg} kg
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center justify-between gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const next = Math.max(
+                                          0,
+                                          Math.round(((currentSet.weight_kg || 0) - weightStep) * 100) / 100
+                                        );
+                                        updateSet(item.exercise_id, activeSetIdx, { weight_kg: next });
+                                      }}
+                                      className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
+                                    >
+                                      <Minus size={20} className="stroke-[2.5]" />
+                                    </button>
+
+                                    <div className="flex-1 min-w-[70px]">
+                                      <input
+                                        type="number"
+                                        step="0.5"
+                                        min="0"
+                                        value={currentSet.weight_kg === 0 ? '' : currentSet.weight_kg}
+                                        placeholder="0"
+                                        onChange={(e) =>
+                                          updateSet(item.exercise_id, activeSetIdx, {
+                                            weight_kg: parseFloat(e.target.value) || 0,
+                                          })
+                                        }
+                                        className="w-full h-12 text-center font-black font-mono text-xl text-slate-800 bg-white border-2 border-pink-200 rounded-2xl focus:outline-none focus:border-rose-400 shadow-inner"
+                                      />
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const next = Math.round(((currentSet.weight_kg || 0) + weightStep) * 100) / 100;
+                                        updateSet(item.exercise_id, activeSetIdx, { weight_kg: next });
+                                      }}
+                                      className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
+                                    >
+                                      <Plus size={20} className="stroke-[2.5]" />
+                                    </button>
+                                  </div>
+
+                                  {/* Weight Step Size Selector (Including ±0.5) */}
+                                  <div className="flex items-center justify-between gap-1 pt-0.5 px-0.5">
+                                    <span className="text-[10px] font-bold text-slate-400">ปรับทีละ:</span>
+                                    <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
+                                      {[0.5, 1, 1.25, 2.5, 5, 10].map((s) => (
+                                        <button
+                                          key={s}
+                                          type="button"
+                                          onClick={() => setWeightStep(s)}
+                                          className={`text-xs font-bold px-2 py-0.5 rounded-xl border transition cursor-pointer active:scale-95 min-h-[26px] ${
+                                            weightStep === s
+                                              ? 'bg-rose-500 text-white border-rose-500 shadow-2xs font-extrabold'
+                                              : 'bg-white hover:bg-pink-50 text-slate-600 border-pink-200'
+                                          }`}
+                                        >
+                                          ±{s}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* 2. Reps Stepper */}
+                                <div className="bg-pink-50/50 rounded-2xl p-3 border border-pink-100/90 space-y-2">
+                                  <div className="flex items-center justify-between px-1">
+                                    <span className="text-xs font-bold text-slate-600">จำนวนครั้ง</span>
+                                    <span className="text-sm font-black text-rose-600 font-mono">
+                                      {currentSet.reps} ครั้ง
+                                    </span>
+                                  </div>
+
+                                  <div className="flex items-center justify-between gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const next = Math.max(0, (currentSet.reps || 0) - repsStep);
+                                        updateSet(item.exercise_id, activeSetIdx, { reps: next });
+                                      }}
+                                      className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
+                                    >
+                                      <Minus size={20} className="stroke-[2.5]" />
+                                    </button>
+
+                                    <div className="flex-1 min-w-[70px]">
+                                      <input
+                                        type="number"
+                                        step="1"
+                                        min="0"
+                                        value={currentSet.reps === 0 ? '' : currentSet.reps}
+                                        placeholder="0"
+                                        onChange={(e) =>
+                                          updateSet(item.exercise_id, activeSetIdx, {
+                                            reps: parseInt(e.target.value) || 0,
+                                          })
+                                        }
+                                        className="w-full h-12 text-center font-black font-mono text-xl text-slate-800 bg-white border-2 border-pink-200 rounded-2xl focus:outline-none focus:border-rose-400 shadow-inner"
+                                      />
+                                    </div>
+
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const next = (currentSet.reps || 0) + repsStep;
+                                        updateSet(item.exercise_id, activeSetIdx, { reps: next });
+                                      }}
+                                      className="w-12 h-12 rounded-2xl bg-white border-2 border-pink-200 text-slate-700 hover:bg-pink-50 flex items-center justify-center shadow-xs active:scale-90 transition cursor-pointer shrink-0"
+                                    >
+                                      <Plus size={20} className="stroke-[2.5]" />
+                                    </button>
+                                  </div>
+
+                                  {/* Reps Step Size Selector */}
+                                  <div className="flex items-center justify-between gap-1 pt-0.5 px-0.5">
+                                    <span className="text-[10px] font-bold text-slate-400">ปรับทีละ:</span>
+                                    <div className="flex items-center gap-1.5 overflow-x-auto py-0.5">
+                                      {[1, 2, 5].map((s) => (
+                                        <button
+                                          key={s}
+                                          type="button"
+                                          onClick={() => setRepsStep(s)}
+                                          className={`text-xs font-bold px-2.5 py-0.5 rounded-xl border transition cursor-pointer active:scale-95 min-h-[26px] ${
+                                            repsStep === s
+                                              ? 'bg-rose-500 text-white border-rose-500 shadow-2xs font-extrabold'
+                                              : 'bg-white hover:bg-pink-50 text-slate-600 border-pink-200'
+                                          }`}
+                                        >
+                                          ±{s}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Prominent Tactile Finish Set Button (Triggers Rest Timer and Auto-Advances to Next Set) */}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newDone = !currentSet.done;
+                                  updateSet(item.exercise_id, activeSetIdx, { done: newDone });
+                                  if (newDone) {
+                                    startRestTimer(standardRestSeconds);
+                                    // Auto-advance to next set if available!
+                                    if (activeSetIdx < item.sets.length - 1) {
+                                      setActiveSetForExercise(item.exercise_id, activeSetIdx + 1);
+                                    }
+                                  }
+                                }}
+                                className={`w-full py-3.5 px-4 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2 transition active:scale-98 cursor-pointer shadow-md min-h-[48px] ${
+                                  currentSet.done
+                                    ? 'bg-rose-100/90 hover:bg-rose-100 text-rose-800 border-2 border-rose-300'
+                                    : 'bg-gradient-to-r from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white shadow-pink-200'
+                                }`}
+                              >
+                                {currentSet.done ? (
+                                  <>
+                                    <Check size={18} className="stroke-[3] text-rose-600" />
+                                    <span>
+                                      เซ็ต {activeSetIdx + 1} เสร็จแล้ว ({currentSet.weight_kg} kg × {currentSet.reps})
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center text-xs font-mono font-bold">
+                                      {activeSetIdx + 1}
+                                    </span>
+                                    <span>
+                                      เสร็จเซ็ต {activeSetIdx + 1} (พัก {standardRestSeconds}s ⏱️)
+                                    </span>
+                                  </>
+                                )}
+                              </button>
+
+                              {/* Horizontal Set Flow Navigation Controls */}
+                              <div className="flex items-center justify-between gap-2 mt-3 pt-2.5 border-t border-pink-100">
+                                <button
+                                  type="button"
+                                  disabled={activeSetIdx === 0}
+                                  onClick={() => setActiveSetForExercise(item.exercise_id, activeSetIdx - 1)}
+                                  className="py-2 px-3 rounded-xl bg-pink-50 hover:bg-pink-100 disabled:opacity-40 disabled:cursor-not-allowed text-slate-700 font-bold text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer min-h-[36px]"
+                                >
+                                  <span>← เซ็ตก่อนหน้า</span>
+                                </button>
+
+                                {activeSetIdx < item.sets.length - 1 ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setActiveSetForExercise(item.exercise_id, activeSetIdx + 1)}
+                                    className="py-2 px-3 rounded-xl bg-gradient-to-r from-pink-400 to-rose-400 text-white hover:from-pink-500 hover:to-rose-500 font-bold text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-2xs min-h-[36px]"
+                                  >
+                                    <span>เซ็ตถัดไป ({activeSetIdx + 2}) →</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      addSetToExercise(item.exercise_id);
+                                      setActiveSetForExercise(item.exercise_id, item.sets.length);
+                                    }}
+                                    className="py-2 px-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white hover:from-pink-600 hover:to-rose-600 font-bold text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer shadow-2xs min-h-[36px]"
+                                  >
+                                    <Plus size={14} className="stroke-[3]" />
+                                    <span>เพิ่มเซ็ต {item.sets.length + 1} →</span>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      ))}
-
-                      {/* Add Next Set Full-Width Button */}
-                      <button
-                        type="button"
-                        onClick={() => addSetToExercise(item.exercise_id)}
-                        className="w-full py-3.5 px-4 rounded-2xl bg-pink-50/70 hover:bg-pink-100/90 text-rose-600 font-black text-xs sm:text-sm flex items-center justify-center gap-2 border-2 border-dashed border-pink-300 transition active:scale-98 cursor-pointer shadow-2xs"
-                      >
-                        <Plus size={18} className="stroke-[3]" />
-                        <span>เพิ่มเซ็ต {item.sets.length + 1}</span>
-                      </button>
-                    </div>
+                      );
+                    })()}
 
                     {/* Quick Button to Collapse after finishing */}
                     <div className="px-4 pb-3 flex justify-end">

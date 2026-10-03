@@ -180,8 +180,8 @@ export const MainContent: React.FC = () => {
         {activeTab === 'stats' && <ProfileView />}
       </main>
 
-      {/* Global Floating Rest Timer Widget (Visible across all tabs & persistent) */}
-      {restTimerSeconds !== null && (
+      {/* Global Floating Rest Timer Widget (Visible across non-workout tabs & persistent) */}
+      {restTimerSeconds !== null && activeTab !== 'workout' && (
         <div className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-6 sm:w-96 z-40 animate-slideUp">
           <div
             className={`rounded-2xl border-2 backdrop-blur-md shadow-2xl p-3 flex items-center justify-between gap-2.5 transition-all ${
@@ -224,11 +224,9 @@ export const MainContent: React.FC = () => {
                 </div>
                 <p className="text-[11px] font-semibold text-white/80 truncate flex items-center gap-1 group-hover:text-white transition">
                   <span>พักระหว่างเซ็ต</span>
-                  {activeTab !== 'workout' && (
-                    <span className="text-[10px] font-bold text-white/90 underline underline-offset-2 flex items-center">
-                      กลับไปดู <ChevronRight size={12} />
-                    </span>
-                  )}
+                  <span className="text-[10px] font-bold text-white/90 underline underline-offset-2 flex items-center">
+                    กลับไปดู <ChevronRight size={12} />
+                  </span>
                 </p>
               </div>
             </button>
