@@ -30,7 +30,6 @@ import {
   Calendar,
   Search,
   ExternalLink,
-  Target,
   BookOpen,
   Bot,
   MessageCircle,
@@ -42,7 +41,6 @@ import { MagicCard } from '../components/ui/MagicCard';
 import { CircularProgress } from '../components/ui/CircularProgress';
 import { NumberTicker } from '../components/ui/NumberTicker';
 import { PigMascot } from '../components/ui/PigMascot';
-import { GoalSetupModal } from '../components/goals/GoalSetupModal';
 import { FoodDatabaseModal } from '../components/food/FoodDatabaseModal';
 import { AiTrainerModal } from '../components/ai/AiTrainerModal';
 import { getUserAvatar, calculatePigEvolution } from '../utils/mascotLevels';
@@ -87,9 +85,6 @@ export const FoodView: React.FC = () => {
   }, [activeProfileKey]);
 
   const activeTargetProfile = selectedUserKey === 'partner' ? partnerProfile : primaryProfile;
-
-  // Goal modal state
-  const [showGoalModal, setShowGoalModal] = useState(false);
 
   // Date Navigator state (Default to today)
   const today = new Date().toISOString().split('T')[0];
@@ -916,24 +911,6 @@ export const FoodView: React.FC = () => {
                 <p className="text-xs text-slate-500">
                   เป้าหมาย: <strong className="text-slate-700">{targetKcal.toLocaleString()} kcal</strong>
                 </p>
-                <button
-                  type="button"
-                  onClick={() => setShowGoalModal(true)}
-                  className="px-2 py-0.5 rounded-full bg-pink-100/70 hover:bg-pink-200 text-pink-700 border border-pink-200/70 text-[10px] font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer"
-                  title="คำนวณเป้าหมายและสารอาหารอัตโนมัติ"
-                >
-                  <Sparkles size={11} className="text-pink-400" />
-                  <span>คำนวณ Goal</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOpenAdjustModal}
-                  className="px-2 py-0.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[10px] font-bold flex items-center gap-1 transition active:scale-95 cursor-pointer"
-                  title="ปรับค่าเป้าหมายและ Limit สารอาหารเอง"
-                >
-                  <Sliders size={11} className="text-rose-500" />
-                  <span>ปรับ Limit เอง</span>
-                </button>
               </div>
               <div className="flex items-center gap-2 mt-1.5">
                 <span className="text-xs text-slate-500">คงเหลือ:</span>
@@ -1014,24 +991,16 @@ export const FoodView: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-1.5 w-full">
-              <button
-                type="button"
-                onClick={() => setShowGoalModal(true)}
-                className="py-1.5 px-2 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-700 font-bold text-[11px] flex items-center justify-center gap-1 border border-pink-200/70 transition active:scale-95 cursor-pointer"
-              >
-                <Target size={13} className="text-pink-500" />
-                <span>คำนวณ Goal</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleOpenAdjustModal}
-                className="py-1.5 px-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold text-[11px] flex items-center justify-center gap-1 shadow-2xs transition active:scale-95 cursor-pointer"
-              >
-                <Sliders size={13} className="text-white" />
-                <span>ปรับ Limit เอง</span>
-              </button>
-            </div>
+            {/* Single Unified Adjust Limit & Target Button */}
+            <button
+              type="button"
+              onClick={handleOpenAdjustModal}
+              className="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs shadow-pink-200/50 transition active:scale-95 cursor-pointer"
+              title="ปรับเป้าหมายพลังงานและ Limit สารอาหารทั้งหมด"
+            >
+              <Sliders size={14} className="text-white" />
+              <span>ปรับ Limit & สารอาหาร ({activeTargetProfile.name})</span>
+            </button>
           </div>
         </div>
 
@@ -1051,23 +1020,9 @@ export const FoodView: React.FC = () => {
                 โซเดียม, ใยอาหาร ฯลฯ
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleOpenAdjustModal();
-                }}
-                className="px-2 py-0.5 rounded-lg bg-pink-100/80 hover:bg-pink-200 text-pink-700 text-[10px] font-bold flex items-center gap-1 border border-pink-200/70 transition active:scale-95 cursor-pointer"
-                title="ปรับค่าขีดจำกัดสารอาหารเอง"
-              >
-                <Sliders size={11} className="text-pink-500" />
-                <span>ปรับ Limit</span>
-              </button>
-              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 group-hover:text-slate-800">
-                <span>{showMicronutrients ? 'ซ่อน' : 'ดูรายละเอียด'}</span>
-                {showMicronutrients ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </div>
+            <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500 group-hover:text-slate-800">
+              <span>{showMicronutrients ? 'ซ่อน' : 'ดูรายละเอียด'}</span>
+              {showMicronutrients ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </div>
           </button>
 
@@ -3443,13 +3398,6 @@ export const FoodView: React.FC = () => {
           </div>
         </div>
       )}
-
-      {/* Smart Goal Setup & Nutrition Calculator Modal */}
-      <GoalSetupModal
-        isOpen={showGoalModal}
-        onClose={() => setShowGoalModal(false)}
-        targetUserKey={selectedUserKey}
-      />
 
       {/* Quick Food Database & Nutrition Reference Modal */}
       <FoodDatabaseModal
