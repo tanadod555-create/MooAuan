@@ -36,12 +36,14 @@ import {
   Leaf,
   Droplets,
   Sliders,
+  TrendingUp,
 } from 'lucide-react';
 import { MagicCard } from '../components/ui/MagicCard';
 import { CircularProgress } from '../components/ui/CircularProgress';
 import { NumberTicker } from '../components/ui/NumberTicker';
 import { PigMascot } from '../components/ui/PigMascot';
 import { FoodDatabaseModal } from '../components/food/FoodDatabaseModal';
+import { FoodAnalyticsView } from '../components/food/FoodAnalyticsView';
 import { AiTrainerModal } from '../components/ai/AiTrainerModal';
 import { getUserAvatar, calculatePigEvolution } from '../utils/mascotLevels';
 
@@ -70,6 +72,9 @@ export const FoodView: React.FC = () => {
     settings,
     updateSettings,
   } = useApp();
+
+  // Sub-tab Navigation: 'daily' (Daily Food Log) | 'analytics' (Nutrition & History Analytics)
+  const [subTab, setSubTab] = useState<'daily' | 'analytics'>('daily');
 
   // Quick Food Reference & AI Trainer Modal state
   const [showFoodDbModal, setShowFoodDbModal] = useState(false);
@@ -763,9 +768,50 @@ export const FoodView: React.FC = () => {
         </button>
       </div>
 
+      {/* Sub-tab navigation: Daily Log vs History & Analytics */}
+      <div className="flex items-center p-1.5 bg-white border-2 border-slate-200/90 rounded-full shadow-[0_4px_0_#e2e8f0] max-w-md mx-auto gap-1">
+        <button
+          type="button"
+          onClick={() => setSubTab('daily')}
+          className={`flex-1 py-2 px-3 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
+            subTab === 'daily'
+              ? selectedUserKey === 'partner'
+                ? 'bg-pink-500 text-white shadow-md shadow-pink-300/50'
+                : 'bg-sky-500 text-white shadow-md shadow-sky-300/50'
+              : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <UtensilsCrossed size={15} />
+          <span>บันทึกวันนี้ 🍽️</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setSubTab('analytics')}
+          className={`flex-1 py-2 px-3 rounded-full text-xs font-black transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 ${
+            subTab === 'analytics'
+              ? selectedUserKey === 'partner'
+                ? 'bg-pink-500 text-white shadow-md shadow-pink-300/50'
+                : 'bg-sky-500 text-white shadow-md shadow-sky-300/50'
+              : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <TrendingUp size={15} />
+          <span>ประวัติ & สถิติกราฟ 📊</span>
+        </button>
+      </div>
 
-
-      {/* Date Navigation & Search Controls */}
+      {subTab === 'analytics' ? (
+        <FoodAnalyticsView
+          selectedUserKey={selectedUserKey}
+          onSelectUserKey={setSelectedUserKey}
+          onNavigateToDate={(targetDateStr) => {
+            setSelectedDate(targetDateStr);
+            setSubTab('daily');
+          }}
+        />
+      ) : (
+        <>
+          {/* Date Navigation & Search Controls */}
       <div className="p-3 bg-white/90 rounded-2xl border border-pink-200/70 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
           <button
@@ -991,16 +1037,27 @@ export const FoodView: React.FC = () => {
               </div>
             </div>
 
-            {/* Single Unified Adjust Limit & Target Button */}
-            <button
-              type="button"
-              onClick={handleOpenAdjustModal}
-              className="w-full py-2.5 px-3 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs shadow-pink-200/50 transition active:scale-95 cursor-pointer"
-              title="ปรับเป้าหมายพลังงานและ Limit สารอาหารทั้งหมด"
-            >
-              <Sliders size={14} className="text-white" />
-              <span>ปรับ Limit & สารอาหาร ({activeTargetProfile.name})</span>
-            </button>
+            {/* Action Buttons: Adjust Limit & View Analytics Graph */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={handleOpenAdjustModal}
+                className="w-full py-2 px-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs shadow-pink-200/50 transition active:scale-95 cursor-pointer"
+                title="ปรับเป้าหมายพลังงานและ Limit สารอาหารทั้งหมด"
+              >
+                <Sliders size={13} className="text-white" />
+                <span>ปรับ Limit ({activeTargetProfile.name})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubTab('analytics')}
+                className="w-full py-2 px-2.5 rounded-2xl bg-white hover:bg-pink-50 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 border border-pink-200/80 shadow-2xs transition active:scale-95 cursor-pointer"
+                title="เปิดหน้ากราฟและประวัติโภชนาการย้อนหลัง"
+              >
+                <TrendingUp size={13} className="text-pink-500" />
+                <span>กราฟสถิติ 📊</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1622,7 +1679,8 @@ export const FoodView: React.FC = () => {
           </div>
         )}
       </div>
-
+        </>
+      )}
 
       {/* Photo Preview & Note Modal (Appears immediately AFTER taking or uploading photo(s)) */}
       {showPhotoNoteModal && pendingPhotos.length > 0 && (
