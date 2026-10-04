@@ -35,6 +35,7 @@ import { RestTimer } from '../components/workout/RestTimer';
 import { RoutineEditModal } from '../components/workout/RoutineEditModal';
 import { WorkoutHistorySection } from '../components/workout/WorkoutHistorySection';
 import { YoutubeWorkoutModal } from '../components/workout/YoutubeWorkoutModal';
+import { CardioVideoTab } from '../components/workout/CardioVideoTab';
 import { PigMascot } from '../components/ui/PigMascot';
 import { calculatePigEvolution, getUserAvatar, PIG_10_LEVELS } from '../utils/mascotLevels';
 import {
@@ -106,7 +107,7 @@ export const WorkoutView: React.FC = () => {
     toggleRestTimerSound,
   } = useApp();
 
-  const [workoutTab, setWorkoutTab] = useState<'workout' | 'history'>('workout');
+  const [workoutTab, setWorkoutTab] = useState<'workout' | 'cardio_vdo' | 'history'>('workout');
   const [activeExerciseModal, setActiveExerciseModal] = useState<Exercise | null>(null);
   const [showAddExerciseDrawer, setShowAddExerciseDrawer] = useState(false);
   const [drawerSearch, setDrawerSearch] = useState('');
@@ -356,16 +357,16 @@ export const WorkoutView: React.FC = () => {
   return (
     <div className="space-y-6 pb-24 animate-fadeIn">
       {/* Top Tab Switcher: Apple Segmented Control */}
-      <div className="flex items-center p-1 bg-zinc-200/60 backdrop-blur-md rounded-full max-w-md mx-auto shadow-inner border border-black/[0.04]">
+      <div className="flex items-center p-1 bg-zinc-200/60 backdrop-blur-md rounded-full max-w-lg mx-auto shadow-inner border border-black/[0.04]">
         <button
           onClick={() => setWorkoutTab('workout')}
-          className={`flex-1 py-2 px-4 rounded-full text-xs font-bold flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
+          className={`flex-1 py-2 px-3 sm:px-4 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer ${
             workoutTab === 'workout'
               ? 'bg-white text-zinc-900 shadow-sm'
               : 'text-zinc-600 hover:text-zinc-900'
           }`}
         >
-          <Dumbbell size={15} />
+          <Dumbbell size={14} />
           <span>ออกกำลังกาย</span>
           {activeWorkout && (
             <span className="w-2 h-2 rounded-full bg-blue-500 animate-ping ml-0.5" />
@@ -373,23 +374,35 @@ export const WorkoutView: React.FC = () => {
         </button>
 
         <button
+          onClick={() => setWorkoutTab('cardio_vdo')}
+          className={`flex-1 py-2 px-3 sm:px-4 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer ${
+            workoutTab === 'cardio_vdo'
+              ? 'bg-white text-zinc-900 shadow-sm'
+              : 'text-zinc-600 hover:text-zinc-900'
+          }`}
+        >
+          <span className="text-red-500 text-xs font-black">▶</span>
+          <span>Cardio VDO</span>
+        </button>
+
+        <button
           onClick={() => setWorkoutTab('history')}
-          className={`flex-1 py-2 px-4 rounded-full text-xs font-bold flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
+          className={`flex-1 py-2 px-3 sm:px-4 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer ${
             workoutTab === 'history'
               ? 'bg-white text-zinc-900 shadow-sm'
               : 'text-zinc-600 hover:text-zinc-900'
           }`}
         >
-          <Clock size={15} />
-          <span>ประวัติการฝึก</span>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-700 font-mono font-bold">
-            {allWorkoutHistory.length}
+          <Clock size={14} />
+          <span>ประวัติ</span>
+          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-zinc-100 text-zinc-700 font-mono font-bold">
+            {workoutHistory.length}
           </span>
         </button>
       </div>
 
-      {/* Active Workout Notification Bar while on History Tab */}
-      {activeWorkout && workoutTab === 'history' && (
+      {/* Active Workout Notification Bar while on History or Cardio VDO Tab */}
+      {activeWorkout && workoutTab !== 'workout' && (
         <div className="p-3 bg-pink-50 border border-pink-200 rounded-2xl flex items-center justify-between gap-3 animate-pulse shadow-xs">
           <div className="flex items-center gap-2 text-xs">
             <span className="w-2 h-2 rounded-full bg-rose-400 animate-ping" />
@@ -407,7 +420,15 @@ export const WorkoutView: React.FC = () => {
         </div>
       )}
 
-      {workoutTab === 'history' ? (
+      {workoutTab === 'cardio_vdo' ? (
+        <CardioVideoTab
+          onStartLiveSession={(data) => {
+            handleStartLiveYoutubeWorkout(data);
+            setWorkoutTab('workout');
+          }}
+          onSaveFinishedSession={handleSaveFinishedYoutubeWorkout}
+        />
+      ) : workoutTab === 'history' ? (
         <WorkoutHistorySection
           onStartRoutineWithExercises={(name, exs) => {
             setWorkoutTab('workout');

@@ -181,30 +181,38 @@ export const YoutubeWorkoutModal: React.FC<YoutubeWorkoutModalProps> = ({
   const handleTriggerSaveFinished = async () => {
     if (!analyzedData || isSaving) return;
     setIsSaving(true);
-    try {
-      const finalData = {
-        title: customTitle || analyzedData.analysis.title,
-        youtubeId: analyzedData.youtubeId,
-        youtubeUrl: analyzedData.originalUrl,
-        durationMinutes: customDuration,
-        caloriesKcal: customCalories,
-        targetMuscles: analyzedData.analysis.targetMuscles || [],
-        benefits: analyzedData.analysis.benefits || [],
-        note: [
-          `คลิป: ${analyzedData.analysis.title}`,
-          analyzedData.analysis.category ? `ประเภท: ${analyzedData.analysis.category}` : null,
-          userNote ? `โน้ต: ${userNote}` : null,
-        ]
-          .filter(Boolean)
-          .join(' | '),
-      };
 
-      await onSaveFinishedSession(finalData);
-      onClose();
+    const finalData = {
+      title: customTitle || analyzedData.analysis.title,
+      youtubeId: analyzedData.youtubeId,
+      youtubeUrl: analyzedData.originalUrl,
+      durationMinutes: customDuration,
+      caloriesKcal: customCalories,
+      targetMuscles: analyzedData.analysis.targetMuscles || [],
+      benefits: analyzedData.analysis.benefits || [],
+      note: [
+        `คลิป: ${analyzedData.analysis.title}`,
+        analyzedData.analysis.category ? `ประเภท: ${analyzedData.analysis.category}` : null,
+        userNote ? `โน้ต: ${userNote}` : null,
+      ]
+        .filter(Boolean)
+        .join(' | '),
+    };
+
+    // Close modal and fire callback immediately without hanging
+    try {
+      // Fire and handle safely
+      const savePromise = onSaveFinishedSession(finalData);
+      // Wait at most 300ms so UI updates smoothly, then close modal
+      await Promise.race([
+        savePromise,
+        new Promise((resolve) => setTimeout(resolve, 250)),
+      ]);
     } catch (err) {
       console.error('Save session error:', err);
     } finally {
       setIsSaving(false);
+      onClose();
     }
   };
 
