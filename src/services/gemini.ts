@@ -662,3 +662,197 @@ ${workoutsSummary}
 
   return textOutput;
 }
+
+// ==================== YOUTUBE WORKOUT CLIP ANALYSIS ====================
+
+export interface YoutubeWorkoutAnalysis {
+  title: string;
+  channelName?: string;
+  category: string;
+  estimatedDurationMinutes: number;
+  estimatedCalories: number;
+  intensity: 'เบา (Low)' | 'ปานกลาง (Moderate)' | 'เข้มข้นสูง (High)';
+  targetMuscles: string[];
+  benefits: string[];
+  movements: string[];
+  coachingTips: string;
+  suitability: string;
+}
+
+export function extractYouTubeId(urlOrId: string): string | null {
+  if (!urlOrId) return null;
+  const trimmed = urlOrId.trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(trimmed)) {
+    return trimmed;
+  }
+  const watchMatch = trimmed.match(
+    /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i
+  );
+  if (watchMatch && watchMatch[1]) {
+    return watchMatch[1];
+  }
+  const shortsMatch = trimmed.match(/youtube\.com\/shorts\/([^"&?\/\s]{11})/i);
+  if (shortsMatch && shortsMatch[1]) {
+    return shortsMatch[1];
+  }
+  return null;
+}
+
+export async function fetchYouTubeOEmbed(
+  videoId: string
+): Promise<{ title?: string; author_name?: string } | null> {
+  try {
+    const res = await fetch(
+      `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`
+    );
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        title: data.title,
+        author_name: data.author_name,
+      };
+    }
+  } catch (err) {
+    console.warn('Could not fetch YouTube oEmbed info:', err);
+  }
+  return null;
+}
+
+export async function analyzeYoutubeWorkoutVideo(
+  input: {
+    urlOrText: string;
+    userNote?: string;
+    userName?: string;
+    userGoal?: string;
+  },
+  customApiKey?: string
+): Promise<{
+  analysis: YoutubeWorkoutAnalysis;
+  youtubeId: string | null;
+}> {
+  const activeKey =
+    customApiKey ||
+    (typeof window !== 'undefined' ? localStorage.getItem('fittrack_gemini_key') : null) ||
+    getDefaultGeminiApiKey();
+
+  if (!activeKey) {
+    throw new Error('กรุณากรอก Gemini API Key เพื่อให้ AI วิเคราะห์คลิปออกกำลังกาย');
+  }
+
+  const youtubeId = extractYouTubeId(input.urlOrText);
+  let fetchedTitle = '';
+  let fetchedAuthor = '';
+
+  if (youtubeId) {
+    const oembed = await fetchYouTubeOEmbed(youtubeId);
+    if (oembed) {
+      fetchedTitle = oembed.title || '';
+      fetchedAuthor = oembed.author_name || '';
+    }
+  }
+
+  const promptText = `คุณคือโค้ชผู้เชี่ยวชาญด้านวิทยาศาสตร์การกีฬาและเทรนเนอร์ส่วนตัวอัจฉริยะ (Sports Scientist & Master Trainer) ประจำ FitTrack หมูอ้วน
+ผู้ใช้ชื่อคุณ "${input.userName || 'น้องมะนาว'}" (เป้าหมาย: ${input.userGoal || 'กระชับสัดส่วน Toning & สุขภาพ'}) ต้องการออกกำลังกายตามคลิป YouTube นี้:
+
+[ข้อมูลคลิปและลิงก์]
+- ข้อความ/ลิงก์ที่ผู้ใช้ระบุ: "${input.urlOrText}"
+- YouTube Video ID: "${youtubeId || 'ไม่พบ ID ตรง'}"
+- ชื่อคลิปจริงที่ดึงได้: "${fetchedTitle || 'อ้างอิงจากลิงก์หรือข้อความค้นหา'}"
+- ช่อง/ผู้จัดทำ: "${fetchedAuthor || '-'}"
+- หมายเหตุเพิ่มเติมจากผู้ใช้: "${input.userNote || 'ไม่มี'}"
+
+กรุณาวิเคราะห์คลิปออกกำลังกายนี้อย่างละเอียดและเป็นมืออาชีพตามหลักวิทยาศาสตร์การกีฬา:
+1. ประเภทของคลิปการฝึก (เช่น พิลาทิสบอดี้เวท, เต้นแอโรบิกคาร์ดิโอ, HIIT เผาผลาญไขมัน, ปั้นร่อง 11 & หน้าท้อง, ยืดเหยียดผ่อนคลาย, ปั้นก้นและสะโพก)
+2. ระยะเวลาโดยประมาณ (นาที) และ แคลอรี่ที่เผาผลาญโดยเฉลี่ย (kcal)
+3. ระดับความเข้มข้น (เบา (Low), ปานกลาง (Moderate), หรือ เข้มข้นสูง (High))
+4. กล้ามเนื้อและสัดส่วนที่คลิปนี้เน้นโฟกัส (เช่น หน้าท้องส่วนล่าง, แกนกลางลำตัว, ก้น, ต้นขาใน, ไหล่)
+5. สิ่งที่ได้ / ประโยชน์ที่ได้รับจากคลิปนี้ (3-5 ข้อ เช่น กระชับหน้าท้องสร้างเอว S, เร่งอัตราการเผาผลาญไขมัน, Low-Impact ถนอมเข่าและข้อต่อ, ปรับบุคลิกภาพ)
+6. ท่าสำคัญหรือรูปแบบการเคลื่อนไหวเด่นในคลิป (3-6 ท่า)
+7. คำแนะนำและเทคนิคการเกร็ง/การหายใจจากโค้ช AI
+8. เหมาะสำหรับใคร / วัตถุประสงค์ใด
+
+ส่งผลลัพธ์กลับมาเป็นรูปแบบ JSON เท่านั้น (Strict JSON Schema, no markdown wrap):
+{
+  "title": "string (ชื่อคลิปหรือชื่อโปรแกรมที่อ่านง่ายและกระชับ ภาษาไทย/อังกฤษ)",
+  "channelName": "string (ชื่อช่องหรือ Creator)",
+  "category": "string (เช่น พิลาทิส & แกนกลางลำตัว / คาร์ดิโอแดนซ์ / HIIT)",
+  "estimatedDurationMinutes": number (เช่น 15, 20, 30),
+  "estimatedCalories": number (เช่น 120, 180, 250),
+  "intensity": "เบา (Low)" | "ปานกลาง (Moderate)" | "เข้มข้นสูง (High)",
+  "targetMuscles": ["string", "string", "string"],
+  "benefits": ["string", "string", "string", "string"],
+  "movements": ["string", "string", "string", "string"],
+  "coachingTips": "string (คำแนะนำการเกร็งและเทคนิคการเล่น)",
+  "suitability": "string (เหมาะสำหรับใคร เช่น เหมาะสำหรับผู้หญิงที่อยากปั้นร่อง 11 และลดไขมันหน้าท้อง)"
+}`;
+
+  const candidateModels = [
+    'gemini-2.5-flash',
+    'gemini-1.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-pro',
+  ];
+
+  const defaultKey = getDefaultGeminiApiKey();
+  const keysToTry = [activeKey];
+  if (defaultKey && defaultKey !== activeKey) {
+    keysToTry.push(defaultKey);
+  }
+
+  let rawJsonText = '';
+
+  for (const currentKey of keysToTry) {
+    for (const model of candidateModels) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`;
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: promptText }] }],
+            generationConfig: {
+              temperature: 0.2,
+              response_mime_type: 'application/json',
+            },
+          }),
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          const partText = json.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (partText) {
+            rawJsonText = partText;
+            break;
+          }
+        }
+      } catch (err) {
+        console.warn(`Model ${model} workout analysis failed:`, err);
+      }
+    }
+    if (rawJsonText) break;
+  }
+
+  if (!rawJsonText) {
+    throw new Error('AI ไม่สามารถวิเคราะห์คลิปออกกำลังกายได้ในขณะนี้ กรุณาตรวจสอบอินเทอร์เน็ตหรือ API Key');
+  }
+
+  try {
+    const cleaned = rawJsonText.replace(/```json/g, '').replace(/```/g, '').trim();
+    const parsed: YoutubeWorkoutAnalysis = JSON.parse(cleaned);
+
+    if (fetchedTitle && (!parsed.title || parsed.title.length < 3)) {
+      parsed.title = fetchedTitle;
+    }
+    if (fetchedAuthor && !parsed.channelName) {
+      parsed.channelName = fetchedAuthor;
+    }
+
+    return {
+      analysis: parsed,
+      youtubeId,
+    };
+  } catch (err: any) {
+    throw new Error(`การแปลงผลวิเคราะห์ผิดพลาด: ${err.message}`);
+  }
+}
+

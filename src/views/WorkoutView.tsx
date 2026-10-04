@@ -34,6 +34,7 @@ import { BentoGrid, BentoCard } from '../components/ui/BentoGrid';
 import { RestTimer } from '../components/workout/RestTimer';
 import { RoutineEditModal } from '../components/workout/RoutineEditModal';
 import { WorkoutHistorySection } from '../components/workout/WorkoutHistorySection';
+import { YoutubeWorkoutModal } from '../components/workout/YoutubeWorkoutModal';
 import { PigMascot } from '../components/ui/PigMascot';
 import { calculatePigEvolution, getUserAvatar, PIG_10_LEVELS } from '../utils/mascotLevels';
 import {
@@ -88,6 +89,8 @@ export const WorkoutView: React.FC = () => {
     resetProgramsToDefault,
     workoutHistory,
     allWorkoutHistory,
+    deleteWorkoutSession,
+    saveDirectWorkoutSession,
     activeProfileKey,
     currentProfile,
     // Global Rest Timer from AppContext
@@ -109,6 +112,69 @@ export const WorkoutView: React.FC = () => {
   const [drawerSearch, setDrawerSearch] = useState('');
   const [drawerMuscle, setDrawerMuscle] = useState<string>('all');
   const [showRestTimer, setShowRestTimer] = useState(false);
+
+  // YouTube Workout Modal State
+  const [showYoutubeModal, setShowYoutubeModal] = useState(false);
+
+  const handleStartLiveYoutubeWorkout = (data: {
+    title: string;
+    youtubeId: string | null;
+    youtubeUrl: string;
+    durationMinutes: number;
+    caloriesKcal: number;
+    targetMuscles: string[];
+    benefits: string[];
+    note: string;
+  }) => {
+    const cardioActivity: CardioActivity = {
+      type: 'video_workout',
+      machine_name: `คลิป: ${data.title}`,
+      duration_minutes: data.durationMinutes,
+      calories_kcal: data.caloriesKcal,
+      note: data.note,
+      youtube_id: data.youtubeId || undefined,
+      youtube_url: data.youtubeUrl || undefined,
+      target_muscles: data.targetMuscles,
+      benefits: data.benefits,
+    };
+    startCardioSession(`📺 ${data.title}`, 'video_workout', cardioActivity, true);
+  };
+
+  const handleSaveFinishedYoutubeWorkout = async (data: {
+    title: string;
+    youtubeId: string | null;
+    youtubeUrl: string;
+    durationMinutes: number;
+    caloriesKcal: number;
+    targetMuscles: string[];
+    benefits: string[];
+    note: string;
+  }) => {
+    const cardioActivity: CardioActivity = {
+      id: 'cardio_' + Math.random().toString(36).substring(2, 9),
+      type: 'video_workout',
+      machine_name: `คลิป: ${data.title}`,
+      duration_minutes: data.durationMinutes,
+      calories_kcal: data.caloriesKcal,
+      note: data.note,
+      youtube_id: data.youtubeId || undefined,
+      youtube_url: data.youtubeUrl || undefined,
+      target_muscles: data.targetMuscles,
+      benefits: data.benefits,
+    };
+
+    await saveDirectWorkoutSession({
+      user_id: activeProfileKey,
+      user_name: currentProfile.name,
+      date: new Date().toISOString().split('T')[0],
+      program_name: `📺 ${data.title}`,
+      start_time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+      end_time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+      note: data.note,
+      sets: [],
+      cardio: [cardioActivity],
+    });
+  };
 
   // Cardio Setup Modal State (Choose activity & target before starting)
   const [showCardioModal, setShowCardioModal] = useState(false);
@@ -547,6 +613,48 @@ export const WorkoutView: React.FC = () => {
               </div>
             )}
           </div>
+
+          {/* Active YouTube Video Player Card (If following a video workout) */}
+          {(() => {
+            const videoCardio = activeWorkout.cardio?.find((c) => c.youtube_id || c.type === 'video_workout');
+            if (!videoCardio || !videoCardio.youtube_id) return null;
+            return (
+              <div className="p-3.5 sm:p-4 bg-slate-900 text-white rounded-3xl border border-red-500/40 shadow-xl space-y-3 animate-fadeIn">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-red-500 font-black text-lg">▶</span>
+                    <h3 className="font-bold text-xs sm:text-sm truncate text-white">
+                      {videoCardio.machine_name || 'คลิปออกกำลังกาย YouTube'}
+                    </h3>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40 font-bold shrink-0">
+                    Live Video Follow
+                  </span>
+                </div>
+
+                <div className="rounded-2xl overflow-hidden aspect-video w-full bg-black shadow-inner">
+                  <iframe
+                    src={`https://www.youtube.com/embed/${videoCardio.youtube_id}?enablejsapi=1&rel=0`}
+                    title={videoCardio.machine_name}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-full border-0"
+                  />
+                </div>
+
+                {videoCardio.benefits && videoCardio.benefits.length > 0 && (
+                  <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-white/80">
+                    <span className="text-emerald-400 font-bold">✨ สิ่งที่ได้:</span>
+                    {videoCardio.benefits.map((b, i) => (
+                      <span key={i} className="px-2 py-0.5 rounded-md bg-white/10 text-white/90">
+                        {b}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Exercise Cards in Workout (Collapsible & Horizontal Set Carousel) */}
           {activeWorkout.exercises.map((item, exIdx) => {
@@ -1445,6 +1553,14 @@ export const WorkoutView: React.FC = () => {
                   <Footprints size={16} className={activeProfileKey === 'partner' ? 'text-pink-500' : 'text-sky-500'} />
                   <span>คาร์ดิโอ / เดินชัน 🏃</span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setShowYoutubeModal(true)}
+                  className="py-2.5 px-4 text-sm flex items-center gap-2 cursor-pointer shadow-md rounded-full bg-gradient-to-r from-red-500 via-rose-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-bold transition active:scale-95"
+                >
+                  <span className="text-base">▶️</span>
+                  <span>ออกกำลังกายตามคลิป (YouTube) 🌸</span>
+                </button>
               </div>
             </div>
           </div>
@@ -2076,6 +2192,15 @@ export const WorkoutView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* YouTube Workout Video AI Analysis & Session Modal */}
+      <YoutubeWorkoutModal
+        isOpen={showYoutubeModal}
+        onClose={() => setShowYoutubeModal(false)}
+        onStartLiveSession={handleStartLiveYoutubeWorkout}
+        onSaveFinishedSession={handleSaveFinishedYoutubeWorkout}
+        selectedUserKey={activeProfileKey}
+      />
     </div>
   );
 };

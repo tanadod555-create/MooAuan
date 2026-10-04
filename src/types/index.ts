@@ -149,6 +149,7 @@ export type CardioType =
   | 'stairmaster'
   | 'outdoor_walk'
   | 'outdoor_run'
+  | 'video_workout'
   | 'other';
 
 export interface CardioActivity {
@@ -162,6 +163,10 @@ export interface CardioActivity {
   calories_kcal?: number;
   heart_rate_bpm?: number;
   note?: string;
+  youtube_id?: string;
+  youtube_url?: string;
+  target_muscles?: string[];
+  benefits?: string[];
 }
 
 export interface WorkoutSet {

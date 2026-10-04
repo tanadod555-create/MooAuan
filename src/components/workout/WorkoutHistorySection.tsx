@@ -20,6 +20,7 @@ import {
   TrendingUp,
   Activity,
   Footprints,
+  ExternalLink,
 } from 'lucide-react';
 import { PigMascot } from '../ui/PigMascot';
 
@@ -483,16 +484,25 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                               className="bg-white/95 p-3 rounded-2xl border border-pink-200 shadow-xs space-y-2"
                             >
                               <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                                  <Footprints size={14} className="text-rose-500" />
-                                  {c.machine_name || 'คาร์ดิโอ'}
+                                <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5 truncate">
+                                  {c.type === 'video_workout' || c.youtube_id ? (
+                                    <span className="text-red-500 font-bold">▶</span>
+                                  ) : (
+                                    <Footprints size={14} className="text-rose-500 shrink-0" />
+                                  )}
+                                  <span className="truncate">{c.machine_name || 'คาร์ดิโอ'}</span>
                                 </span>
-                                <span className="text-xs font-black text-rose-600 font-mono bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-100">
+                                <span className="text-xs font-black text-rose-600 font-mono bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-100 shrink-0">
                                   {c.duration_minutes} นาที
                                 </span>
                               </div>
                               <div className="flex items-center gap-2 text-[11px] text-slate-600 font-mono flex-wrap">
-                                {c.incline_pct !== undefined && (
+                                {c.calories_kcal !== undefined && c.calories_kcal > 0 && (
+                                  <span className="bg-orange-50 px-2 py-0.5 rounded-md text-orange-700 font-bold">
+                                    🔥 {c.calories_kcal} kcal
+                                  </span>
+                                )}
+                                {c.incline_pct !== undefined && c.incline_pct > 0 && (
                                   <span className="bg-pink-50 px-2 py-0.5 rounded-md text-pink-700 font-bold">
                                     ความชัน {c.incline_pct}%
                                   </span>
@@ -508,6 +518,19 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                                   </span>
                                 )}
                               </div>
+                              {c.youtube_id && (
+                                <div className="mt-1">
+                                  <a
+                                    href={`https://www.youtube.com/watch?v=${c.youtube_id}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-[11px] font-bold text-red-600 hover:text-red-700 hover:underline flex items-center gap-1"
+                                  >
+                                    <span>▶ เปิดดูคลิปบน YouTube</span>
+                                    <ExternalLink size={11} />
+                                  </a>
+                                </div>
+                              )}
                               {c.note && (
                                 <p className="text-[11px] text-slate-600 italic bg-pink-50/50 p-2 rounded-xl border border-pink-100">
                                   📝 {c.note}

@@ -104,6 +104,7 @@ interface AppContextType {
   workoutHistory: WorkoutSession[];
   allWorkoutHistory: WorkoutSession[];
   deleteWorkoutSession: (sessionId: string) => void;
+  saveDirectWorkoutSession: (session: Omit<WorkoutSession, 'session_id'>) => Promise<string>;
   
   foodLogs: FoodLog[];
   allFoodLogs: FoodLog[];
@@ -1653,6 +1654,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       stairmaster: 'บันไดสเต็ปมาสเตอร์ (Stairmaster)',
       outdoor_walk: 'เดินเร็วกลางแจ้ง (Outdoor Walk)',
       outdoor_run: 'วิ่งกลางแจ้ง (Outdoor Run)',
+      video_workout: 'ออกกำลังกายตามคลิป (Video Workout)',
       other: 'คาร์ดิโอทั่วไป (Cardio)'
     };
     const defaultName = typeNames[defaultType] || 'คาร์ดิโอ (Cardio)';
@@ -1907,6 +1909,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (db) {
       cloudDeleteWorkout(db, sessionId).catch(console.error);
     }
+  };
+
+  const saveDirectWorkoutSession = async (session: Omit<WorkoutSession, 'session_id'>): Promise<string> => {
+    const sessionId = 'sess_' + Date.now();
+    const currentName = activeProfileKey === 'partner' ? partnerProfile.name : primaryProfile.name;
+    const newSession: WorkoutSession = {
+      ...session,
+      session_id: sessionId,
+      user_id: session.user_id || activeProfileKey,
+      user_name: session.user_name || currentName,
+      date: session.date || new Date().toISOString().split('T')[0],
+      start_time: session.start_time || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+      end_time: session.end_time || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    addPendingSyncId(sessionId);
+    setAllWorkoutHistory((prev) => {
+      const updated = [newSession, ...prev];
+      try {
+        localStorage.setItem('ft_history_unified', JSON.stringify(updated));
+        localStorage.setItem('ft_history_seeded', '1');
+      } catch {}
+      return updated;
+    });
+
+    awardCoins('workout_finish', 150);
+    if (newSession.cardio && newSession.cardio.length > 0) {
+      awardCoins('cardio_finish', 60);
+    }
+
+    const db = firestoreDbRef.current || getFirestoreInstance();
+    if (db) {
+      cloudSaveWorkout(db, newSession).catch(console.error);
+    }
+
+    if (settings.appsScriptUrl || (settings.autoSyncGoogleSheets && settings.googleAccessToken)) {
+      try {
+        await sheetsService.syncWorkoutSession(newSession, newSession.sets || [], newSession.user_name || '');
+      } catch (err) {
+        console.error('Auto sync direct workout failed:', err);
+      }
+    }
+
+    return sessionId;
   };
 
   const addExerciseToWorkout = (exercise: Exercise) => {
@@ -2422,6 +2468,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         workoutHistory,
         allWorkoutHistory,
         deleteWorkoutSession,
+        saveDirectWorkoutSession,
         // Global Rest Timer
         restTimerSeconds,
         restTimerInitial,
