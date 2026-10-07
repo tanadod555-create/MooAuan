@@ -36,6 +36,14 @@ import { RoutineEditModal } from '../components/workout/RoutineEditModal';
 import { WorkoutHistorySection } from '../components/workout/WorkoutHistorySection';
 import { YoutubeWorkoutModal } from '../components/workout/YoutubeWorkoutModal';
 import { CardioVideoTab } from '../components/workout/CardioVideoTab';
+import { VisualMuscleRecoveryMap } from '../components/muscle/VisualMuscleRecoveryMap';
+import {
+  calculate1RM,
+  calculateBarbellPlates,
+  findPreviousExercisePerformance,
+  findExercisePR,
+} from '../utils/fitnessCalculations';
+import { requestScreenWakeLock, releaseScreenWakeLock } from '../utils/screenWakeLock';
 import { PigMascot } from '../components/ui/PigMascot';
 import { calculatePigEvolution, getUserAvatar, PIG_10_LEVELS } from '../utils/mascotLevels';
 import {
@@ -264,6 +272,46 @@ export const WorkoutView: React.FC = () => {
       [exerciseId]: setIdx,
     }));
   };
+
+  // Screen Wake Lock State (Keep screen awake during workouts)
+  const [wakeLockEnabled, setWakeLockEnabled] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('mooauan_wake_lock_enabled');
+      return saved === 'true';
+    }
+    return true;
+  });
+
+  // Activate Wake Lock when workout is active
+  useEffect(() => {
+    if (activeWorkout && wakeLockEnabled) {
+      requestScreenWakeLock();
+    } else {
+      releaseScreenWakeLock();
+    }
+    return () => {
+      releaseScreenWakeLock();
+    };
+  }, [activeWorkout, wakeLockEnabled]);
+
+  const handleToggleWakeLock = async () => {
+    const next = !wakeLockEnabled;
+    setWakeLockEnabled(next);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('mooauan_wake_lock_enabled', String(next));
+    }
+    if (next && activeWorkout) {
+      await requestScreenWakeLock();
+    } else {
+      await releaseScreenWakeLock();
+    }
+  };
+
+  // Plate Calculator Modal State
+  const [plateModalTarget, setPlateModalTarget] = useState<{
+    targetWeight: number;
+    exerciseName: string;
+  } | null>(null);
 
   // Exercise card accordion collapse state
   const [collapsedExercises, setCollapsedExercises] = useState<Record<string, boolean>>({});
@@ -602,6 +650,25 @@ export const WorkoutView: React.FC = () => {
                   </div>
                 </div>
 
+                {/* Screen Wake Lock Toggle */}
+                <div className="flex items-center justify-between gap-1 pt-1 border-t border-pink-100">
+                  <span className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
+                    <span>📱</span>
+                    <span>เปิดจอค้างไว้ขณะซ้อม (Wake Lock):</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleToggleWakeLock}
+                    className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black transition cursor-pointer border ${
+                      wakeLockEnabled
+                        ? 'bg-emerald-500 text-white border-emerald-500 shadow-2xs'
+                        : 'bg-slate-100 text-slate-500 border-slate-300'
+                    }`}
+                  >
+                    {wakeLockEnabled ? '🟢 เปิดอยู่ (จอไม่ดับ)' : '⚪ ปิดอยู่'}
+                  </button>
+                </div>
+
                 {/* Session Note */}
                 <input
                   type="text"
@@ -876,8 +943,8 @@ export const WorkoutView: React.FC = () => {
                               }`}
                             >
                               {/* Set Card Header */}
-                              <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-pink-100">
-                                <div className="flex items-center gap-2">
+                              <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-pink-100 flex-wrap gap-2">
+                                <div className="flex items-center gap-1.5 flex-wrap">
                                   <span
                                     className={`px-2.5 py-1 rounded-xl text-xs font-black tracking-wide ${
                                       currentSet.done
@@ -887,6 +954,39 @@ export const WorkoutView: React.FC = () => {
                                   >
                                     เซ็ตที่ {activeSetIdx + 1} จาก {item.sets.length}
                                   </span>
+
+                                  {/* Set Type Tagging Selector (Normal, Warmup, Dropset, Failure) */}
+                                  <div className="flex items-center p-0.5 bg-slate-100 rounded-xl border border-slate-200">
+                                    {(
+                                      [
+                                        { key: 'normal', label: 'เซ็ตจริง (N)', color: 'bg-white text-slate-700' },
+                                        { key: 'warmup', label: 'วอร์ม (W)', color: 'bg-amber-500 text-white' },
+                                        { key: 'dropset', label: 'ดรอป (D)', color: 'bg-purple-500 text-white' },
+                                        { key: 'failure', label: 'หมดแรง (F)', color: 'bg-rose-600 text-white' },
+                                      ] as const
+                                    ).map((tag) => {
+                                      const isCurr = (currentSet.set_type || 'normal') === tag.key;
+                                      return (
+                                        <button
+                                          key={tag.key}
+                                          type="button"
+                                          onClick={() =>
+                                            updateSet(item.exercise_id, activeSetIdx, {
+                                              set_type: tag.key,
+                                              is_warmup: tag.key === 'warmup',
+                                            })
+                                          }
+                                          className={`px-2 py-0.5 rounded-lg text-[10px] font-black transition active:scale-95 cursor-pointer ${
+                                            isCurr ? `${tag.color} shadow-2xs` : 'text-slate-400 hover:text-slate-700'
+                                          }`}
+                                          title={`เลือกประเภทเซ็ต: ${tag.label}`}
+                                        >
+                                          {tag.key.charAt(0).toUpperCase()}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+
                                   {currentSet.done && (
                                     <span className="text-[11px] font-bold text-rose-500 flex items-center gap-1">
                                       <Check size={13} className="stroke-[3]" /> เสร็จแล้ว
@@ -894,23 +994,104 @@ export const WorkoutView: React.FC = () => {
                                   )}
                                 </div>
 
-                                {item.sets.length > 1 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      removeSetFromExercise(item.exercise_id, activeSetIdx);
-                                      setActiveSetForExercise(
-                                        item.exercise_id,
-                                        Math.max(0, activeSetIdx - 1)
-                                      );
-                                    }}
-                                    className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition active:scale-95 cursor-pointer"
-                                    title="ลบเซ็ตนี้"
-                                  >
-                                    <Trash2 size={15} />
-                                  </button>
-                                )}
+                                <div className="flex items-center gap-1">
+                                  {/* Barbell Plate Calculator Trigger Button */}
+                                  {currentSet.weight_kg > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setPlateModalTarget({
+                                          targetWeight: currentSet.weight_kg,
+                                          exerciseName: exerciseData?.name_th || item.exercise_id,
+                                        })
+                                      }
+                                      className="px-2 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-[10px] font-bold flex items-center gap-1 transition cursor-pointer"
+                                      title="คำนวณแผ่นน้ำหนักบาร์เบล (Plate Math)"
+                                    >
+                                      <span>⚖️ แผ่นน้ำหนัก</span>
+                                    </button>
+                                  )}
+
+                                  {item.sets.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        removeSetFromExercise(item.exercise_id, activeSetIdx);
+                                        setActiveSetForExercise(
+                                          item.exercise_id,
+                                          Math.max(0, activeSetIdx - 1)
+                                        );
+                                      }}
+                                      className="text-slate-400 hover:text-rose-500 p-1.5 rounded-lg hover:bg-rose-50 transition active:scale-95 cursor-pointer"
+                                      title="ลบเซ็ตนี้"
+                                    >
+                                      <Trash2 size={15} />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
+
+                              {/* Previous Performance Ghost Banner & 1RM Real-time Stats */}
+                              {(() => {
+                                const prevPerf = findPreviousExercisePerformance(
+                                  item.exercise_id,
+                                  workoutHistory || []
+                                );
+                                const prevSetForThisIdx = prevPerf?.sets[activeSetIdx];
+                                const current1RM = calculate1RM(currentSet.weight_kg, currentSet.reps);
+                                const allTimePR = findExercisePR(item.exercise_id, workoutHistory || []);
+                                const isNewPR =
+                                  current1RM > 0 &&
+                                  allTimePR.best1RM > 0 &&
+                                  current1RM > allTimePR.best1RM;
+
+                                return (
+                                  <div className="mb-2.5 space-y-1.5">
+                                    <div className="flex items-center justify-between gap-2 px-1 text-xs flex-wrap">
+                                      {/* 1RM & PR Badge */}
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[11px] text-slate-500 font-bold">
+                                          1RM: <strong className="text-slate-800 font-mono">~{current1RM} kg</strong>
+                                        </span>
+                                        {isNewPR && (
+                                          <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 font-black text-[10px] flex items-center gap-0.5 animate-pulse">
+                                            🏆 NEW PR!
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {/* Previous History Ghost Preview */}
+                                      {prevPerf && (
+                                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                                          <span className="text-slate-400">รอบก่อน ({prevPerf.date.slice(5)}):</span>
+                                          <span className="font-bold text-slate-700 font-mono">
+                                            {prevSetForThisIdx
+                                              ? `${prevSetForThisIdx.weight_kg}kg × ${prevSetForThisIdx.reps}`
+                                              : prevPerf.sets[0]
+                                              ? `${prevPerf.sets[0].weight_kg}kg × ${prevPerf.sets[0].reps}`
+                                              : '-'}
+                                          </span>
+                                          {prevSetForThisIdx && (
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                updateSet(item.exercise_id, activeSetIdx, {
+                                                  weight_kg: prevSetForThisIdx.weight_kg,
+                                                  reps: prevSetForThisIdx.reps,
+                                                });
+                                              }}
+                                              className="text-[10px] px-1.5 py-0.2 rounded bg-pink-100 text-pink-700 font-bold hover:bg-pink-200 cursor-pointer"
+                                              title="ดึงค่าน้ำหนักรอบก่อนมาใส่"
+                                            >
+                                              ใส่ค่านี้
+                                            </button>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
 
                               {/* Weight & Reps Stepper Controllers */}
                               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
@@ -1586,6 +1767,13 @@ export const WorkoutView: React.FC = () => {
             </div>
           </div>
 
+          {/* Visual Muscle Recovery Map Widget (Inspired by openGym) */}
+          <VisualMuscleRecoveryMap
+            onSelectMuscle={(muscleKey) => {
+              setDrawerMuscle(muscleKey);
+            }}
+          />
+
           {/* Routine Programs */}
           <div className="space-y-3.5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
@@ -2222,6 +2410,93 @@ export const WorkoutView: React.FC = () => {
         onSaveFinishedSession={handleSaveFinishedYoutubeWorkout}
         selectedUserKey={activeProfileKey}
       />
+
+      {/* Barbell Plate Math Calculator Modal (Inspired by openGym) */}
+      {plateModalTarget && (() => {
+        const plates = calculateBarbellPlates(plateModalTarget.targetWeight, 20);
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+            <div className="absolute inset-0" onClick={() => setPlateModalTarget(null)} />
+            <div className="relative w-full max-w-sm bg-white rounded-3xl border border-pink-200 p-5 shadow-2xl space-y-4 z-10 animate-scaleUp">
+              <div className="flex items-center justify-between pb-2 border-b border-pink-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-xl">⚖️</span>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-800">
+                      ตัวช่วยใส่แผ่นน้ำหนัก (Plate Math)
+                    </h3>
+                    <p className="text-[11px] text-slate-500 truncate max-w-[200px]">
+                      {plateModalTarget.exerciseName}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPlateModalTarget(null)}
+                  className="p-1 rounded-full text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Target & Bar Summary */}
+              <div className="p-3 bg-pink-50/70 rounded-2xl border border-pink-200 text-center space-y-1">
+                <div className="text-xs text-slate-500 font-bold">น้ำหนักเป้าหมายรวม:</div>
+                <div className="text-2xl font-black text-rose-600 font-mono">
+                  {plateModalTarget.targetWeight} kg
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  (บาร์มาตรฐาน 20 kg + แผ่นข้างละ <strong>{plates.perSideWeight} kg</strong>)
+                </div>
+              </div>
+
+              {/* Plates Needed per side */}
+              <div className="space-y-2">
+                <div className="text-xs font-bold text-slate-700 flex items-center justify-between">
+                  <span>แผ่นน้ำหนักที่ต้องใส่ "ข้างละ":</span>
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    รวม {plates.perSideWeight} kg/ข้าง
+                  </span>
+                </div>
+
+                {plates.platesPerSide.length === 0 ? (
+                  <div className="p-3 text-center text-xs text-slate-500 bg-slate-50 rounded-xl">
+                    ไม่ต้องใส่แผ่นเพิ่ม (ยกบาร์เปล่า 20 kg)
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    {plates.platesPerSide.map((p, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2.5 rounded-2xl bg-white border-2 border-slate-200 flex items-center justify-between shadow-2xs"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-7 h-7 rounded-full bg-slate-800 text-white font-mono font-black text-xs flex items-center justify-center">
+                            {p.weight}
+                          </span>
+                          <span className="text-xs font-bold text-slate-700">kg</span>
+                        </div>
+                        <span className="text-xs font-black text-rose-600 font-mono bg-pink-50 px-2 py-0.5 rounded-lg border border-pink-200">
+                          × {p.count} แผ่น
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPlateModalTarget(null)}
+                className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-black text-xs cursor-pointer shadow-md"
+              >
+                เข้าใจแล้ว พร้อมยก! 🏋️
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

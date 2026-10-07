@@ -169,6 +169,8 @@ export interface CardioActivity {
   benefits?: string[];
 }
 
+export type SetType = 'normal' | 'warmup' | 'dropset' | 'failure';
+
 export interface WorkoutSet {
   set_id: string;
   session_id: string;
@@ -178,9 +180,11 @@ export interface WorkoutSet {
   set_no: number;
   weight_kg: number;
   reps: number;
+  set_type?: SetType;
   rpe?: number;
   done: boolean;
   is_warmup?: boolean;
+  estimated_1rm?: number;
   note?: string;
 }
 
