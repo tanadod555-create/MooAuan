@@ -7,10 +7,12 @@ import {
   WorkoutSession,
   WorkoutSet,
   FoodLog,
+  AppAccount,
 } from '../types';
 
 export const SHEET_TABS = [
   'profile',
+  'users',
   'body_metrics',
   'exercises',
   'programs',
@@ -23,6 +25,7 @@ export const SHEET_TABS = [
 
 export const SHEET_HEADERS: Record<string, string[]> = {
   profile: ['user_name', 'user_id', 'email', 'sex', 'goal', 'kcal_target', 'protein_target_g', 'carb_target_g', 'fat_target_g', 'height_cm', 'waist_cm', 'chest_cm', 'shoulders_cm', 'thigh_cm', 'hips_cm', 'arm_cm', 'calf_cm', 'neck_cm', 'updated_at'],
+  users: ['username', 'password', 'user_id', 'name', 'sex', 'goal', 'height_cm', 'kcal_target', 'created_at'],
   body_metrics: ['user_name', 'date', 'weight_kg', 'height_cm', 'body_fat_pct', 'waist_cm', 'chest_cm', 'shoulders_cm', 'thigh_cm', 'hips_cm', 'arm_cm', 'calf_cm', 'neck_cm', 'note'],
   exercises: ['exercise_id', 'name_en', 'name_th', 'category', 'muscle_primary', 'muscle_secondary', 'pattern', 'equipment'],
   programs: ['user_name', 'program_id', 'name', 'day_of_week', 'note'],
@@ -392,5 +395,40 @@ export class GoogleSheetsService {
       new Date().toISOString(),
     ];
     return this.appendRow('profile', row);
+  }
+
+  /**
+   * Synchronize User Account to Sheet (users tab)
+   */
+  async syncUserAccount(account: AppAccount) {
+    if (this.appsScriptUrl) {
+      try {
+        await fetch(this.appsScriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'register_user', data: account }),
+        });
+        return { success: true };
+      } catch (e) {
+        console.warn('Apps Script syncUserAccount error:', e);
+      }
+    }
+
+    if (!this.accessToken) return;
+
+    // Matches SHEET_HEADERS.users: ['username', 'password', 'user_id', 'name', 'sex', 'goal', 'height_cm', 'kcal_target', 'created_at']
+    const row = [
+      account.username,
+      account.password || '',
+      account.user_id,
+      account.name,
+      account.sex,
+      account.goal || '',
+      account.height_cm || '',
+      account.kcal_target || '',
+      account.created_at || new Date().toISOString(),
+    ];
+    return this.appendRow('users', row);
   }
 }

@@ -9,7 +9,7 @@ import { FoodView } from './views/FoodView';
 import { ProfileView } from './views/ProfileView';
 import { MascotBattleView } from './views/MascotBattleView';
 import { PiggyRunView } from './views/PiggyRunView';
-import { ProfileGateModal } from './components/auth/ProfileGateModal';
+import { SimpleAuthModal } from './components/auth/SimpleAuthModal';
 import { AiTrainerModal } from './components/ai/AiTrainerModal';
 import { PigMascot } from './components/ui/PigMascot';
 import { PiggyRunModal } from './components/game/PiggyRunModal';
@@ -30,21 +30,14 @@ export const MainContent: React.FC = () => {
     foodScanResult,
     foodScanError,
     dismissFoodScanResult,
+    showAuthModal,
+    setShowAuthModal,
   } = useApp();
   const isMaxnum = activeProfileKey === 'primary';
 
   const [activeTab, setActiveTab] = useState<TabKey>('workout');
   const [isGameOpen, setIsGameOpen] = useState(false);
   const [showAiTrainer, setShowAiTrainer] = useState(false);
-  const [showProfileGate, setShowProfileGate] = useState<boolean>(() => {
-    // Show on entering website unless previously confirmed in this session
-    return !sessionStorage.getItem('ft_profile_selected_session');
-  });
-
-  const handleCloseGate = () => {
-    sessionStorage.setItem('ft_profile_selected_session', 'true');
-    setShowProfileGate(false);
-  };
 
   const formatSeconds = (sec: number) => {
     const m = Math.floor(sec / 60);
@@ -78,7 +71,7 @@ export const MainContent: React.FC = () => {
       {/* Top Header */}
       <Header
         onOpenSettings={() => setActiveTab('stats')}
-        onOpenProfileModal={() => setShowProfileGate(true)}
+        onOpenProfileModal={() => setShowAuthModal(true)}
         onOpenAiTrainer={() => setShowAiTrainer(true)}
       />
 
@@ -163,8 +156,8 @@ export const MainContent: React.FC = () => {
         </div>
       )}
 
-      {/* Profile Selection Gate on Enter */}
-      <ProfileGateModal isOpen={showProfileGate} onClose={handleCloseGate} />
+      {/* Simple Auth Modal (Login / Sign Up) */}
+      <SimpleAuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
 
       {/* AI Personal Trainer Interactive Modal */}
       <AiTrainerModal isOpen={showAiTrainer} onClose={() => setShowAiTrainer(false)} />

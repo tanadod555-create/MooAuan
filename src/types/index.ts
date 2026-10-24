@@ -71,6 +71,19 @@ export interface Exercise {
   youtube_short_url?: string;
 }
 
+export interface AppAccount {
+  username: string;
+  password?: string;
+  user_id: string;
+  name: string;
+  sex: 'male' | 'female';
+  goal: string;
+  height_cm: number;
+  kcal_target: number;
+  protein_target_g: number;
+  created_at: string;
+}
+
 export interface UserProfile {
   user_id: string;
   email: string;

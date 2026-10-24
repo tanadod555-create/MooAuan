@@ -13,6 +13,7 @@ import {
   Program,
   AppSettings,
   FirebaseConfig,
+  AppAccount,
 } from '../types';
 import { SEED_EXERCISES } from '../data/exercises';
 import { PREDEFINED_FOODS, PredefinedFood } from '../data/foodDatabase';
@@ -72,6 +73,15 @@ export interface ActiveWorkout {
 }
 
 interface AppContextType {
+  // Simple Auth & Account Management
+  currentAccount: AppAccount | null;
+  accountsList: AppAccount[];
+  loginWithCredentials: (username: string, password?: string) => { success: boolean; message?: string };
+  signupNewAccount: (accountData: Omit<AppAccount, 'created_at' | 'user_id'>) => { success: boolean; message?: string };
+  logoutAccount: () => void;
+  showAuthModal: boolean;
+  setShowAuthModal: (show: boolean) => void;
+
   activeProfileKey: 'primary' | 'partner';
   setActiveProfileKey: (key: 'primary' | 'partner') => void;
   currentProfile: UserProfile;
@@ -251,6 +261,33 @@ const DEFAULT_SETTINGS: AppSettings = {
   firebaseConfig: DEFAULT_FIREBASE_CONFIG,
   useFirebase: true,
 };
+
+export const DEFAULT_ACCOUNTS: AppAccount[] = [
+  {
+    username: 'maxnum',
+    password: 'maxnum',
+    user_id: 'primary',
+    name: 'แม็กนั่ม (Maxnum)',
+    sex: 'male',
+    goal: 'Hypertrophy & Strength (สร้างกล้ามเนื้อ)',
+    height_cm: 175,
+    kcal_target: 2400,
+    protein_target_g: 150,
+    created_at: '2026-01-01T00:00:00.000Z',
+  },
+  {
+    username: 'manow',
+    password: 'manow',
+    user_id: 'partner',
+    name: 'มะนาว (Manow)',
+    sex: 'female',
+    goal: 'Toning & Healthy (หุ่นกระชับ & สุขภาพ)',
+    height_cm: 162,
+    kcal_target: 1750,
+    protein_target_g: 110,
+    created_at: '2026-01-01T00:00:00.000Z',
+  },
+];
 
 
 const DEFAULT_PROGRAMS: Program[] = [
@@ -801,8 +838,53 @@ export const removePendingSyncId = (id: string) => {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Simple Auth & Account Cache
+  const [accountsList, setAccountsList] = useState<AppAccount[]>(() => {
+    const saved = localStorage.getItem('mooauan_accounts');
+    if (saved) {
+      try {
+        const parsed: AppAccount[] = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const merged = [...parsed];
+          for (const def of DEFAULT_ACCOUNTS) {
+            if (!merged.some(a => a.username.toLowerCase() === def.username.toLowerCase())) {
+              merged.push(def);
+            }
+          }
+          return merged;
+        }
+      } catch {}
+    }
+    localStorage.setItem('mooauan_accounts', JSON.stringify(DEFAULT_ACCOUNTS));
+    return DEFAULT_ACCOUNTS;
+  });
+
+  const [currentAccount, setCurrentAccount] = useState<AppAccount | null>(() => {
+    const savedSession = localStorage.getItem('mooauan_auth_session');
+    if (savedSession) {
+      try {
+        const parsed: AppAccount = JSON.parse(savedSession);
+        if (parsed && parsed.username) return parsed;
+      } catch {}
+    }
+    return null;
+  });
+
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(() => {
+    const savedSession = localStorage.getItem('mooauan_auth_session');
+    return !savedSession;
+  });
+
   // Profiles
   const [activeProfileKey, setActiveProfileKey] = useState<'primary' | 'partner'>(() => {
+    const savedSession = localStorage.getItem('mooauan_auth_session');
+    if (savedSession) {
+      try {
+        const parsed: AppAccount = JSON.parse(savedSession);
+        if (parsed.sex === 'female' || parsed.user_id === 'partner') return 'partner';
+        return 'primary';
+      } catch {}
+    }
     return (localStorage.getItem('ft_active_profile') as 'primary' | 'partner') || 'primary';
   });
 
@@ -2434,11 +2516,113 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const currentProfile = activeProfileKey === 'primary' ? primaryProfile : partnerProfile;
+  const loginWithCredentials = (username: string, password?: string) => {
+    const cleanUser = username.trim().toLowerCase();
+    const account = accountsList.find(a => a.username.toLowerCase() === cleanUser);
+    if (!account) {
+      return { success: false, message: 'ไม่พบบัญชีผู้ใช้นี้ กรุณาสมัครสมาชิกใหม่' };
+    }
+    if (account.password && password && account.password !== password.trim()) {
+      return { success: false, message: 'รหัสผ่านไม่ถูกต้อง' };
+    }
+
+    setCurrentAccount(account);
+    localStorage.setItem('mooauan_auth_session', JSON.stringify(account));
+    setShowAuthModal(false);
+
+    if (account.sex === 'female' || account.user_id === 'partner') {
+      setActiveProfileKey('partner');
+      localStorage.setItem('ft_active_profile', 'partner');
+    } else {
+      setActiveProfileKey('primary');
+      localStorage.setItem('ft_active_profile', 'primary');
+    }
+
+    return { success: true };
+  };
+
+  const signupNewAccount = (accountData: Omit<AppAccount, 'created_at' | 'user_id'>) => {
+    const cleanUser = accountData.username.trim().toLowerCase();
+    if (accountsList.some(a => a.username.toLowerCase() === cleanUser)) {
+      return { success: false, message: 'Username นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น' };
+    }
+
+    const newAccount: AppAccount = {
+      ...accountData,
+      user_id: accountData.sex === 'female' ? 'partner' : 'primary',
+      created_at: new Date().toISOString(),
+    };
+
+    const updatedList = [...accountsList, newAccount];
+    setAccountsList(updatedList);
+    localStorage.setItem('mooauan_accounts', JSON.stringify(updatedList));
+
+    setCurrentAccount(newAccount);
+    localStorage.setItem('mooauan_auth_session', JSON.stringify(newAccount));
+    setShowAuthModal(false);
+
+    if (newAccount.sex === 'female') {
+      setActiveProfileKey('partner');
+      localStorage.setItem('ft_active_profile', 'partner');
+      setPartnerProfile(prev => ({
+        ...prev,
+        name: newAccount.name,
+        sex: 'female',
+        goal: newAccount.goal,
+        height_cm: newAccount.height_cm,
+        kcal_target: newAccount.kcal_target,
+        protein_target_g: newAccount.protein_target_g,
+      }));
+    } else {
+      setActiveProfileKey('primary');
+      localStorage.setItem('ft_active_profile', 'primary');
+      setPrimaryProfile(prev => ({
+        ...prev,
+        name: newAccount.name,
+        sex: 'male',
+        goal: newAccount.goal,
+        height_cm: newAccount.height_cm,
+        kcal_target: newAccount.kcal_target,
+        protein_target_g: newAccount.protein_target_g,
+      }));
+    }
+
+    sheetsService.syncUserAccount(newAccount).catch(err => {
+      console.warn('Sync new user to sheets warning:', err);
+    });
+
+    return { success: true };
+  };
+
+  const logoutAccount = () => {
+    setCurrentAccount(null);
+    localStorage.removeItem('mooauan_auth_session');
+    setShowAuthModal(true);
+  };
+
+  const baseProfile = activeProfileKey === 'primary' ? primaryProfile : partnerProfile;
+  const currentProfile: UserProfile = currentAccount
+    ? {
+        ...baseProfile,
+        name: currentAccount.name || baseProfile.name,
+        sex: currentAccount.sex || baseProfile.sex,
+        goal: currentAccount.goal || baseProfile.goal,
+        height_cm: currentAccount.height_cm || baseProfile.height_cm,
+        kcal_target: currentAccount.kcal_target || baseProfile.kcal_target,
+        protein_target_g: currentAccount.protein_target_g || baseProfile.protein_target_g,
+      }
+    : baseProfile;
 
   return (
     <AppContext.Provider
       value={{
+        currentAccount,
+        accountsList,
+        loginWithCredentials,
+        signupNewAccount,
+        logoutAccount,
+        showAuthModal,
+        setShowAuthModal,
         activeProfileKey,
         setActiveProfileKey,
         currentProfile,
