@@ -720,11 +720,17 @@ export const FoodView: React.FC = () => {
     setManualPotassium('');
   };
 
+  const isSelectedMaxnum = selectedUserKey === 'primary';
+
   return (
     <div className="space-y-5 pb-24 animate-fadeIn">
       {/* Cute Pig Mascot Kitchen Greeting Card */}
-      <div className="p-3.5 sm:p-4 rounded-3xl bg-white/90 border border-pink-200/70 shadow-sm shadow-pink-100/40 flex items-center gap-3">
-        <div className="w-11 h-11 rounded-2xl overflow-hidden border-2 border-pink-200 shadow-2xs shrink-0 bg-pink-50 flex items-center justify-center">
+      <div className={`p-3.5 sm:p-4 rounded-3xl bg-white/95 border shadow-sm flex items-center gap-3 ${
+        isSelectedMaxnum ? 'border-sky-200/80 shadow-sky-100/40' : 'border-pink-200/80 shadow-pink-100/40'
+      }`}>
+        <div className={`w-11 h-11 rounded-2xl overflow-hidden border-2 shadow-2xs shrink-0 bg-white flex items-center justify-center ${
+          isSelectedMaxnum ? 'border-sky-300' : 'border-pink-300'
+        }`}>
           <img
             src={getUserAvatar(selectedUserKey)}
             alt={activeTargetProfile.name}
@@ -733,8 +739,10 @@ export const FoodView: React.FC = () => {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700">
-              ครัวหมูอ้วน 🍓
+            <span className={`text-xs font-black px-2.5 py-0.5 rounded-full ${
+              isSelectedMaxnum ? 'bg-sky-100 text-sky-700' : 'bg-pink-100 text-pink-700'
+            }`}>
+              {isSelectedMaxnum ? 'ครัวหมูหนุ่มกล้ามโต 🏋️‍♂️' : 'ครัวหมูอ้วน 🍓'}
             </span>
             <span className="text-xs text-slate-500 font-bold">
               {activeTargetProfile.name}
@@ -938,7 +946,9 @@ export const FoodView: React.FC = () => {
       )}
 
       {/* Top Header & Daily Macro Tracker for Selected User */}
-      <MagicCard spotlightColor="rgba(244, 114, 182, 0.08)" className="p-5 sm:p-6 bg-white/90 border-pink-200/70 shadow-sm shadow-pink-100/30">
+      <MagicCard spotlightColor={isSelectedMaxnum ? 'rgba(56, 189, 248, 0.08)' : 'rgba(244, 114, 182, 0.08)'} className={`p-5 sm:p-6 bg-white/95 border shadow-sm ${
+        isSelectedMaxnum ? 'border-sky-200/70 shadow-sky-100/30' : 'border-pink-200/70 shadow-pink-100/30'
+      }`}>
         <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
           {/* Left: Animated Circular Progress Ring */}
           <div className="flex items-center gap-5 sm:gap-6">
@@ -947,15 +957,25 @@ export const FoodView: React.FC = () => {
               max={targetKcal}
               size={130}
               strokeWidth={11}
-              color={totalKcal > targetKcal ? '#f472b6' : '#f472b6'}
-              bgColor="#fce7f3"
+              color={
+                totalKcal > targetKcal
+                  ? '#f43f5e'
+                  : isSelectedMaxnum
+                  ? '#0284c7'
+                  : '#f472b6'
+              }
+              bgColor={isSelectedMaxnum ? '#e0f2fe' : '#fce7f3'}
               label={`${Math.round(totalKcal)}`}
               sublabel={isToday ? 'kcal วันนี้' : `kcal (${selectedDate})`}
               labelClassName="text-slate-700 font-black"
               sublabelClassName="text-slate-400 font-medium"
             />
             <div>
-              <span className="text-[10px] font-bold text-pink-700 bg-pink-100/80 px-2.5 py-0.5 rounded-full border border-pink-200/70 uppercase tracking-wider">
+              <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${
+                isSelectedMaxnum
+                  ? 'text-sky-700 bg-sky-100/80 border-sky-200/70'
+                  : 'text-pink-700 bg-pink-100/80 border-pink-200/70'
+              }`}>
                 เป้าหมายของ {activeTargetProfile.name}
               </span>
               <h2 className="text-lg sm:text-xl font-bold text-slate-700 mt-1">เป้าหมายพลังงาน</h2>
@@ -965,9 +985,19 @@ export const FoodView: React.FC = () => {
                 </p>
               </div>
               <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-xs text-slate-500">คงเหลือ:</span>
-                <span className="text-sm font-black text-pink-600 font-mono">
-                  {Math.max(0, targetKcal - totalKcal).toLocaleString()} kcal
+                <span className="text-xs text-slate-500">
+                  {totalKcal > targetKcal ? 'เกินเป้าหมาย:' : 'คงเหลือ:'}
+                </span>
+                <span className={`text-sm font-black font-mono ${
+                  totalKcal > targetKcal
+                    ? 'text-rose-600 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200'
+                    : isSelectedMaxnum
+                    ? 'text-sky-600'
+                    : 'text-pink-600'
+                }`}>
+                  {totalKcal > targetKcal
+                    ? `+${(totalKcal - targetKcal).toLocaleString()} kcal ⚠️`
+                    : `${(targetKcal - totalKcal).toLocaleString()} kcal`}
                 </span>
               </div>
             </div>
@@ -1048,7 +1078,11 @@ export const FoodView: React.FC = () => {
               <button
                 type="button"
                 onClick={handleOpenAdjustModal}
-                className="w-full py-2 px-2.5 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs shadow-pink-200/50 transition active:scale-95 cursor-pointer"
+                className={`w-full py-2 px-2.5 rounded-2xl font-bold text-xs flex items-center justify-center gap-1.5 text-white shadow-2xs transition active:scale-95 cursor-pointer ${
+                  isSelectedMaxnum
+                    ? 'bg-gradient-to-r from-sky-500 to-blue-500 hover:from-sky-600 hover:to-blue-600 shadow-sky-200/50'
+                    : 'bg-gradient-to-r from-pink-500 to-rose-400 hover:from-pink-600 hover:to-rose-500 shadow-pink-200/50'
+                }`}
                 title="ปรับเป้าหมายพลังงานและ Limit สารอาหารทั้งหมด"
               >
                 <Sliders size={13} className="text-white" />

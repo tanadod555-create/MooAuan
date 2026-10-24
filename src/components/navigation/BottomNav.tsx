@@ -16,23 +16,23 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
   const navItems = [
     { key: 'workout' as TabKey, label: 'ฝึกซ้อม', icon: Dumbbell, hasBadge: !!activeWorkout, emoji: '🏋️' },
     { key: 'mascot' as TabKey, label: 'หมูอ้วน', icon: Trophy, hasBadge: false, emoji: '🐷' },
-    { key: 'game' as TabKey, label: 'มินิเกม', icon: Gamepad2, hasBadge: false, emoji: '🎮' },
+    { key: 'game' as TabKey, label: 'เกม', icon: Gamepad2, hasBadge: false, emoji: '🎮' },
     { key: 'food' as TabKey, label: 'อาหาร', icon: UtensilsCrossed, emoji: '🍱' },
-    { key: 'exercises' as TabKey, label: 'คลังท่า', icon: BookOpen, emoji: '📖' },
-    { key: 'anatomy' as TabKey, label: 'กายวิภาค', icon: Activity, emoji: '✨' },
+    { key: 'exercises' as TabKey, label: 'ท่าฝึก', icon: BookOpen, emoji: '📖' },
+    { key: 'anatomy' as TabKey, label: 'กล้ามเนื้อ', icon: Activity, emoji: '✨' },
     { key: 'stats' as TabKey, label: 'โปรไฟล์', icon: BarChart3, emoji: '⭐' },
   ];
 
   return (
-    <div className="fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] max-w-lg z-40 pb-safe pointer-events-none">
+    <div className="fixed bottom-2.5 sm:bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] max-w-lg z-40 pb-safe pointer-events-none">
       <nav
-        className={`rounded-3xl p-1.5 shadow-xl border-2 pointer-events-auto backdrop-blur-2xl transition-all duration-300 ${
+        className={`rounded-[28px] p-1.5 shadow-2xl border-2 pointer-events-auto backdrop-blur-2xl transition-all duration-300 ${
           isMaxnum
-            ? 'bg-white/95 border-sky-300 shadow-sky-200/50'
-            : 'bg-white/95 border-pink-300 shadow-pink-200/50'
+            ? 'bg-white/95 border-sky-300 shadow-sky-300/30'
+            : 'bg-white/95 border-pink-300 shadow-pink-300/30'
         }`}
       >
-        <div className="grid grid-cols-7 items-center gap-0.5 sm:gap-1">
+        <div className="grid grid-cols-7 items-center gap-0.5">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.key;
@@ -40,30 +40,33 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
               <button
                 key={item.key}
                 onClick={() => onTabChange(item.key)}
-                className={`group relative flex flex-col items-center justify-center py-2.5 px-1 rounded-2xl transition-all duration-200 cursor-pointer select-none active:scale-90 min-h-[52px] ${
+                className={`group relative flex flex-col items-center justify-center py-2 px-0.5 rounded-2xl transition-all duration-200 cursor-pointer select-none active:scale-95 min-h-[48px] ${
                   isActive
                     ? isMaxnum
-                      ? 'bg-sky-400 text-white shadow-md shadow-sky-300/60 font-black scale-105'
-                      : 'bg-pink-400 text-white shadow-md shadow-pink-300/60 font-black scale-105'
+                      ? 'bg-gradient-to-b from-sky-400 to-blue-500 text-white shadow-md shadow-sky-300/60 font-black'
+                      : 'bg-gradient-to-b from-pink-400 to-rose-400 text-white shadow-md shadow-pink-300/60 font-black'
                     : isMaxnum
-                    ? 'text-slate-500 hover:text-sky-600 hover:bg-sky-50'
-                    : 'text-slate-500 hover:text-pink-600 hover:bg-pink-50'
+                    ? 'text-slate-500 hover:text-sky-600 hover:bg-sky-50/70'
+                    : 'text-slate-500 hover:text-pink-600 hover:bg-pink-50/70'
                 }`}
               >
                 <div className="relative flex items-center justify-center">
                   <Icon
-                    size={20}
+                    size={18}
                     className={`transition-transform duration-200 ${
-                      isActive ? 'scale-110 stroke-[2.6] animate-wiggle' : 'stroke-[2] group-hover:scale-110'
+                      isActive ? 'scale-110 stroke-[2.6] animate-wiggle' : 'stroke-[2] group-hover:scale-105'
                     }`}
                   />
                   {item.hasBadge && (
-                    <span className="absolute -top-1 -right-1.5 w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-white animate-ping" />
+                    <span className="absolute -top-1 -right-1.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white animate-ping" />
                   )}
                 </div>
-                <span className={`text-[10px] leading-tight tracking-tight mt-0.5 ${isActive ? 'font-black' : 'font-semibold'}`}>
+                <span className={`text-[9px] sm:text-[10px] leading-tight tracking-tight mt-0.5 truncate max-w-full ${isActive ? 'font-black' : 'font-semibold'}`}>
                   {item.label}
                 </span>
+                {isActive && (
+                  <span className="absolute bottom-1 w-1 h-1 rounded-full bg-white/90" />
+                )}
               </button>
             );
           })}

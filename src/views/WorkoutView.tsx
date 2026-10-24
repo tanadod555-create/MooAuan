@@ -1878,20 +1878,36 @@ export const WorkoutView: React.FC = () => {
                     <div>
                       {/* Card Header */}
                       <div className="flex items-center justify-between gap-2 mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="w-8 h-8 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-sm">
-                            ⭐
+                        <div className="flex items-center gap-2.5">
+                          <span className={`w-9 h-9 rounded-2xl flex items-center justify-center text-base border shadow-2xs ${
+                            activeProfileKey === 'partner'
+                              ? 'bg-pink-50 border-pink-200 text-pink-600'
+                              : 'bg-sky-50 border-sky-200 text-sky-600'
+                          }`}>
+                            {prog.name.toLowerCase().includes('leg') || prog.name.includes('ขา') || prog.name.includes('ก้น') || prog.name.toLowerCase().includes('glute')
+                              ? '🍑'
+                              : prog.name.toLowerCase().includes('push') || prog.name.includes('อก')
+                              ? '💪'
+                              : prog.name.toLowerCase().includes('pull') || prog.name.includes('หลัง')
+                              ? '🔙'
+                              : prog.name.toLowerCase().includes('cardio') || prog.name.includes('เบิร์น')
+                              ? '🔥'
+                              : '🏋️'}
                           </span>
                           <div>
-                            <h4 className="text-sm font-black text-slate-800 tracking-tight">{prog.name}</h4>
-                            {prog.note && <p className="text-[11px] text-slate-500 font-medium truncate max-w-[140px]">{prog.note}</p>}
+                            <h4 className="text-sm font-black text-slate-800 tracking-tight leading-tight">{prog.name}</h4>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              {prog.day_of_week && (
+                                <span className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
+                                  {prog.day_of_week}
+                                </span>
+                              )}
+                              <span className="text-[10px] font-bold text-slate-400">
+                                {prog.items?.length || 0} ท่า · ~{(prog.items?.length || 0) * 8} นาที
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        {prog.day_of_week && (
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                            {prog.day_of_week}
-                          </span>
-                        )}
                       </div>
 
                       {/* Preview exercises in routine */}

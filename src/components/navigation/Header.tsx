@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Users, Sparkles, User } from 'lucide-react';
-import { getUserAvatar } from '../../utils/mascotLevels';
+import { Users, Sparkles, User, Flame } from 'lucide-react';
+import { getUserAvatar, calculatePigEvolution } from '../../utils/mascotLevels';
+import { loadPiggySaveData, subscribeToCoinUpdates } from '../../services/piggyGameService';
 
 interface HeaderProps {
   onOpenSettings: () => void;
@@ -18,19 +19,37 @@ export const Header: React.FC<HeaderProps> = ({
     currentProfile,
     currentAccount,
     isSpecialPair,
+    workoutHistory,
+    activeWorkout,
     loginWithCredentials,
   } = useApp();
 
   const isMaxnum = activeProfileKey === 'primary';
+  const evolution = calculatePigEvolution(workoutHistory || [], activeWorkout !== null);
+
+  // Real-time Coin Balance
+  const [coins, setCoins] = useState<number>(() => {
+    try {
+      return loadPiggySaveData().totalCoins;
+    } catch {
+      return 50;
+    }
+  });
+
+  useEffect(() => {
+    return subscribeToCoinUpdates((newTotal) => {
+      setCoins(newTotal);
+    });
+  }, []);
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b-2 border-pink-100/90 shadow-xs px-3 sm:px-6 py-2.5 transition-all duration-300 w-full">
+    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b-2 border-pink-100/90 shadow-xs px-3 sm:px-6 py-2 transition-all duration-300 w-full">
       <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
-        {/* Clean Profile Avatar & User Info */}
+        {/* Left: Clean Profile Avatar, Level & User Info */}
         <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
           <button
             onClick={onOpenProfileModal}
-            className={`flex items-center justify-center p-0.5 rounded-2xl border-2 transition-transform duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-xs shrink-0 ${
+            className={`relative flex items-center justify-center p-0.5 rounded-2xl border-2 transition-transform duration-200 hover:scale-105 active:scale-95 cursor-pointer shadow-xs shrink-0 ${
               isMaxnum
                 ? 'bg-sky-100/80 border-sky-300'
                 : 'bg-pink-100/80 border-pink-300'
@@ -44,16 +63,34 @@ export const Header: React.FC<HeaderProps> = ({
                 className="w-full h-full object-cover"
               />
             </div>
+            {/* Level Mini-Badge on Avatar */}
+            <span
+              className={`absolute -bottom-1 -right-1 text-[9px] font-black px-1 rounded-full text-white ring-2 ring-white shadow-2xs ${
+                isMaxnum ? 'bg-sky-500' : 'bg-pink-500'
+              }`}
+            >
+              L{evolution.level}
+            </span>
           </button>
+
           <div
             className="cursor-pointer min-w-0"
             onClick={onOpenProfileModal}
             title="แตะเพื่อเข้าสู่ระบบ หรือ สลับบัญชี"
           >
-            <h1 className="font-extrabold text-sm sm:text-base md:text-lg text-slate-800 tracking-tight flex items-center gap-1 leading-tight truncate">
-              หมูอ้วน 🐷
-            </h1>
-            <p className="text-xs font-bold text-slate-500 flex items-center gap-1 truncate">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h1 className="font-extrabold text-sm sm:text-base text-slate-800 tracking-tight flex items-center gap-1 leading-tight truncate">
+                หมูอ้วน 🐷
+              </h1>
+              {/* Streak Tag */}
+              {evolution.streakWeeks > 0 && (
+                <span className="hidden xs:inline-flex sm:inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-orange-100/90 border border-orange-200 text-orange-700 text-[10px] font-black">
+                  <Flame size={10} className="text-orange-500" />
+                  {evolution.streakWeeks} วีค
+                </span>
+              )}
+            </div>
+            <p className="text-xs font-bold text-slate-500 flex items-center gap-1 truncate mt-0.5">
               <span className={`truncate ${isMaxnum ? 'text-sky-600' : 'text-pink-600'}`}>
                 {currentAccount ? currentAccount.name : currentProfile.name}
               </span>
@@ -66,18 +103,27 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right Action Controls: AI Coach, Character Switch & Account */}
+        {/* Right: Coins, AI Coach, Character Switch & Account */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Gym Coins Badge */}
+          <div
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100/80 border border-amber-200 text-amber-800 text-xs font-black shadow-xs transition select-none cursor-default"
+            title={`เหรียญหมูอ้วน: ${coins} เหรียญ (ได้จากการยกเวทและคาร์ดิโอ)`}
+          >
+            <span className="text-xs sm:text-sm animate-wiggle">🪙</span>
+            <span className="font-mono text-xs font-black">{coins}</span>
+          </div>
+
           {/* AI Trainer Button */}
           {onOpenAiTrainer && (
             <button
               onClick={onOpenAiTrainer}
-              className="btn-candy-yellow px-2.5 sm:px-3.5 py-1.5 text-xs flex items-center gap-1 cursor-pointer"
+              className="btn-candy-yellow px-2.5 sm:px-3 py-1 text-xs flex items-center gap-1 cursor-pointer"
               title="เปิดคุยกับโค้ชหมูอ้วน AI"
             >
-              <Sparkles size={13} className="animate-sparkle" />
-              <span className="hidden sm:inline">โค้ช AI 💬</span>
-              <span className="sm:hidden">โค้ช AI</span>
+              <Sparkles size={12} className="animate-sparkle" />
+              <span className="hidden sm:inline">โค้ช AI</span>
+              <span className="sm:hidden text-[11px]">AI</span>
             </button>
           )}
 
@@ -89,13 +135,13 @@ export const Header: React.FC<HeaderProps> = ({
                 const targetUser = targetKey === 'partner' ? 'manow' : 'maxnum';
                 loginWithCredentials(targetUser, targetUser);
               }}
-              className={`px-2.5 sm:px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer ${
+              className={`px-2.5 sm:px-3 py-1 text-xs font-bold flex items-center gap-1 cursor-pointer ${
                 isMaxnum ? 'btn-candy-pink' : 'btn-candy-blue'
               }`}
               title={`คลิกเพื่อสลับเป็น ${isMaxnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}`}
             >
-              <Users size={13} />
-              <span className="hidden sm:inline">สลับเป็น</span>
+              <Users size={12} />
+              <span className="hidden sm:inline">สลับ</span>
               <span>{isMaxnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}</span>
             </button>
           )}
@@ -103,7 +149,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Account / Switcher Button */}
           <button
             onClick={onOpenProfileModal}
-            className={`p-1.5 sm:px-3 sm:py-1.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer rounded-2xl border transition-all ${
+            className={`p-1.5 sm:px-2.5 sm:py-1 text-xs font-bold flex items-center gap-1 cursor-pointer rounded-2xl border transition-all ${
               !isSpecialPair
                 ? isMaxnum
                   ? 'btn-candy-pink'
@@ -112,8 +158,8 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
             title="เข้าสู่ระบบ / สลับบัญชีผู้ใช้"
           >
-            <User size={14} />
-            <span className={isSpecialPair ? 'hidden md:inline' : 'inline'}>
+            <User size={13} />
+            <span className={isSpecialPair ? 'hidden md:inline text-[11px]' : 'inline text-[11px]'}>
               {currentAccount ? 'สลับบัญชี' : 'เข้าสู่ระบบ'}
             </span>
           </button>

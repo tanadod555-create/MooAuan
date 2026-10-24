@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Sparkles, Check, Lock, User, Heart, Dumbbell, ArrowRight, UserPlus, LogIn, X } from 'lucide-react';
+import { Sparkles, Check, Lock, User, Heart, Dumbbell, ArrowRight, UserPlus, LogIn, X, Eye, EyeOff } from 'lucide-react';
 import { PigMascot } from '../ui/PigMascot';
 
 interface SimpleAuthModalProps {
@@ -17,10 +17,12 @@ export const SimpleAuthModal: React.FC<SimpleAuthModalProps> = ({ isOpen, onClos
   // Login form state
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   // Sign up form state
   const [signupUsername, setSignupUsername] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [signupName, setSignupName] = useState('');
   const [signupSex, setSignupSex] = useState<'male' | 'female'>('male');
   const [signupGoal, setSignupGoal] = useState('ลดไขมัน & กระชับสัดส่วน');
@@ -167,13 +169,23 @@ export const SimpleAuthModal: React.FC<SimpleAuthModalProps> = ({ isOpen, onClos
                 <Lock size={13} className="text-slate-400" />
                 <span>Password (รหัสผ่าน):</span>
               </label>
-              <input
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                placeholder="กรอกรหัสผ่านของคุณ"
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-pink-400 focus:bg-white transition"
-              />
+              <div className="relative">
+                <input
+                  type={showLoginPassword ? 'text' : 'password'}
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="กรอกรหัสผ่านของคุณ"
+                  className="w-full pl-3.5 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-pink-400 focus:bg-white transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition p-1"
+                  title={showLoginPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+                >
+                  {showLoginPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </div>
 
             <button
@@ -266,13 +278,23 @@ export const SimpleAuthModal: React.FC<SimpleAuthModalProps> = ({ isOpen, onClos
             {/* Password */}
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700">ตั้ง Password:</label>
-              <input
-                type="password"
-                value={signupPassword}
-                onChange={(e) => setSignupPassword(e.target.value)}
-                placeholder="ตั้งรหัสผ่านง่ายๆ ของคุณ"
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-pink-400 focus:bg-white"
-              />
+              <div className="relative">
+                <input
+                  type={showSignupPassword ? 'text' : 'password'}
+                  value={signupPassword}
+                  onChange={(e) => setSignupPassword(e.target.value)}
+                  placeholder="ตั้งรหัสผ่านง่ายๆ ของคุณ"
+                  className="w-full pl-3.5 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-pink-400 focus:bg-white"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSignupPassword(!showSignupPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition p-1"
+                  title={showSignupPassword ? 'ซ่อนรหัสผ่าน' : 'แสดงรหัสผ่าน'}
+                >
+                  {showSignupPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
             </div>
 
             {/* Goal */}

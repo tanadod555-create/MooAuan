@@ -505,15 +505,15 @@ export const ProfileView: React.FC = () => {
   return (
     <div className="space-y-6 pb-24 animate-fadeIn">
       {/* Profile Selector Banner with Avatar Icon & Dynamic Streak */}
-      <div className="card-apple p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className={`p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 ${isMaxnum ? 'card-kawaii-blue' : 'card-kawaii-pink'}`}>
         <div className="flex items-center gap-3.5">
-          <div className="relative w-14 h-14 rounded-2xl overflow-hidden border-2 border-pink-300 shadow-sm shrink-0 bg-white flex items-center justify-center">
+          <div className={`relative w-14 h-14 rounded-2xl overflow-hidden border-2 ${isMaxnum ? 'border-sky-300' : 'border-pink-300'} shadow-sm shrink-0 bg-white flex items-center justify-center`}>
             <img
               src={getUserAvatar(activeProfileKey)}
               alt={currentProfile.name}
               className="w-full h-full object-cover animate-bounce-subtle"
             />
-            <span className="absolute -bottom-1 -right-1 text-[10px] font-black bg-rose-500 text-white px-1.5 py-0.2 rounded-full border border-white">
+            <span className={`absolute -bottom-1 -right-1 text-[10px] font-black ${isMaxnum ? 'bg-sky-500' : 'bg-rose-500'} text-white px-1.5 py-0.2 rounded-full border border-white`}>
               Lv.{evolution.level}
             </span>
           </div>
@@ -690,7 +690,7 @@ export const ProfileView: React.FC = () => {
           </div>
 
           {/* Body Circumferences Highlights */}
-          <div className="card-apple p-5 space-y-4">
+          <div className={`p-5 space-y-4 ${isMaxnum ? 'card-kawaii-blue' : 'card-kawaii-pink'}`}>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-base font-bold text-zinc-900 flex items-center gap-2">
