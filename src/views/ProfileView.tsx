@@ -48,6 +48,8 @@ export const ProfileView: React.FC = () => {
     setActiveProfileKey,
     currentProfile,
     partnerProfile,
+    isSpecialPair,
+    setShowAuthModal,
     updateProfile,
     bodyMetrics,
     allBodyMetrics,
@@ -538,14 +540,25 @@ export const ProfileView: React.FC = () => {
 
         {/* Actions: Switch Profile */}
         <div className="flex items-center gap-2 self-stretch sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setActiveProfileKey(activeProfileKey === 'primary' ? 'partner' : 'primary')}
-            className="w-full sm:w-auto px-4 py-2 rounded-full bg-zinc-100 hover:bg-zinc-200/80 border border-black/[0.06] text-xs font-semibold text-zinc-700 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs justify-center"
-          >
-            <Users size={14} className="text-zinc-500" />
-            <span>สลับเป็น {isMaxnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}</span>
-          </button>
+          {isSpecialPair ? (
+            <button
+              type="button"
+              onClick={() => setActiveProfileKey(activeProfileKey === 'primary' ? 'partner' : 'primary')}
+              className="w-full sm:w-auto px-4 py-2 rounded-full bg-zinc-100 hover:bg-zinc-200/80 border border-black/[0.06] text-xs font-semibold text-zinc-700 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs justify-center"
+            >
+              <Users size={14} className="text-zinc-500" />
+              <span>สลับเป็น {isMaxnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowAuthModal(true)}
+              className="w-full sm:w-auto px-4 py-2 rounded-full bg-zinc-100 hover:bg-zinc-200/80 border border-black/[0.06] text-xs font-semibold text-zinc-700 flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-2xs justify-center"
+            >
+              <Users size={14} className="text-zinc-500" />
+              <span>สลับบัญชีผู้ใช้</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -53,6 +53,8 @@ export const FoodView: React.FC = () => {
     primaryProfile,
     partnerProfile,
     activeProfileKey,
+    currentAccount,
+    isSpecialPair,
     updateProfile,
     foodLogs,
     allFoodLogs,
@@ -89,7 +91,9 @@ export const FoodView: React.FC = () => {
     setSelectedUserKey(activeProfileKey);
   }, [activeProfileKey]);
 
-  const activeTargetProfile = selectedUserKey === 'partner' ? partnerProfile : primaryProfile;
+  const activeTargetProfile = isSpecialPair
+    ? (selectedUserKey === 'partner' ? partnerProfile : primaryProfile)
+    : currentProfile;
 
   // Date Navigator state (Default to today)
   const today = new Date().toISOString().split('T')[0];
@@ -116,7 +120,7 @@ export const FoodView: React.FC = () => {
 
   // Filter food logs for selected date & selected user ONLY (no combined food)
   const todayLogs = (allFoodLogs || []).filter(
-    (l) => l.date === selectedDate && (l.user_id || 'primary') === selectedUserKey
+    (l) => l.date === selectedDate && (isSpecialPair ? (l.user_id || 'primary') === selectedUserKey : true)
   );
 
   // Count logs for switcher pills
@@ -160,7 +164,7 @@ export const FoodView: React.FC = () => {
 
   // Water intake calculations for selected user & date
   const todayWaterLogs = (allWaterLogs || []).filter(
-    (w) => w.date === selectedDate && (w.user_id || 'primary') === selectedUserKey
+    (w) => w.date === selectedDate && (isSpecialPair ? (w.user_id || 'primary') === selectedUserKey : true)
   );
   const totalWaterMl = todayWaterLogs.reduce((sum, w) => sum + (w.amount_ml || 0), 0);
   const targetWaterMl = activeTargetProfile.water_target_ml || (selectedUserKey === 'primary' ? 2500 : 2000);
@@ -742,31 +746,33 @@ export const FoodView: React.FC = () => {
         </div>
       </div>
 
-      {/* User Switcher Pills: Clean 2-person toggle with avatars */}
-      <div className="flex items-center p-1 bg-white/90 rounded-2xl border border-pink-200/70 gap-1.5 shadow-2xs">
-        <button
-          onClick={() => setSelectedUserKey('primary')}
-          className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${
-            selectedUserKey === 'primary'
-              ? 'bg-gradient-to-r from-sky-400 to-blue-400 text-white shadow-xs'
-              : 'text-slate-500 hover:text-slate-700 hover:bg-sky-50/50'
-          }`}
-        >
-          <img src={getUserAvatar('primary')} className="w-4 h-4 rounded-full object-cover border border-white/60" />
-          <span>แม็กนั่ม ({maxnumDayCount})</span>
-        </button>
-        <button
-          onClick={() => setSelectedUserKey('partner')}
-          className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${
-            selectedUserKey === 'partner'
-              ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-xs'
-              : 'text-slate-500 hover:text-slate-700 hover:bg-pink-50/50'
-          }`}
-        >
-          <img src={getUserAvatar('partner')} className="w-4 h-4 rounded-full object-cover border border-white/60" />
-          <span>มะนาว ({manowDayCount})</span>
-        </button>
-      </div>
+      {/* User Switcher Pills: Clean 2-person toggle with avatars (Only for Maxnum & Manow) */}
+      {isSpecialPair && (
+        <div className="flex items-center p-1 bg-white/90 rounded-2xl border border-pink-200/70 gap-1.5 shadow-2xs">
+          <button
+            onClick={() => setSelectedUserKey('primary')}
+            className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${
+              selectedUserKey === 'primary'
+                ? 'bg-gradient-to-r from-sky-400 to-blue-400 text-white shadow-xs'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-sky-50/50'
+            }`}
+          >
+            <img src={getUserAvatar('primary')} className="w-4 h-4 rounded-full object-cover border border-white/60" />
+            <span>แม็กนั่ม ({maxnumDayCount})</span>
+          </button>
+          <button
+            onClick={() => setSelectedUserKey('partner')}
+            className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${
+              selectedUserKey === 'partner'
+                ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-xs'
+                : 'text-slate-500 hover:text-slate-700 hover:bg-pink-50/50'
+            }`}
+          >
+            <img src={getUserAvatar('partner')} className="w-4 h-4 rounded-full object-cover border border-white/60" />
+            <span>มะนาว ({manowDayCount})</span>
+          </button>
+        </div>
+      )}
 
       {/* Sub-tab navigation: Daily Log vs History & Analytics */}
       <div className="flex items-center p-1.5 bg-white border-2 border-slate-200/90 rounded-full shadow-[0_4px_0_#e2e8f0] max-w-md mx-auto gap-1">
@@ -2171,35 +2177,37 @@ export const FoodView: React.FC = () => {
             <div className="p-4 overflow-y-auto space-y-4 text-xs overscroll-contain">
               {/* Profile & Meal Picker */}
               <div className="p-3 bg-purple-50/50 rounded-2xl border border-purple-100 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-slate-600">บันทึกลงโปรไฟล์:</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setAiTextUserId('primary')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 min-h-[38px] ${
-                        aiTextUserId === 'primary'
-                          ? 'bg-sky-500 text-white shadow-2xs'
-                          : 'bg-white text-slate-600 border border-slate-200 hover:bg-sky-50'
-                      }`}
-                    >
-                      <img src={getUserAvatar('primary')} className="w-4 h-4 rounded-full object-cover" />
-                      <span>แม็กนั่ม</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAiTextUserId('partner')}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 min-h-[38px] ${
-                        aiTextUserId === 'partner'
-                          ? 'bg-pink-500 text-white shadow-2xs'
-                          : 'bg-white text-slate-600 border border-slate-200 hover:bg-pink-50'
-                      }`}
-                    >
-                      <img src={getUserAvatar('partner')} className="w-4 h-4 rounded-full object-cover" />
-                      <span>มะนาว</span>
-                    </button>
+                {isSpecialPair && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-600">บันทึกลงโปรไฟล์:</span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setAiTextUserId('primary')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 min-h-[38px] ${
+                          aiTextUserId === 'primary'
+                            ? 'bg-sky-500 text-white shadow-2xs'
+                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-sky-50'
+                        }`}
+                      >
+                        <img src={getUserAvatar('primary')} className="w-4 h-4 rounded-full object-cover" />
+                        <span>แม็กนั่ม</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAiTextUserId('partner')}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 min-h-[38px] ${
+                          aiTextUserId === 'partner'
+                            ? 'bg-pink-500 text-white shadow-2xs'
+                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-pink-50'
+                        }`}
+                      >
+                        <img src={getUserAvatar('partner')} className="w-4 h-4 rounded-full object-cover" />
+                        <span>มะนาว</span>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div>
                   <span className="text-[11px] font-bold text-slate-600 block mb-1">เลือกมื้ออาหาร:</span>
@@ -2566,7 +2574,7 @@ export const FoodView: React.FC = () => {
                   <span>
                     {isSubmittingAiText
                       ? 'กำลังบันทึก...'
-                      : `บันทึกลงโปรไฟล์ของ ${aiTextUserId === 'partner' ? 'มะนาว' : 'แม็กนั่ม'} (${aiTextItems.length} รายการ)`}
+                      : `บันทึกลงโปรไฟล์ของ ${isSpecialPair ? (aiTextUserId === 'partner' ? 'มะนาว' : 'แม็กนั่ม') : currentProfile.name} (${aiTextItems.length} รายการ)`}
                   </span>
                 </button>
                 <button

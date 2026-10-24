@@ -11,6 +11,7 @@ import {
   Swords,
   AlertTriangle,
   Crown,
+  Sparkles,
 } from 'lucide-react';
 import { MascotSceneStage } from '../components/mascot/MascotSceneStage';
 
@@ -20,8 +21,153 @@ export const MascotBattleView: React.FC = () => {
     activeWorkout,
     primaryProfile,
     partnerProfile,
+    currentProfile,
     activeProfileKey,
+    currentAccount,
+    isSpecialPair,
   } = useApp();
+
+  // If not special pair (Maxnum & Manow), render individual character development view
+  if (!isSpecialPair) {
+    const userGender = currentAccount?.sex || (activeProfileKey === 'partner' ? 'female' : 'male');
+    const userEvolution = calculatePigEvolution(allWorkoutHistory, activeWorkout !== null);
+    const userConfig = PIG_10_LEVELS[userEvolution.level];
+    const isMale = userGender === 'male';
+
+    return (
+      <div className="space-y-6 max-w-xl mx-auto pb-16">
+        {/* Header Bar */}
+        <div className="flex items-center gap-3 p-4 bg-white/95 rounded-3xl border border-pink-200 shadow-xs">
+          <div
+            className={`w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-xs ${
+              isMale
+                ? 'bg-gradient-to-br from-sky-400 to-blue-500'
+                : 'bg-gradient-to-br from-pink-400 to-rose-400'
+            }`}
+          >
+            <Sparkles size={20} />
+          </div>
+          <div>
+            <h2 className="font-extrabold text-base text-slate-800 flex items-center gap-1.5">
+              ศูนย์พัฒนาหมูอ้วน 10 เลเวล 🌟
+            </h2>
+            <p className="text-xs text-slate-500 font-medium">
+              ยิ่งซ้อมต่อเนื่อง เลเวลยิ่งอัป! ไม่ซ้อมเกิน 7 วัน เลเวลจะลดลง
+            </p>
+          </div>
+        </div>
+
+        {/* Character Evolution Card */}
+        <div
+          className={`relative p-6 rounded-3xl border-2 transition-all duration-300 bg-white/95 shadow-lg ${userConfig.borderGlow}`}
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div
+              className={`w-14 h-14 rounded-2xl overflow-hidden border-2 shadow-sm shrink-0 ${
+                isMale ? 'border-sky-300 bg-sky-50' : 'border-pink-300 bg-pink-50'
+              }`}
+            >
+              <img
+                src={getUserAvatar(userGender)}
+                alt={currentProfile.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-extrabold text-lg text-slate-800 truncate">
+                  {currentAccount?.name || currentProfile.name}
+                </h3>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    isMale ? 'bg-sky-100 text-sky-700' : 'bg-pink-100 text-pink-700'
+                  }`}
+                >
+                  {isMale ? 'สายฟิตหนุ่ม' : 'สายฟิตสาว'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 font-semibold mt-0.5 truncate">
+                เป้าหมาย: {currentAccount?.goal || currentProfile.goal}
+              </p>
+            </div>
+          </div>
+
+          {/* Animated Mascot Preview */}
+          <div
+            className={`relative h-64 rounded-3xl border flex items-center justify-center p-3 mb-5 overflow-hidden ${
+              isMale
+                ? 'bg-gradient-to-b from-sky-50/90 to-blue-50/50 border-sky-100'
+                : 'bg-gradient-to-b from-pink-50/90 to-rose-50/50 border-pink-100'
+            }`}
+          >
+            <PigMascot level={userEvolution.level} gender={userGender} size="2xl" />
+            <div
+              className={`absolute top-3 right-3 bg-white/90 backdrop-blur-xs px-3 py-1 rounded-full border text-xs font-black font-mono shadow-xs ${
+                isMale ? 'border-sky-200 text-sky-700' : 'border-pink-200 text-pink-700'
+              }`}
+            >
+              Lv.{userEvolution.level} / 10
+            </div>
+          </div>
+
+          {/* Evolution Title & Body Fat */}
+          <div className="space-y-1.5 mb-4">
+            <div className="flex items-center justify-between">
+              <h4 className="text-base font-extrabold text-slate-800 flex items-center gap-1.5">
+                <span>{userConfig.emoji}</span>
+                <span>{userConfig.titleTh}</span>
+              </h4>
+              <span
+                className={`text-xs font-extrabold px-2.5 py-0.5 rounded-full border ${userConfig.badgeColor}`}
+              >
+                {userConfig.bodyFatLabel}
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 font-medium leading-relaxed">
+              {userConfig.description}
+            </p>
+          </div>
+
+          {/* Streak & Sessions Stats */}
+          <div
+            className={`grid grid-cols-3 gap-2.5 p-3 rounded-2xl border text-center ${
+              isMale ? 'bg-sky-50/60 border-sky-100' : 'bg-pink-50/60 border-pink-100'
+            }`}
+          >
+            <div>
+              <span className="text-[10px] text-slate-400 font-bold block">สัปดาห์นี้</span>
+              <span
+                className={`text-base font-black ${
+                  isMale ? 'text-sky-700' : 'text-pink-700'
+                }`}
+              >
+                {userEvolution.recentWeekCount} วัน
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 font-bold block">สตรีค</span>
+              <span className="text-base font-black text-rose-600 flex items-center justify-center gap-0.5">
+                <Flame size={14} /> {userEvolution.streakWeeks} วีค
+              </span>
+            </div>
+            <div>
+              <span className="text-[10px] text-slate-400 font-bold block">ทั้งหมด</span>
+              <span className="text-base font-black text-slate-700">
+                {userEvolution.totalCount} รอบ
+              </span>
+            </div>
+          </div>
+
+          {/* Inactivity Warning */}
+          {userEvolution.decayWarningMsg && (
+            <p className="text-xs text-amber-700 font-bold mt-3 flex items-center gap-1.5 p-2 bg-amber-50 rounded-xl border border-amber-200">
+              <AlertTriangle size={14} /> {userEvolution.decayWarningMsg}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // Maxnum Stats & Evolution
   const maxnumHistory = allWorkoutHistory.filter(

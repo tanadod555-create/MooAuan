@@ -76,6 +76,7 @@ interface AppContextType {
   // Simple Auth & Account Management
   currentAccount: AppAccount | null;
   accountsList: AppAccount[];
+  isSpecialPair: boolean;
   loginWithCredentials: (username: string, password?: string) => { success: boolean; message?: string };
   signupNewAccount: (accountData: Omit<AppAccount, 'created_at' | 'user_id'>) => { success: boolean; message?: string };
   logoutAccount: () => void;
@@ -1005,7 +1006,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return list;
   });
 
-  const foodLogs = allFoodLogs.filter(l => (l.user_id || 'primary') === activeProfileKey);
+  // Special pair flag: Maxnum and Manow can see each other's data
+  const isSpecialPair = Boolean(
+    currentAccount && (
+      currentAccount.username.toLowerCase() === 'maxnum' ||
+      currentAccount.username.toLowerCase() === 'manow'
+    )
+  );
+
+  const currentUserId = currentAccount ? currentAccount.user_id : activeProfileKey;
+
+  const foodLogs = isSpecialPair
+    ? allFoodLogs.filter(l => (l.user_id || 'primary') === activeProfileKey)
+    : currentAccount
+    ? allFoodLogs.filter(l => l.user_id === currentUserId)
+    : [];
+
+  const exposedFoodLogs = isSpecialPair
+    ? allFoodLogs.filter(l => !l.user_id || l.user_id === 'primary' || l.user_id === 'partner')
+    : currentAccount
+    ? allFoodLogs.filter(l => l.user_id === currentUserId)
+    : [];
 
   // Unified Water Logs (Combined for Maxnum & Manow)
   const [allWaterLogs, setAllWaterLogs] = useState<WaterLog[]>(() => {
@@ -1019,7 +1040,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return [];
   });
 
-  const waterLogs = allWaterLogs.filter(w => (w.user_id || 'primary') === activeProfileKey);
+  const waterLogs = isSpecialPair
+    ? allWaterLogs.filter(w => (w.user_id || 'primary') === activeProfileKey)
+    : currentAccount
+    ? allWaterLogs.filter(w => w.user_id === currentUserId)
+    : [];
+
+  const exposedWaterLogs = isSpecialPair
+    ? allWaterLogs.filter(w => !w.user_id || w.user_id === 'primary' || w.user_id === 'partner')
+    : currentAccount
+    ? allWaterLogs.filter(w => w.user_id === currentUserId)
+    : [];
 
   useEffect(() => {
     localStorage.setItem('ft_water_unified', JSON.stringify(allWaterLogs));
@@ -1049,7 +1080,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return [];
   });
 
-  const bodyMetrics = allBodyMetrics.filter(m => (m.user_id || 'primary') === activeProfileKey);
+  const bodyMetrics = isSpecialPair
+    ? allBodyMetrics.filter(m => (m.user_id || 'primary') === activeProfileKey)
+    : currentAccount
+    ? allBodyMetrics.filter(m => m.user_id === currentUserId)
+    : [];
+
+  const exposedBodyMetrics = isSpecialPair
+    ? allBodyMetrics.filter(m => !m.user_id || m.user_id === 'primary' || m.user_id === 'partner')
+    : currentAccount
+    ? allBodyMetrics.filter(m => m.user_id === currentUserId)
+    : [];
 
   // Unified Workout History (Combined for Maxnum & Manow)
   const [allWorkoutHistory, setAllWorkoutHistory] = useState<WorkoutSession[]>(() => {
@@ -1077,7 +1118,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return DEFAULT_WORKOUT_HISTORY;
   });
 
-  const workoutHistory = allWorkoutHistory.filter(s => (s.user_id || 'primary') === activeProfileKey);
+  const workoutHistory = isSpecialPair
+    ? allWorkoutHistory.filter(s => (s.user_id || 'primary') === activeProfileKey)
+    : currentAccount
+    ? allWorkoutHistory.filter(s => s.user_id === currentUserId)
+    : [];
+
+  const exposedWorkoutHistory = isSpecialPair
+    ? allWorkoutHistory.filter(s => !s.user_id || s.user_id === 'primary' || s.user_id === 'partner')
+    : currentAccount
+    ? allWorkoutHistory.filter(s => s.user_id === currentUserId)
+    : [];
 
   // Active Workout Session (with background timestamp calculation)
   const [activeWorkout, setActiveWorkout] = useState<ActiveWorkout | null>(() => {
@@ -1925,10 +1976,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       finalNote = finalNote ? `${finalNote} [คาร์ดิโอ: ${cardioParts}]` : `[คาร์ดิโอ: ${cardioParts}]`;
     }
 
+    const finishUserId = currentAccount ? currentAccount.user_id : activeProfileKey;
+    const finishUserName = currentAccount ? currentAccount.name : (activeProfileKey === 'partner' ? partnerProfile.name : primaryProfile.name);
+
     const finishedSession: WorkoutSession = {
       session_id: activeWorkout.session_id,
-      user_id: activeProfileKey,
-      user_name: currentName,
+      user_id: finishUserId,
+      user_name: finishUserName,
       date: today,
       program_name: activeWorkout.name,
       start_time: activeWorkout.start_time,
@@ -1995,12 +2049,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const saveDirectWorkoutSession = async (session: Omit<WorkoutSession, 'session_id'>): Promise<string> => {
     const sessionId = 'sess_' + Date.now();
-    const currentName = activeProfileKey === 'partner' ? partnerProfile.name : primaryProfile.name;
+    const directUserId = currentAccount ? currentAccount.user_id : activeProfileKey;
+    const directUserName = currentAccount ? currentAccount.name : (activeProfileKey === 'partner' ? partnerProfile.name : primaryProfile.name);
     const newSession: WorkoutSession = {
       ...session,
       session_id: sessionId,
-      user_id: session.user_id || activeProfileKey,
-      user_name: session.user_name || currentName,
+      user_id: session.user_id || directUserId,
+      user_name: session.user_name || directUserName,
       date: session.date || new Date().toISOString().split('T')[0],
       start_time: session.start_time || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
       end_time: session.end_time || new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
@@ -2144,8 +2199,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addFoodLog = async (logData: Omit<FoodLog, 'log_id'>) => {
-    const targetUserId = (logData.user_id as 'primary' | 'partner') || activeProfileKey;
-    const currentName = targetUserId === 'partner' ? partnerProfile.name : primaryProfile.name;
+    const targetUserId = logData.user_id || (currentAccount ? currentAccount.user_id : activeProfileKey);
+    const currentName = currentAccount ? currentAccount.name : (targetUserId === 'partner' ? partnerProfile.name : primaryProfile.name);
     const newLog: FoodLog = {
       ...logData,
       log_id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
@@ -2343,8 +2398,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addWaterLog = async (amount_ml: number, date?: string, user_id?: string) => {
-    const targetUserId = (user_id as 'primary' | 'partner') || activeProfileKey;
-    const currentName = targetUserId === 'partner' ? partnerProfile.name : primaryProfile.name;
+    const targetUserId = user_id || (currentAccount ? currentAccount.user_id : activeProfileKey);
+    const currentName = currentAccount ? currentAccount.name : (targetUserId === 'partner' ? partnerProfile.name : primaryProfile.name);
     const today = date || new Date().toISOString().split('T')[0];
     const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
@@ -2388,12 +2443,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addBodyMetric = async (metricData: Omit<BodyMetric, 'id'>) => {
-    const currentName = activeProfileKey === 'partner' ? partnerProfile.name : primaryProfile.name;
+    const targetUserId = (metricData as any).user_id || (currentAccount ? currentAccount.user_id : activeProfileKey);
+    const currentName = currentAccount ? currentAccount.name : (targetUserId === 'partner' ? partnerProfile.name : primaryProfile.name);
     const docId = 'metric_' + Date.now();
     const newMetric: BodyMetric = {
       ...metricData,
       id: docId,
-      user_id: activeProfileKey,
+      user_id: targetUserId,
       user_name: currentName,
     };
     addPendingSyncId(docId);
@@ -2547,9 +2603,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return { success: false, message: 'Username นี้ถูกใช้งานแล้ว กรุณาเลือกชื่ออื่น' };
     }
 
+    const uniqueUserId = `usr_${cleanUser}_${Date.now()}`;
     const newAccount: AppAccount = {
       ...accountData,
-      user_id: accountData.sex === 'female' ? 'partner' : 'primary',
+      user_id: uniqueUserId,
       created_at: new Date().toISOString(),
     };
 
@@ -2566,6 +2623,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('ft_active_profile', 'partner');
       setPartnerProfile(prev => ({
         ...prev,
+        user_id: uniqueUserId,
         name: newAccount.name,
         sex: 'female',
         goal: newAccount.goal,
@@ -2578,6 +2636,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('ft_active_profile', 'primary');
       setPrimaryProfile(prev => ({
         ...prev,
+        user_id: uniqueUserId,
         name: newAccount.name,
         sex: 'male',
         goal: newAccount.goal,
@@ -2618,6 +2677,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         currentAccount,
         accountsList,
+        isSpecialPair,
         loginWithCredentials,
         signupNewAccount,
         logoutAccount,
@@ -2650,7 +2710,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateCardioInWorkout,
         removeCardioFromWorkout,
         workoutHistory,
-        allWorkoutHistory,
+        allWorkoutHistory: exposedWorkoutHistory,
         deleteWorkoutSession,
         saveDirectWorkoutSession,
         // Global Rest Timer
@@ -2666,7 +2726,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleRestTimerPause,
         toggleRestTimerSound,
         foodLogs,
-        allFoodLogs,
+        allFoodLogs: exposedFoodLogs,
         addFoodLog,
         updateFoodLog,
         deleteFoodLog,
@@ -2677,11 +2737,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         startFoodScan,
         dismissFoodScanResult,
         waterLogs,
-        allWaterLogs,
+        allWaterLogs: exposedWaterLogs,
         addWaterLog,
         deleteWaterLog,
         bodyMetrics,
-        allBodyMetrics,
+        allBodyMetrics: exposedBodyMetrics,
         addBodyMetric,
         deleteBodyMetric,
         clearAllBodyMetrics,

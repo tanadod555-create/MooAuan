@@ -102,6 +102,7 @@ export const WorkoutView: React.FC = () => {
     saveDirectWorkoutSession,
     activeProfileKey,
     currentProfile,
+    isSpecialPair,
     // Global Rest Timer from AppContext
     restTimerSeconds,
     restTimerInitial,
@@ -1705,7 +1706,7 @@ export const WorkoutView: React.FC = () => {
                       Lv.{evolution.level}
                     </span>
                     <span className="text-xs font-bold text-slate-600">
-                      {activeProfileKey === 'partner' ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}
+                      {isSpecialPair ? (activeProfileKey === 'partner' ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️') : currentProfile.name}
                     </span>
                     <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 border border-orange-200 flex items-center gap-0.5">
                       <Flame size={11} className="text-orange-500" />
@@ -1789,7 +1790,7 @@ export const WorkoutView: React.FC = () => {
                       : 'bg-sky-100 text-sky-700 border-sky-200'
                   }`}
                 >
-                  {activeProfileKey === 'partner' ? '🌸 มะนาว' : '🏋️‍♂️ แม็กนั่ม'}
+                  {isSpecialPair ? (activeProfileKey === 'partner' ? '🌸 มะนาว' : '🏋️‍♂️ แม็กนั่ม') : currentProfile.name}
                 </span>
               </div>
 
@@ -2199,7 +2200,7 @@ export const WorkoutView: React.FC = () => {
           }}
           program={editingProgram}
           availableExercises={exercises}
-          ownerName={activeProfileKey === 'partner' ? 'มะนาว' : 'แม็กนั่ม'}
+          ownerName={isSpecialPair ? (activeProfileKey === 'partner' ? 'มะนาว' : 'แม็กนั่ม') : currentProfile.name}
           onSave={(saved) => {
             if (editingProgram) {
               updateProgram(saved.program_id, saved);

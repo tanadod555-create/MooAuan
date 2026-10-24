@@ -17,6 +17,8 @@ export const Header: React.FC<HeaderProps> = ({
     activeProfileKey,
     currentProfile,
     currentAccount,
+    isSpecialPair,
+    loginWithCredentials,
   } = useApp();
 
   const isMaxnum = activeProfileKey === 'primary';
@@ -78,11 +80,30 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
+          {/* Quick Switch for Special Pair (Maxnum & Manow only) */}
+          {isSpecialPair && (
+            <button
+              onClick={() => {
+                const targetKey = isMaxnum ? 'partner' : 'primary';
+                const targetUser = targetKey === 'partner' ? 'manow' : 'maxnum';
+                loginWithCredentials(targetUser, targetUser);
+              }}
+              className={`px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer ${
+                isMaxnum ? 'btn-candy-pink' : 'btn-candy-blue'
+              }`}
+              title={`คลิกเพื่อสลับเป็น ${isMaxnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}`}
+            >
+              <Users size={13} />
+              <span className="hidden sm:inline">สลับเป็น</span>
+              <span>{isMaxnum ? 'มะนาว 🌸' : 'แม็กนั่ม 🏋️‍♂️'}</span>
+            </button>
+          )}
+
           {/* Account / Switcher Button */}
           <button
             onClick={onOpenProfileModal}
             className={`px-3 py-1.5 text-xs font-bold flex items-center gap-1.5 cursor-pointer ${
-              isMaxnum ? 'btn-candy-pink' : 'btn-candy-blue'
+              !isSpecialPair ? (isMaxnum ? 'btn-candy-pink' : 'btn-candy-blue') : 'bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl border border-slate-200'
             }`}
             title="เข้าสู่ระบบ / สลับบัญชีผู้ใช้"
           >

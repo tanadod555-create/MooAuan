@@ -40,6 +40,7 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
     exercises,
     startWorkout,
     openUnifiedSpreadsheet,
+    isSpecialPair,
   } = useApp();
 
   const [scope, setScope] = useState<'mine' | 'partner' | 'all'>('mine');
@@ -48,6 +49,7 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
 
   // Filter based on scope
   const scopedHistory = allWorkoutHistory.filter((sess) => {
+    if (!isSpecialPair) return true;
     if (scope === 'all') return true;
     if (scope === 'mine') return (sess.user_id || 'primary') === activeProfileKey;
     if (scope === 'partner') {
@@ -250,49 +252,51 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
 
       {/* Scope Filter Tabs & Search Bar */}
       <div className="space-y-2.5">
-        <div className="flex items-center gap-1.5 p-1.5 bg-white/95 border border-pink-200/90 rounded-2xl shadow-xs">
-          <button
-            onClick={() => setScope('mine')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-              scope === 'mine'
-                ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
-            }`}
-          >
-            <span>{activeProfileKey === 'partner' ? '🌸 ของมะนาว (Manow)' : '🏋️‍♂️ ของแม็กนั่ม'}</span>
-            <span className="text-[10px] opacity-80 font-mono">
-              (
-              {
-                allWorkoutHistory.filter(
-                  (s) => (s.user_id || 'primary') === activeProfileKey
-                ).length
-              }
-              )
-            </span>
-          </button>
+        {isSpecialPair && (
+          <div className="flex items-center gap-1.5 p-1.5 bg-white/95 border border-pink-200/90 rounded-2xl shadow-xs">
+            <button
+              onClick={() => setScope('mine')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                scope === 'mine'
+                  ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
+              }`}
+            >
+              <span>{activeProfileKey === 'partner' ? '🌸 ของมะนาว (Manow)' : '🏋️‍♂️ ของแม็กนั่ม'}</span>
+              <span className="text-[10px] opacity-80 font-mono">
+                (
+                {
+                  allWorkoutHistory.filter(
+                    (s) => (s.user_id || 'primary') === activeProfileKey
+                  ).length
+                }
+                )
+              </span>
+            </button>
 
-          <button
-            onClick={() => setScope('partner')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-              scope === 'partner'
-                ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
-            }`}
-          >
-            <span>{activeProfileKey === 'partner' ? '🏋️‍♂️ ของแม็กนั่ม' : '🌸 ของมะนาว (Manow)'}</span>
-            <span className="text-[10px] opacity-80 font-mono">
-              (
-              {
-                allWorkoutHistory.filter(
-                  (s) =>
-                    (s.user_id || 'primary') ===
-                    (activeProfileKey === 'primary' ? 'partner' : 'primary')
-                ).length
-              }
-              )
-            </span>
-          </button>
-        </div>
+            <button
+              onClick={() => setScope('partner')}
+              className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                scope === 'partner'
+                  ? 'bg-gradient-to-r from-pink-400 to-rose-300 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-800 hover:bg-pink-50/60'
+              }`}
+            >
+              <span>{activeProfileKey === 'partner' ? '🏋️‍♂️ ของแม็กนั่ม' : '🌸 ของมะนาว (Manow)'}</span>
+              <span className="text-[10px] opacity-80 font-mono">
+                (
+                {
+                  allWorkoutHistory.filter(
+                    (s) =>
+                      (s.user_id || 'primary') ===
+                      (activeProfileKey === 'primary' ? 'partner' : 'primary')
+                  ).length
+                }
+                )
+              </span>
+            </button>
+          </div>
+        )}
 
         {/* Search input */}
         <div className="relative">
@@ -366,7 +370,7 @@ export const WorkoutHistorySection: React.FC<WorkoutHistorySectionProps> = ({
                             : 'bg-pink-100 text-pink-800 border border-pink-200'
                         }`}
                       >
-                        {isPartner ? '🌸 มะนาว' : '🏋️‍♂️ แม็กนั่ม'}
+                        {isSpecialPair ? (isPartner ? '🌸 มะนาว' : '🏋️‍♂️ แม็กนั่ม') : (sess.user_name || 'ฉัน')}
                       </span>
                       <span className="text-xs text-pink-800/80 font-medium flex items-center gap-1">
                         <Calendar size={13} className="text-pink-400" />

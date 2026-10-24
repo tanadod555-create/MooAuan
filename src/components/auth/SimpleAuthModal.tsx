@@ -42,16 +42,6 @@ export const SimpleAuthModal: React.FC<SimpleAuthModalProps> = ({ isOpen, onClos
     }
   };
 
-  const handleQuickLogin = (user: string, pass: string) => {
-    setLoginUsername(user);
-    setLoginPassword(pass);
-    setErrorMsg(null);
-    const res = loginWithCredentials(user, pass);
-    if (res.success) {
-      onClose();
-    }
-  };
-
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -108,7 +98,7 @@ export const SimpleAuthModal: React.FC<SimpleAuthModalProps> = ({ isOpen, onClos
           <p className="text-xs text-slate-500 font-medium">
             {mode === 'login'
               ? 'ล็อกอินครั้งเดียวจำในเครื่องทันที เปิดครั้งต่อไปไม่ต้องกรอกซ้ำ!'
-              : 'เลือกเพศเพื่อรับตัวละครหมู (ชาย=Maxnum, หญิง=Manow)'}
+              : 'เลือกเพศของคุณเพื่อปรับเป้าหมายและตัวละครของคุณ'}
           </p>
         </div>
 
@@ -156,36 +146,6 @@ export const SimpleAuthModal: React.FC<SimpleAuthModalProps> = ({ isOpen, onClos
         {/* MODE 1: LOGIN FORM */}
         {mode === 'login' ? (
           <form onSubmit={handleLogin} className="space-y-4">
-            {/* Quick 1-Click Login for Maxnum & Manow */}
-            <div className="space-y-1.5">
-              <span className="text-[11px] font-bold text-slate-400 block text-center">
-                ✨ แตะเพื่อเข้าสู่ระบบด่วน (1-Click Login)
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin('maxnum', 'maxnum')}
-                  className="p-2.5 rounded-2xl bg-sky-50 hover:bg-sky-100 border border-sky-300 text-sky-800 text-xs font-black flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-xs"
-                >
-                  <span>🏋️‍♂️ แม็กนั่ม (Maxnum)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleQuickLogin('manow', 'manow')}
-                  className="p-2.5 rounded-2xl bg-pink-50 hover:bg-pink-100 border border-pink-300 text-pink-800 text-xs font-black flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-xs"
-                >
-                  <span>🌸 มะนาว (Manow)</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="relative flex items-center justify-center my-2">
-              <div className="border-t border-slate-200 w-full" />
-              <span className="bg-white px-2 text-[10px] text-slate-400 font-bold uppercase absolute">
-                หรือกรอกข้อมูล
-              </span>
-            </div>
-
             {/* Username Input */}
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700 flex items-center gap-1">
@@ -196,7 +156,7 @@ export const SimpleAuthModal: React.FC<SimpleAuthModalProps> = ({ isOpen, onClos
                 type="text"
                 value={loginUsername}
                 onChange={(e) => setLoginUsername(e.target.value)}
-                placeholder="เช่น maxnum, manow หรือ username ของคุณ"
+                placeholder="กรอกชื่อผู้ใช้ของคุณ"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-pink-400 focus:bg-white transition"
               />
             </div>
@@ -227,10 +187,10 @@ export const SimpleAuthModal: React.FC<SimpleAuthModalProps> = ({ isOpen, onClos
         ) : (
           /* MODE 2: SIGN UP FORM */
           <form onSubmit={handleSignup} className="space-y-3.5">
-            {/* Gender Selection: Male = Maxnum Pig, Female = Manow Pig */}
+            {/* Gender Selection: Male / Female (no mention of Maxnum / Manow) */}
             <div className="space-y-1.5">
               <label className="text-xs font-black text-slate-700 block">
-                🐷 เลือกเพศตัวละครหมูของคุณ:
+                เลือกเพศของคุณ:
               </label>
               <div className="grid grid-cols-2 gap-2.5">
                 {/* Male Card */}
@@ -251,7 +211,7 @@ export const SimpleAuthModal: React.FC<SimpleAuthModalProps> = ({ isOpen, onClos
                       <span>เพศชาย</span>
                       {signupSex === 'male' && <Check size={12} className="text-sky-600 stroke-[3]" />}
                     </div>
-                    <p className="text-[10px] text-slate-500">ใช้หมู Maxnum (ฟ้า)</p>
+                    <p className="text-[10px] text-slate-500">ชาย</p>
                   </div>
                 </button>
 
@@ -273,7 +233,7 @@ export const SimpleAuthModal: React.FC<SimpleAuthModalProps> = ({ isOpen, onClos
                       <span>เพศหญิง</span>
                       {signupSex === 'female' && <Check size={12} className="text-pink-600 stroke-[3]" />}
                     </div>
-                    <p className="text-[10px] text-slate-500">ใช้หมู Manow (ชมพู)</p>
+                    <p className="text-[10px] text-slate-500">หญิง</p>
                   </div>
                 </button>
               </div>
