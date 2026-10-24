@@ -66,7 +66,7 @@ export const MainContent: React.FC = () => {
     <div
       className={`min-h-screen ${
         isMaxnum ? 'theme-maxnum' : 'theme-manow'
-      } flex flex-col font-sans relative transition-colors duration-300`}
+      } flex flex-col font-sans relative transition-colors duration-300 overflow-x-hidden w-full`}
     >
       {/* Top Header */}
       <Header
