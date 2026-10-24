@@ -20,6 +20,7 @@ var SPREADSHEET_ID = "1cBYIM2WiqqGHIJi8t_JiUF4py30g3CGgQhGWwKWH2_A";
 
 var SHEET_HEADERS = {
   profile: ['user_name', 'user_id', 'email', 'sex', 'goal', 'kcal_target', 'protein_target_g', 'carb_target_g', 'fat_target_g', 'height_cm', 'waist_cm', 'chest_cm', 'shoulders_cm', 'thigh_cm', 'hips_cm', 'arm_cm', 'calf_cm', 'neck_cm', 'updated_at'],
+  users: ['username', 'password', 'user_id', 'name', 'sex', 'goal', 'height_cm', 'kcal_target', 'created_at'],
   body_metrics: ['user_name', 'date', 'weight_kg', 'body_fat_pct', 'waist_cm', 'chest_cm', 'shoulders_cm', 'thigh_cm', 'hips_cm', 'arm_cm', 'calf_cm', 'neck_cm', 'note'],
   exercises: ['exercise_id', 'name_en', 'name_th', 'category', 'muscle_primary', 'muscle_secondary', 'pattern', 'equipment'],
   programs: ['user_name', 'program_id', 'name', 'day_of_week', 'note'],
@@ -225,6 +226,30 @@ function doPost(e) {
         new Date().toISOString()
       ]);
       return jsonResponse({ success: true, message: "Profile updated for " + userName });
+    }
+
+    // 6. Register / Sync User Account
+    if (action === "register_user") {
+      var uSheet = ss.getSheetByName("users") || ss.insertSheet("users");
+      var u = contents.data;
+      if (uSheet.getLastRow() === 0) {
+        uSheet.appendRow(SHEET_HEADERS.users);
+        uSheet.getRange(1, 1, 1, SHEET_HEADERS.users.length)
+          .setFontWeight("bold").setBackground("#0f172a").setFontColor("#38bdf8");
+        uSheet.setFrozenRows(1);
+      }
+      uSheet.appendRow([
+        u.username || "",
+        u.password || "",
+        u.user_id || "",
+        u.name || "",
+        u.sex || "",
+        u.goal || "",
+        u.height_cm || "",
+        u.kcal_target || "",
+        u.created_at || new Date().toISOString()
+      ]);
+      return jsonResponse({ success: true, message: "User registered: " + (u.username || "") });
     }
 
     return jsonResponse({ success: false, message: "Unknown action: " + action });
