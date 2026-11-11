@@ -9,6 +9,8 @@ import { FoodView } from './views/FoodView';
 import { ProfileView } from './views/ProfileView';
 import { MascotBattleView } from './views/MascotBattleView';
 import { PiggyRunView } from './views/PiggyRunView';
+import { PortalHubView } from './views/PortalHubView';
+import { SetthiMooAuanView } from './views/SetthiMooAuanView';
 import { SimpleAuthModal } from './components/auth/SimpleAuthModal';
 import { AiTrainerModal } from './components/ai/AiTrainerModal';
 import { PigMascot } from './components/ui/PigMascot';
@@ -32,6 +34,8 @@ export const MainContent: React.FC = () => {
     dismissFoodScanResult,
     showAuthModal,
     setShowAuthModal,
+    activeWorld,
+    setActiveWorld,
   } = useApp();
   const isMaxnum = activeProfileKey === 'primary';
 
@@ -162,16 +166,25 @@ export const MainContent: React.FC = () => {
       {/* AI Personal Trainer Interactive Modal */}
       <AiTrainerModal isOpen={showAiTrainer} onClose={() => setShowAiTrainer(false)} />
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-28">
-        {activeTab === 'workout' && <WorkoutView />}
-        {activeTab === 'mascot' && <MascotBattleView />}
-        {activeTab === 'game' && <PiggyRunView />}
-        {activeTab === 'anatomy' && <AnatomyView />}
-        {activeTab === 'exercises' && <ExercisesView />}
-        {activeTab === 'food' && <FoodView />}
-        {activeTab === 'stats' && <ProfileView />}
-      </main>
+      {/* Worlds Routing: Portal Hub vs Setthi MooAuan vs MooAuan Fit */}
+      {activeWorld === 'portal' ? (
+        <PortalHubView />
+      ) : activeWorld === 'setthi' ? (
+        <main className="flex-1 max-w-4xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-28">
+          <SetthiMooAuanView />
+        </main>
+      ) : (
+        <>
+          {/* Main Content Area */}
+          <main className="flex-1 max-w-4xl w-full mx-auto px-3.5 sm:px-6 pt-4 pb-28">
+            {activeTab === 'workout' && <WorkoutView />}
+            {activeTab === 'mascot' && <MascotBattleView />}
+            {activeTab === 'game' && <PiggyRunView />}
+            {activeTab === 'anatomy' && <AnatomyView />}
+            {activeTab === 'exercises' && <ExercisesView />}
+            {activeTab === 'food' && <FoodView />}
+            {activeTab === 'stats' && <ProfileView />}
+          </main>
 
       {/* Global Floating Rest Timer Widget (Visible across non-workout tabs & persistent) */}
       {restTimerSeconds !== null && activeTab !== 'workout' && (
@@ -331,7 +344,9 @@ export const MainContent: React.FC = () => {
 
       {/* Floating Bottom Nav */}
       <BottomNav activeTab={activeTab} onTabChange={(tab) => setActiveTab(tab)} />
-    </div>
+    </>
+  )}
+</div>
   );
 };
 

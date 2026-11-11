@@ -253,6 +253,59 @@ export interface FoodLog {
   source: 'ai' | 'manual';
   confidence?: number;
   note?: string;
+  // Two-Way Cross-Link Fields to Finance
+  price_thb?: number;             // ราคาอาหาร (บาท)
+  payment_channel?: string;       // KBank, PromptPay, เงินสด, บัตรเครดิต
+  linked_transaction_id?: string; // ID เชื่อมโยงกับรายการในหมูอ้วนเศรษฐี
+}
+
+export type ActiveWorld = 'portal' | 'fit' | 'setthi';
+
+export type TransactionType = 'EXPENSE' | 'INCOME' | 'TRANSFER';
+
+export interface Transaction {
+  id: string;
+  user_id: string; // 'primary' | 'partner' or custom username
+  user_name: string; // 'maxnum' | 'manow' etc.
+  date: string; // YYYY-MM-DD
+  time: string; // HH:mm
+  type: TransactionType;
+  category: string;
+  amount: number;
+  wallet: string; // e.g. KBank, SCB, PromptPay, เงินสด, บัตรเครดิต
+  merchant: string;
+  tags?: string[];
+  note: string;
+  slipRef?: string;
+  slipImage?: string;
+  isCategorized?: boolean;
+  createdAt?: string;
+  // Two-Way Cross-Link to FoodLog
+  linked_food_log_id?: string;
+  food_kcal?: number;
+}
+
+export interface FinancialCategory {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  budget?: number;
+  type: 'EXPENSE' | 'INCOME';
+}
+
+export interface GeminiParsedSlip {
+  success: boolean;
+  bank?: string;
+  merchant?: string;
+  amount?: number;
+  datetime?: string;
+  slipRef?: string;
+  suggestedCategory?: string;
+  type?: TransactionType;
+  note?: string;
+  confidence?: number;
+  error?: string;
 }
 
 export interface FirebaseConfig {

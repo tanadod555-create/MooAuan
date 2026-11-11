@@ -14,6 +14,9 @@ import {
   AppSettings,
   FirebaseConfig,
   AppAccount,
+  ActiveWorld,
+  Transaction,
+  TransactionType,
 } from '../types';
 import { SEED_EXERCISES } from '../data/exercises';
 import { PREDEFINED_FOODS, PredefinedFood } from '../data/foodDatabase';
@@ -183,6 +186,21 @@ interface AppContextType {
   firebaseError: string | null;
   migrateLocalDataToFirebase: (onProgress?: (msg: string) => void) => Promise<{ success: boolean; count: number }>;
   testFirebaseConnection: (config?: FirebaseConfig) => Promise<{ success: boolean; message: string }>;
+
+  // World Gateway & Mode Management
+  activeWorld: ActiveWorld;
+  setActiveWorld: (world: ActiveWorld) => void;
+
+  // Setthi MooAuan Transactions & Dual-Log 2-Way Sync
+  transactions: Transaction[];
+  allTransactions: Transaction[];
+  addTransaction: (tx: Omit<Transaction, 'id' | 'createdAt'>) => Promise<Transaction>;
+  updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
+  addFoodLogWithFinance: (
+    food: Omit<FoodLog, 'log_id'>,
+    financeOption?: { price: number; wallet?: string }
+  ) => Promise<void>;
 }
 
 
@@ -827,6 +845,99 @@ export const addPendingSyncId = (id: string) => {
   } catch {}
 };
 
+const DEFAULT_INITIAL_TRANSACTIONS: Transaction[] = [
+  {
+    id: 'TXN-M-001',
+    user_id: 'primary',
+    user_name: 'แม็กนั่ม (Maxnum)',
+    date: new Date().toISOString().split('T')[0],
+    time: '08:00',
+    type: 'INCOME',
+    category: 'เงินเดือนประจำ',
+    amount: 35000.00,
+    wallet: 'KBank',
+    merchant: 'บริษัทจำกัด (เงินเดือน)',
+    note: 'เงินเดือนเข้าบัญชี',
+    slipRef: '202611110800001',
+    isCategorized: true
+  },
+  {
+    id: 'TXN-M-002',
+    user_id: 'primary',
+    user_name: 'แม็กนั่ม (Maxnum)',
+    date: new Date().toISOString().split('T')[0],
+    time: '08:30',
+    type: 'EXPENSE',
+    category: 'อาหารและเครื่องดื่ม',
+    amount: 95.00,
+    wallet: 'KBank',
+    merchant: 'Amazon Cafe',
+    note: 'อเมริกาโน่เย็น ไม่หวาน',
+    slipRef: '202611110830002',
+    isCategorized: true
+  },
+  {
+    id: 'TXN-M-003',
+    user_id: 'primary',
+    user_name: 'แม็กนั่ม (Maxnum)',
+    date: new Date().toISOString().split('T')[0],
+    time: '12:30',
+    type: 'EXPENSE',
+    category: 'อาหารและเครื่องดื่ม',
+    amount: 80.00,
+    wallet: 'TrueMoney',
+    merchant: 'ข้าวราดแกงปักษ์ใต้',
+    note: 'มื้อเที่ยง',
+    slipRef: '202611111230003',
+    isCategorized: true
+  },
+  {
+    id: 'TXN-W-001',
+    user_id: 'partner',
+    user_name: 'มะนาว (Manow)',
+    date: new Date().toISOString().split('T')[0],
+    time: '08:00',
+    type: 'INCOME',
+    category: 'เงินเดือนประจำ',
+    amount: 32000.00,
+    wallet: 'SCB',
+    merchant: 'เงินเดือนประจำ',
+    note: 'เงินเดือนเข้า',
+    slipRef: '202611110800002',
+    isCategorized: true
+  },
+  {
+    id: 'TXN-W-002',
+    user_id: 'partner',
+    user_name: 'มะนาว (Manow)',
+    date: new Date().toISOString().split('T')[0],
+    time: '09:00',
+    type: 'EXPENSE',
+    category: 'อาหารและเครื่องดื่ม',
+    amount: 75.00,
+    wallet: 'SCB',
+    merchant: 'ชาชีสสตอเบอรี่',
+    note: 'ของหวานยามเช้า',
+    slipRef: '202611110900001',
+    isCategorized: true
+  },
+  {
+    id: 'TXN-W-003',
+    user_id: 'partner',
+    user_name: 'มะนาว (Manow)',
+    date: new Date().toISOString().split('T')[0],
+    time: '13:00',
+    type: 'EXPENSE',
+    category: 'ของใช้ & ช้อปปิ้ง',
+    amount: 150.00,
+    wallet: 'KBank',
+    merchant: 'EVEANDBOY',
+    note: 'ลิปมันบำรุงริมฝีปาก',
+    slipRef: '202611111300002',
+    isCategorized: true
+  }
+];
+
 export const removePendingSyncId = (id: string) => {
   if (!id) return;
   try {
@@ -875,6 +986,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const savedSession = localStorage.getItem('mooauan_auth_session');
     return !savedSession;
   });
+
+  // World Gateway Mode ('portal' | 'fit' | 'setthi')
+  const [activeWorld, setActiveWorldState] = useState<ActiveWorld>(() => {
+    const saved = localStorage.getItem('ft_active_world') as ActiveWorld;
+    if (saved === 'fit' || saved === 'setthi' || saved === 'portal') return saved;
+    return 'portal';
+  });
+
+  const setActiveWorld = (world: ActiveWorld) => {
+    setActiveWorldState(world);
+    localStorage.setItem('ft_active_world', world);
+  };
 
   // Profiles
   const [activeProfileKey, setActiveProfileKey] = useState<'primary' | 'partner'>(() => {
@@ -1059,6 +1182,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('ft_food_logs_unified', JSON.stringify(allFoodLogs));
   }, [allFoodLogs]);
+
+  // Unified Financial Transactions (Setthi MooAuan)
+  const [allTransactions, setAllTransactions] = useState<Transaction[]>(() => {
+    const saved = localStorage.getItem('ft_transactions_unified');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch {}
+    }
+    localStorage.setItem('ft_transactions_unified', JSON.stringify(DEFAULT_INITIAL_TRANSACTIONS));
+    return DEFAULT_INITIAL_TRANSACTIONS;
+  });
+
+  const transactions = isSpecialPair
+    ? allTransactions.filter(t => (t.user_id || 'primary') === activeProfileKey)
+    : currentAccount
+    ? allTransactions.filter(t => t.user_id === currentUserId)
+    : [];
+
+  const exposedTransactions = isSpecialPair
+    ? allTransactions.filter(t => !t.user_id || t.user_id === 'primary' || t.user_id === 'partner')
+    : currentAccount
+    ? allTransactions.filter(t => t.user_id === currentUserId)
+    : [];
+
+  useEffect(() => {
+    localStorage.setItem('ft_transactions_unified', JSON.stringify(allTransactions));
+  }, [allTransactions]);
 
   // Unified Body Metrics (Combined for Maxnum & Manow)
   const [allBodyMetrics, setAllBodyMetrics] = useState<BodyMetric[]>(() => {
@@ -2279,6 +2431,159 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Setthi MooAuan Transactions & Two-Way Dual-Log Engine
+  const addTransaction = async (txData: Omit<Transaction, 'id' | 'createdAt'>): Promise<Transaction> => {
+    const targetUserId = txData.user_id || (currentAccount ? currentAccount.user_id : activeProfileKey);
+    const targetUserName = txData.user_name || (currentAccount ? currentAccount.name : (targetUserId === 'partner' ? 'มะนาว (Manow)' : 'แม็กนั่ม (Maxnum)'));
+    
+    const newTx: Transaction = {
+      ...txData,
+      id: `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      user_id: targetUserId,
+      user_name: targetUserName,
+      createdAt: new Date().toISOString(),
+    };
+
+    setAllTransactions((prev) => {
+      const updated = [newTx, ...prev];
+      try {
+        localStorage.setItem('ft_transactions_unified', JSON.stringify(updated));
+      } catch (e) {
+        console.error('LocalStorage write error:', e);
+      }
+      return updated;
+    });
+
+    if (settings.appsScriptUrl) {
+      fetch(settings.appsScriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'add_transaction',
+          transaction: newTx,
+          user_name: targetUserName,
+        }),
+      }).catch(err => console.error('Auto sync transaction failed:', err));
+    }
+
+    return newTx;
+  };
+
+  const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
+    setAllTransactions((prev) => {
+      const updated = prev.map((t) => (t.id === id ? { ...t, ...updates } : t));
+      try {
+        localStorage.setItem('ft_transactions_unified', JSON.stringify(updated));
+      } catch (e) {
+        console.error('LocalStorage write error:', e);
+      }
+      return updated;
+    });
+  };
+
+  const deleteTransaction = async (id: string) => {
+    setAllTransactions((prev) => {
+      const updated = prev.filter((t) => t.id !== id);
+      try {
+        localStorage.setItem('ft_transactions_unified', JSON.stringify(updated));
+      } catch (e) {
+        console.error('LocalStorage write error:', e);
+      }
+      return updated;
+    });
+  };
+
+  const addFoodLogWithFinance = async (
+    food: Omit<FoodLog, 'log_id'>,
+    financeOption?: { price: number; wallet?: string }
+  ) => {
+    const foodId = 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+    let linkedTxId: string | undefined = undefined;
+
+    const targetUserId = food.user_id || (currentAccount ? currentAccount.user_id : activeProfileKey);
+    const targetUserName = currentAccount ? currentAccount.name : (targetUserId === 'partner' ? partnerProfile.name : primaryProfile.name);
+
+    if (financeOption && financeOption.price > 0) {
+      linkedTxId = `TXN-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+      const newTx: Transaction = {
+        id: linkedTxId,
+        user_id: targetUserId,
+        user_name: targetUserName,
+        date: food.date,
+        time: food.time,
+        type: 'EXPENSE',
+        category: 'อาหารและเครื่องดื่ม',
+        amount: Number(financeOption.price),
+        wallet: financeOption.wallet || 'KBank',
+        merchant: food.name,
+        note: `ค่าอาหาร (${food.meal}) · ${food.kcal} kcal`,
+        isCategorized: true,
+        linked_food_log_id: foodId,
+        food_kcal: food.kcal,
+        createdAt: new Date().toISOString(),
+      };
+
+      setAllTransactions((prev) => {
+        const updated = [newTx, ...prev];
+        try {
+          localStorage.setItem('ft_transactions_unified', JSON.stringify(updated));
+        } catch {}
+        return updated;
+      });
+
+      if (settings.appsScriptUrl) {
+        fetch(settings.appsScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'add_transaction',
+            transaction: newTx,
+            user_name: targetUserName,
+          }),
+        }).catch(() => {});
+      }
+    }
+
+    const newFoodLog: FoodLog = {
+      ...food,
+      log_id: foodId,
+      user_id: targetUserId,
+      user_name: targetUserName,
+      price_thb: financeOption && financeOption.price > 0 ? Number(financeOption.price) : undefined,
+      payment_channel: financeOption && financeOption.price > 0 ? (financeOption.wallet || 'KBank') : undefined,
+      linked_transaction_id: linkedTxId,
+    };
+
+    addPendingSyncId(newFoodLog.log_id);
+
+    setAllFoodLogs((prev) => {
+      const updated = [newFoodLog, ...prev.filter((l) => l.log_id !== newFoodLog.log_id)];
+      try {
+        localStorage.setItem('ft_food_logs_unified', JSON.stringify(updated));
+      } catch (e) {
+        console.error('LocalStorage write error:', e);
+      }
+      return updated;
+    });
+
+    const db = firestoreDbRef.current || getFirestoreInstance();
+    if (db) {
+      try {
+        await cloudSaveFoodLog(db, newFoodLog);
+      } catch (err) {
+        console.error('Cloud save food log failed:', err);
+      }
+    }
+
+    if (settings.appsScriptUrl || (settings.autoSyncGoogleSheets && settings.googleAccessToken)) {
+      try {
+        await sheetsService.syncFoodLog(newFoodLog, targetUserName);
+      } catch (err) {
+        console.error('Auto sync food log failed:', err);
+      }
+    }
+  };
+
   // Global AI Food Scanning State (Runs persistently across tab switches & exits)
   const [isFoodScanning, setIsFoodScanning] = useState(false);
   const [foodScanStatus, setFoodScanStatus] = useState<string | null>(null);
@@ -2762,6 +3067,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         firebaseError,
         migrateLocalDataToFirebase,
         testFirebaseConnection,
+        activeWorld,
+        setActiveWorld,
+        transactions,
+        allTransactions: exposedTransactions,
+        addTransaction,
+        updateTransaction,
+        deleteTransaction,
+        addFoodLogWithFinance,
       }}
     >
       {children}

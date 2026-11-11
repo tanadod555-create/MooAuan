@@ -27,7 +27,8 @@ var SHEET_HEADERS = {
   program_items: ['program_id', 'order', 'exercise_id', 'target_sets', 'target_reps', 'target_weight_kg'],
   workout_sessions: ['user_name', 'date', 'program_name', 'start_time', 'end_time', 'note', 'session_id'],
   workout_sets: ['user_name', 'date', 'exercise_name', 'set_no', 'weight_kg', 'reps', 'rpe', 'done', 'session_id'],
-  food_logs: ['user_name', 'date', 'time', 'meal', 'name', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'grams', 'source', 'log_id']
+  food_logs: ['user_name', 'date', 'time', 'meal', 'name', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'grams', 'source', 'log_id', 'price_thb', 'payment_channel', 'linked_transaction_id'],
+  transactions: ['user_name', 'date', 'time', 'type', 'category', 'amount', 'wallet', 'merchant', 'note', 'id', 'linked_food_log_id', 'food_kcal']
 };
 
 /**
@@ -250,6 +251,36 @@ function doPost(e) {
         u.created_at || new Date().toISOString()
       ]);
       return jsonResponse({ success: true, message: "User registered: " + (u.username || "") });
+    }
+
+    // 7. Add Transaction (Setthi MooAuan Finance)
+    if (action === "add_transaction") {
+      var tSheet = ss.getSheetByName("transactions") || ss.insertSheet("transactions");
+      var t = contents.transaction || contents.data;
+      var userName = contents.user_name || (t && t.user_name) || "แม็กนั่ม";
+
+      if (tSheet.getLastRow() === 0) {
+        tSheet.appendRow(SHEET_HEADERS.transactions);
+        tSheet.getRange(1, 1, 1, SHEET_HEADERS.transactions.length)
+          .setFontWeight("bold").setBackground("#0f172a").setFontColor("#38bdf8");
+        tSheet.setFrozenRows(1);
+      }
+
+      tSheet.appendRow([
+        userName,
+        t.date || new Date().toISOString().split("T")[0],
+        t.time || "12:00",
+        t.type || "EXPENSE",
+        t.category || "อื่นๆ",
+        t.amount || 0,
+        t.wallet || "เงินสด",
+        t.merchant || "",
+        t.note || "",
+        t.id || "",
+        t.linked_food_log_id || "",
+        t.food_kcal || ""
+      ]);
+      return jsonResponse({ success: true, message: "Transaction saved for " + userName });
     }
 
     return jsonResponse({ success: false, message: "Unknown action: " + action });

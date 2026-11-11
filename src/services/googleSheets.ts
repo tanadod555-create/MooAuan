@@ -21,6 +21,7 @@ export const SHEET_TABS = [
   'workout_sets',
   'food_logs',
   'food_database',
+  'transactions',
 ] as const;
 
 export const SHEET_HEADERS: Record<string, string[]> = {
@@ -32,8 +33,9 @@ export const SHEET_HEADERS: Record<string, string[]> = {
   program_items: ['program_id', 'order', 'exercise_id', 'target_sets', 'target_reps', 'target_weight_kg'],
   workout_sessions: ['user_name', 'date', 'program_name', 'start_time', 'end_time', 'note', 'session_id'],
   workout_sets: ['user_name', 'date', 'exercise_name', 'set_no', 'weight_kg', 'reps', 'rpe', 'done', 'session_id'],
-  food_logs: ['user_name', 'date', 'time', 'meal', 'name', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fiber_g', 'grams', 'source', 'log_id'],
+  food_logs: ['user_name', 'date', 'time', 'meal', 'name', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fiber_g', 'grams', 'source', 'log_id', 'price_thb', 'payment_channel', 'linked_transaction_id'],
   food_database: ['name_th', 'name_en', 'category', 'serving_size', 'grams', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fiber_g', 'note'],
+  transactions: ['user_name', 'date', 'time', 'type', 'category', 'amount', 'wallet', 'merchant', 'note', 'id', 'linked_food_log_id', 'food_kcal'],
 };
 
 export class GoogleSheetsService {

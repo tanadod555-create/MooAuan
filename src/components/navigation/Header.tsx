@@ -22,6 +22,8 @@ export const Header: React.FC<HeaderProps> = ({
     workoutHistory,
     activeWorkout,
     loginWithCredentials,
+    activeWorld,
+    setActiveWorld,
   } = useApp();
 
   const isMaxnum = activeProfileKey === 'primary';
@@ -103,8 +105,39 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Right: Coins, AI Coach, Character Switch & Account */}
+        {/* Right: Coins, AI Coach, World Switch, Character Switch & Account */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          {/* Quick World Switcher (Fit ↔️ Setthi) & Portal Button */}
+          {activeWorld !== 'portal' && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setActiveWorld(activeWorld === 'fit' ? 'setthi' : 'fit')}
+                className={`px-2 sm:px-2.5 py-1 text-xs font-black rounded-xl border flex items-center gap-1 transition-all cursor-pointer shadow-2xs ${
+                  activeWorld === 'fit'
+                    ? 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200'
+                    : isMaxnum
+                    ? 'bg-sky-100 text-sky-800 border-sky-300 hover:bg-sky-200'
+                    : 'bg-pink-100 text-pink-800 border-pink-300 hover:bg-pink-200'
+                }`}
+                title={activeWorld === 'fit' ? 'สลับไปหน้า หมูอ้วนเศรษฐี' : 'สลับไปหน้า หมูอ้วนฟิต'}
+              >
+                <span>{activeWorld === 'fit' ? '💰' : '🏋️'}</span>
+                <span className="hidden xs:inline sm:inline text-[11px]">
+                  {activeWorld === 'fit' ? 'เศรษฐี' : 'ฟิต'}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveWorld('portal')}
+                className="p-1 sm:px-2 py-1 text-xs font-bold rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 flex items-center gap-0.5 cursor-pointer shadow-2xs"
+                title="กลับหน้า Portal ประตูกลาง"
+              >
+                <span>🏠</span>
+                <span className="hidden md:inline text-[11px]">หน้ารวม</span>
+              </button>
+            </div>
+          )}
+
           {/* Gym Coins Badge */}
           <div
             className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100/80 border border-amber-200 text-amber-800 text-xs font-black shadow-xs transition select-none cursor-default"

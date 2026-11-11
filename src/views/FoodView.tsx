@@ -59,8 +59,10 @@ export const FoodView: React.FC = () => {
     foodLogs,
     allFoodLogs,
     addFoodLog,
+    addFoodLogWithFinance,
     updateFoodLog,
     deleteFoodLog,
+    setActiveWorld,
     startFoodScan,
     isFoodScanning,
     foodScanStatus,
@@ -299,6 +301,11 @@ export const FoodView: React.FC = () => {
   const [manualPotassium, setManualPotassium] = useState<number | ''>('');
   const [manualNote, setManualNote] = useState('');
 
+  // Dual-Log with Setthi MooAuan
+  const [alsoLogFinance, setAlsoLogFinance] = useState(false);
+  const [financePrice, setFinancePrice] = useState('');
+  const [financeWallet, setFinanceWallet] = useState('KBank');
+
   // AI Text Food Search & Add State
   const [showAiTextModal, setShowAiTextModal] = useState(false);
   const [aiTextQuery, setAiTextQuery] = useState('');
@@ -508,8 +515,11 @@ export const FoodView: React.FC = () => {
     setAiUserNote('');
 
     try {
-      for (const item of itemsToSave) {
-        await addFoodLog({
+      const parsedPrice = parseFloat(financePrice);
+      for (let i = 0; i < itemsToSave.length; i++) {
+        const item = itemsToSave[i];
+        const itemPrice = (alsoLogFinance && parsedPrice > 0 && i === 0) ? parsedPrice : undefined;
+        const foodItemPayload = {
           date: selectedDate,
           time: nowTime,
           meal: selectedMeal,
@@ -523,12 +533,25 @@ export const FoodView: React.FC = () => {
           sugar_g: typeof item.sugar_g === 'number' ? item.sugar_g : (item.sugar_g ? Number(item.sugar_g) : undefined),
           sodium_mg: typeof item.sodium_mg === 'number' ? item.sodium_mg : (item.sodium_mg ? Number(item.sodium_mg) : undefined),
           micros: item.micros,
-          source: 'ai',
+          source: 'ai' as const,
           confidence: item.confidence,
           user_id: selectedUserKey,
           note: userNoteToSave,
-        });
+          price_thb: itemPrice,
+          payment_channel: itemPrice ? financeWallet : undefined,
+        };
+
+        if (itemPrice) {
+          await addFoodLogWithFinance(foodItemPayload, {
+            price: itemPrice,
+            wallet: financeWallet,
+          });
+        } else {
+          await addFoodLog(foodItemPayload);
+        }
       }
+      setAlsoLogFinance(false);
+      setFinancePrice('');
     } catch (err) {
       console.error('Error saving AI food items:', err);
     } finally {
@@ -678,7 +701,7 @@ export const FoodView: React.FC = () => {
       minute: '2-digit',
     });
 
-    await addFoodLog({
+    const foodPayload = {
       date: selectedDate,
       time: nowTime,
       meal: manualMeal,
@@ -697,15 +720,26 @@ export const FoodView: React.FC = () => {
         calcium_mg: manualCalcium === '' ? 0 : Number(manualCalcium),
         potassium_mg: manualPotassium === '' ? 0 : Number(manualPotassium),
       },
-      source: 'manual',
+      source: 'manual' as const,
       confidence: 1.0,
       user_id: selectedUserKey,
       note: manualNote.trim() || undefined,
-    });
+    };
+
+    if (alsoLogFinance && parseFloat(financePrice) > 0) {
+      await addFoodLogWithFinance(foodPayload, {
+        price: parseFloat(financePrice),
+        wallet: financeWallet,
+      });
+    } else {
+      await addFoodLog(foodPayload);
+    }
 
     setShowManualModal(false);
     setManualName('');
     setManualNote('');
+    setAlsoLogFinance(false);
+    setFinancePrice('');
     setManualGrams(200);
     setManualKcal(350);
     setManualProtein(25);
@@ -1673,6 +1707,19 @@ export const FoodView: React.FC = () => {
                         📝 {log.note}
                       </span>
                     )}
+                    {log.price_thb ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveWorld('setthi');
+                        }}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-300 font-bold hover:bg-emerald-100 transition flex items-center gap-1 cursor-pointer"
+                        title="แตะเพื่อดูรายการเงินในหมูอ้วนเศรษฐี"
+                      >
+                        <span>💸 ฿{log.price_thb.toLocaleString()} ({log.payment_channel || 'KBank'}) ➜</span>
+                      </button>
+                    ) : null}
                   </div>
                   <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500 flex-wrap">
                     <span>⏰ {log.time}</span>
@@ -2148,6 +2195,50 @@ export const FoodView: React.FC = () => {
                   💡 หมายเหตุจาก AI: {aiNotes}
                 </p>
               )}
+
+              {/* Dual-Log with Setthi MooAuan */}
+              <div className="mt-3 p-3 bg-gradient-to-r from-amber-50/80 to-emerald-50/80 rounded-2xl border border-amber-200/80 space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={alsoLogFinance}
+                    onChange={(e) => setAlsoLogFinance(e.target.checked)}
+                    className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <span className="text-xs font-bold text-amber-900 flex items-center gap-1">
+                    <span>💰 บันทึกรายจ่ายลง หมูอ้วนเศรษฐี ด้วย</span>
+                    <span className="text-[10px] px-1.5 py-0.2 bg-amber-200 text-amber-800 rounded-full font-semibold">Dual-Log</span>
+                  </span>
+                </label>
+                {alsoLogFinance && (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div>
+                      <label className="block text-[11px] font-bold text-amber-800 mb-1">ราคา (บาท) *</label>
+                      <input
+                        type="number"
+                        placeholder="เช่น 60"
+                        value={financePrice}
+                        onChange={(e) => setFinancePrice(e.target.value)}
+                        className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-bold focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-amber-800 mb-1">ช่องทางจ่าย</label>
+                      <select
+                        value={financeWallet}
+                        onChange={(e) => setFinanceWallet(e.target.value)}
+                        className="w-full bg-white border border-amber-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 font-semibold focus:outline-none"
+                      >
+                        <option value="KBank">🟢 KBank</option>
+                        <option value="SCB">🟣 SCB</option>
+                        <option value="PromptPay">🔵 พร้อมเพย์</option>
+                        <option value="เงินสด">💵 เงินสด</option>
+                        <option value="บัตรเครดิต">💳 บัตรเครดิต</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Modal Footer */}
@@ -2856,6 +2947,51 @@ export const FoodView: React.FC = () => {
                     </button>
                   ))}
                 </div>
+              </div>
+
+              {/* Dual-Log with Setthi MooAuan */}
+              <div className="pt-2 border-t border-amber-200/60 bg-gradient-to-r from-amber-50/70 to-emerald-50/70 p-3 rounded-xl space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={alsoLogFinance}
+                    onChange={(e) => setAlsoLogFinance(e.target.checked)}
+                    className="w-4 h-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <span className="text-xs font-bold text-amber-900 flex items-center gap-1">
+                    <span>💰 บันทึกรายจ่ายลง หมูอ้วนเศรษฐี ด้วย</span>
+                    <span className="text-[10px] px-1.5 py-0.2 bg-amber-200 text-amber-800 rounded-full font-semibold">Dual-Log</span>
+                  </span>
+                </label>
+                {alsoLogFinance && (
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div>
+                      <label className="block text-[11px] font-bold text-amber-800 mb-1">ราคา (บาท) *</label>
+                      <input
+                        type="number"
+                        placeholder="เช่น 60"
+                        value={financePrice}
+                        onChange={(e) => setFinancePrice(e.target.value)}
+                        className="w-full bg-white border border-amber-300 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-bold focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-amber-800 mb-1">ช่องทางจ่าย</label>
+                      <select
+                        value={financeWallet}
+                        onChange={(e) => setFinanceWallet(e.target.value)}
+                        className="w-full bg-white border border-amber-300 rounded-lg px-2 py-1.5 text-xs text-slate-800 font-semibold focus:outline-none"
+                      >
+                        <option value="KBank">🟢 KBank</option>
+                        <option value="SCB">🟣 SCB</option>
+                        <option value="PromptPay">🔵 พร้อมเพย์</option>
+                        <option value="เงินสด">💵 เงินสด</option>
+                        <option value="บัตรเครดิต">💳 บัตรเครดิต</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="pt-3 flex items-center justify-end gap-3 border-t border-pink-100 shrink-0">
