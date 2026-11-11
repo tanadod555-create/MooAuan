@@ -16,7 +16,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  ArrowRight,
   X,
   Check,
   Upload,
@@ -611,17 +610,6 @@ export const SetthiMooAuanView: React.FC = () => {
             </p>
           </div>
         </div>
-
-        {/* Quick Shortcut back to Fitness World */}
-        <button
-          type="button"
-          onClick={() => setActiveWorld('fit')}
-          className="btn-candy-white px-3 py-1.5 text-xs flex items-center gap-1.5 shrink-0 shadow-2xs cursor-pointer"
-          title="สลับไปสู่หมูอ้วนฟิต"
-        >
-          <span>🏋️ ไปหมูอ้วนฟิต</span>
-          <ArrowRight size={13} />
-        </button>
       </div>
 
       {/* Navigation Sub-Tabs Pills */}
