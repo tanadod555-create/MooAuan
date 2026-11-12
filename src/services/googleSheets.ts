@@ -433,4 +433,76 @@ export class GoogleSheetsService {
     ];
     return this.appendRow('users', row);
   }
+
+  /**
+   * Synchronize Financial Transaction to Google Sheet (transactions tab)
+   */
+  async syncTransaction(tx: any, userName: string) {
+    if (this.appsScriptUrl) {
+      try {
+        await fetch(this.appsScriptUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'add_transaction',
+            transaction: tx,
+            user_name: userName,
+          }),
+        });
+        return { success: true };
+      } catch (e) {
+        console.warn('Apps Script syncTransaction error:', e);
+      }
+    }
+
+    if (!this.accessToken) return;
+    const row = [
+      userName,
+      tx.date || new Date().toISOString().split('T')[0],
+      tx.time || '12:00',
+      tx.type || 'EXPENSE',
+      tx.category || 'อื่นๆ',
+      tx.amount || 0,
+      tx.wallet || 'เงินสด',
+      tx.merchant || '',
+      tx.note || '',
+      tx.id || '',
+      tx.linked_food_log_id || '',
+      tx.food_kcal || '',
+    ];
+    return this.appendRow('transactions', row);
+  }
+
+  /**
+   * Fetch transactions from Apps Script (Hydration from Sheet)
+   */
+  async fetchTransactions(): Promise<any[]> {
+    if (!this.appsScriptUrl) return [];
+    try {
+      const url = `${this.appsScriptUrl}?tab=transactions`;
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (!data.success || !Array.isArray(data.rows) || data.rows.length <= 1) return [];
+      const rows = data.rows.slice(1);
+      return rows.map((r: any[]) => ({
+        user_name: r[0] || '',
+        date: r[1] || '',
+        time: r[2] || '',
+        type: r[3] || 'EXPENSE',
+        category: r[4] || 'อื่นๆ',
+        amount: Number(r[5]) || 0,
+        wallet: r[6] || 'เงินสด',
+        merchant: r[7] || '',
+        note: r[8] || '',
+        id: r[9] || `TX-${Date.now()}-${Math.random()}`,
+        linked_food_log_id: r[10] || undefined,
+        food_kcal: r[11] ? Number(r[11]) : undefined,
+      }));
+    } catch (e) {
+      console.warn('fetchTransactions error:', e);
+      return [];
+    }
+  }
 }

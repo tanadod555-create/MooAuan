@@ -37,6 +37,8 @@ import {
   Droplets,
   Sliders,
   TrendingUp,
+  Send,
+  Loader2,
 } from 'lucide-react';
 import { MagicCard } from '../components/ui/MagicCard';
 import { CircularProgress } from '../components/ui/CircularProgress';
@@ -300,6 +302,33 @@ export const FoodView: React.FC = () => {
   const [manualCalcium, setManualCalcium] = useState<number | ''>('');
   const [manualPotassium, setManualPotassium] = useState<number | ''>('');
   const [manualNote, setManualNote] = useState('');
+
+  // Chat-First Food Assistant State
+  interface FoodChatMessage {
+    id: string;
+    sender: 'user' | 'bot';
+    text?: string;
+    imageUrl?: string;
+    items?: GeminiFoodItem[];
+    totalKcal?: number;
+    priceThb?: number;
+    wallet?: string;
+    createdAt: string;
+  }
+
+  const [foodChatInput, setFoodChatInput] = useState('');
+  const [isFoodChatProcessing, setIsFoodChatProcessing] = useState(false);
+  const [foodChatStatus, setFoodChatStatus] = useState('');
+  const foodChatBottomRef = useRef<HTMLDivElement>(null);
+  const foodPhotoInputRef = useRef<HTMLInputElement>(null);
+  const [foodChatMessages, setFoodChatMessages] = useState<FoodChatMessage[]>([
+    {
+      id: 'food-welcome',
+      sender: 'bot',
+      text: 'สวัสดีครับ! ผมคือหมูอ้วนสายกิน 🐷🍽️ พิมพ์บอกมื้ออาหาร เช่น "ข้าวกะเพราไก่ 60 บาท" หรือกดปุ่ม 📸 ถ่ายรูปจานข้าวมาให้ดูได้เลย เดี๋ยวผมช่วยนับแคล โปรตีน และลงบัญชีเศรษฐีให้อัตโนมัติครับ!',
+      createdAt: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+    },
+  ]);
 
   // Dual-Log with Setthi MooAuan
   const [alsoLogFinance, setAlsoLogFinance] = useState(false);
@@ -688,6 +717,242 @@ export const FoodView: React.FC = () => {
       setAiTextError(err.message || 'เกิดข้อผิดพลาดในการบันทึกอาหาร');
     } finally {
       setIsSubmittingAiText(false);
+    }
+  };
+
+  // Send Natural Text in Food Chat
+  const handleSendFoodChatMessage = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const text = foodChatInput.trim();
+    if (!text || isFoodChatProcessing) return;
+
+    const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+    // Extract price if any
+    let detectedPrice: number | undefined = undefined;
+    const priceMatch = text.match(/(\d+(\.\d+)?)\s*(บาท|บ\.)/i) || text.match(/(\d+)\s*(kbank|scb|promptpay|เงินสด|บัตร)/i);
+    if (priceMatch) {
+      detectedPrice = parseFloat(priceMatch[1]);
+    }
+
+    // Extract wallet if any
+    let detectedWallet = 'KBank';
+    if (text.toLowerCase().includes('scb') || text.includes('ไทยพาณิชย์')) detectedWallet = 'SCB';
+    else if (text.includes('พร้อมเพย์') || text.toLowerCase().includes('promptpay')) detectedWallet = 'PromptPay';
+    else if (text.includes('เงินสด')) detectedWallet = 'เงินสด';
+    else if (text.includes('บัตร')) detectedWallet = 'บัตรเครดิต';
+
+    setFoodChatMessages((prev) => [
+      ...prev,
+      {
+        id: 'user-' + Date.now(),
+        sender: 'user',
+        text,
+        createdAt: nowTime,
+      },
+    ]);
+
+    setFoodChatInput('');
+    setIsFoodChatProcessing(true);
+    setFoodChatStatus('หมูอ้วนกำลังคำนวณสารอาหาร...');
+
+    try {
+      const response = await analyzeFoodText({
+        query: text,
+        apiKey: effectiveGeminiKey,
+      });
+
+      if (response.items && response.items.length > 0) {
+        let totalKcal = 0;
+        for (let i = 0; i < response.items.length; i++) {
+          const item = response.items[i];
+          const itemPrice = (detectedPrice && i === 0) ? detectedPrice : undefined;
+          totalKcal += item.kcal;
+
+          const payload = {
+            date: selectedDate,
+            time: nowTime,
+            meal: 'lunch' as MealType,
+            name: item.name,
+            grams: Number(item.grams) || 0,
+            kcal: Number(item.kcal) || 0,
+            protein_g: Number(item.protein_g) || 0,
+            carb_g: Number(item.carb_g) || 0,
+            fat_g: Number(item.fat_g) || 0,
+            fiber_g: typeof item.fiber_g === 'number' ? item.fiber_g : (item.fiber_g ? Number(item.fiber_g) : undefined),
+            sugar_g: typeof item.sugar_g === 'number' ? item.sugar_g : (item.sugar_g ? Number(item.sugar_g) : undefined),
+            sodium_mg: typeof item.sodium_mg === 'number' ? item.sodium_mg : (item.sodium_mg ? Number(item.sodium_mg) : undefined),
+            micros: item.micros,
+            source: 'ai' as const,
+            confidence: item.confidence ?? 0.95,
+            user_id: selectedUserKey,
+            note: text,
+            price_thb: itemPrice,
+            payment_channel: itemPrice ? detectedWallet : undefined,
+          };
+
+          if (itemPrice && itemPrice > 0) {
+            await addFoodLogWithFinance(payload, {
+              price: itemPrice,
+              wallet: detectedWallet,
+            });
+          } else {
+            await addFoodLog(payload);
+          }
+        }
+
+        setFoodChatMessages((prev) => [
+          ...prev,
+          {
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            text: `บันทึกมื้ออาหารเรียบร้อยแล้วครับ! รวมประมาณ ${totalKcal} kcal 🐷💪`,
+            items: response.items,
+            totalKcal,
+            priceThb: detectedPrice,
+            wallet: detectedWallet,
+            createdAt: nowTime,
+          },
+        ]);
+      } else {
+        setFoodChatMessages((prev) => [
+          ...prev,
+          {
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            text: 'ขออภัยครับ หมูอ้วนไม่พบข้อมูลอาหารจากข้อความนี้ กรุณาลองพิมพ์ใหม่อีกครั้ง เช่น "ข้าวมันไก่ 1 จาน" 🐷',
+            createdAt: nowTime,
+          },
+        ]);
+      }
+    } catch (err: any) {
+      console.error(err);
+      const fallbackKcal = 400;
+      await addFoodLog({
+        date: selectedDate,
+        time: nowTime,
+        meal: 'lunch',
+        name: text,
+        grams: 200,
+        kcal: fallbackKcal,
+        protein_g: 20,
+        carb_g: 40,
+        fat_g: 10,
+        source: 'manual',
+        user_id: selectedUserKey,
+        price_thb: detectedPrice,
+        payment_channel: detectedWallet,
+      });
+      setFoodChatMessages((prev) => [
+        ...prev,
+        {
+          id: 'bot-' + Date.now(),
+          sender: 'bot',
+          text: `บันทึก "${text}" ลงมื้ออาหารเรียบร้อยแล้วครับ! 🐷`,
+          totalKcal: fallbackKcal,
+          priceThb: detectedPrice,
+          createdAt: nowTime,
+        },
+      ]);
+    } finally {
+      setIsFoodChatProcessing(false);
+      setFoodChatStatus('');
+    }
+  };
+
+  // Handle Photo uploaded in Food Chat
+  const handleFoodPhotoInChat = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || isFoodChatProcessing) return;
+
+    const file = files[0];
+    e.target.value = '';
+
+    const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    const { base64, mimeType } = await resizeImageToMaxDimension(file, 1024, 0.85);
+    const previewUrl = `data:${mimeType};base64,${base64}`;
+
+    setFoodChatMessages((prev) => [
+      ...prev,
+      {
+        id: 'user-photo-' + Date.now(),
+        sender: 'user',
+        text: 'ถ่ายรูปอาหาร',
+        imageUrl: previewUrl,
+        createdAt: nowTime,
+      },
+    ]);
+
+    setIsFoodChatProcessing(true);
+    setFoodChatStatus('หมูอ้วนกำลังดูรูปและคำนวณแคลอรี่...');
+
+    try {
+      const response = await analyzeFoodImage({
+        base64Image: base64,
+        mimeType,
+        apiKey: effectiveGeminiKey,
+      });
+
+      if (response.items && response.items.length > 0) {
+        let totalKcal = 0;
+        for (const item of response.items) {
+          totalKcal += item.kcal;
+          await addFoodLog({
+            date: selectedDate,
+            time: nowTime,
+            meal: 'lunch',
+            name: item.name,
+            grams: Number(item.grams) || 0,
+            kcal: Number(item.kcal) || 0,
+            protein_g: Number(item.protein_g) || 0,
+            carb_g: Number(item.carb_g) || 0,
+            fat_g: Number(item.fat_g) || 0,
+            fiber_g: typeof item.fiber_g === 'number' ? item.fiber_g : undefined,
+            sugar_g: typeof item.sugar_g === 'number' ? item.sugar_g : undefined,
+            sodium_mg: typeof item.sodium_mg === 'number' ? item.sodium_mg : undefined,
+            micros: item.micros,
+            source: 'ai',
+            confidence: item.confidence ?? 0.9,
+            user_id: selectedUserKey,
+          });
+        }
+
+        setFoodChatMessages((prev) => [
+          ...prev,
+          {
+            id: 'bot-photo-' + Date.now(),
+            sender: 'bot',
+            text: `สแกนจากรูปภาพเรียบร้อยแล้วครับ! ทั้งหมดประมาณ ${totalKcal} kcal 🐷🍽️`,
+            items: response.items,
+            totalKcal,
+            createdAt: nowTime,
+          },
+        ]);
+      } else {
+        setFoodChatMessages((prev) => [
+          ...prev,
+          {
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            text: 'ขออภัยครับ ตรวจไม่พบอาหารจากรูปนี้ คุณสามารถพิมพ์บอกชื่ออาหารแทนได้เลยครับ 🐷',
+            createdAt: nowTime,
+          },
+        ]);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setFoodChatMessages((prev) => [
+        ...prev,
+        {
+          id: 'bot-' + Date.now(),
+          sender: 'bot',
+          text: `สแกนรูปอาหารไม่สำเร็จ (${err.message || 'เกิดข้อผิดพลาด'}) คุณสามารถพิมพ์บอกชื่ออาหารแทนได้ครับ 🐷`,
+          createdAt: nowTime,
+        },
+      ]);
+    } finally {
+      setIsFoodChatProcessing(false);
+      setFoodChatStatus('');
     }
   };
 
@@ -1485,116 +1750,169 @@ export const FoodView: React.FC = () => {
 
 
 
-      {/* Action Buttons: Camera / Gallery / AI Text Search / Quick Food DB / Manual Add */}
-      {/* Action Buttons: Camera / Gallery / AI Text Search / Quick Food DB / Manual Add */}
-      <div className="grid grid-cols-5 gap-1.5 sm:gap-2.5">
-        {/* Camera Hidden Input */}
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          ref={cameraInputRef}
-          onChange={handlePhotoSelect}
-          className="hidden"
-        />
+      {/* Hidden Food Photo Input */}
+      <input
+        type="file"
+        accept="image/*"
+        ref={foodPhotoInputRef}
+        onChange={handleFoodPhotoInChat}
+        className="hidden"
+      />
 
-        {/* Gallery Hidden Input */}
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          ref={galleryInputRef}
-          onChange={handlePhotoSelect}
-          className="hidden"
-        />
+      {/* ======================================================== */}
+      {/* CHAT-FIRST INTERFACE: หมูอ้วนสายกิน (AI Food Chat)     */}
+      {/* ======================================================== */}
+      <div className="bg-white rounded-3xl border-2 border-pink-200 shadow-sm overflow-hidden flex flex-col h-[52vh] sm:h-[56vh]">
+        {/* Chat Messages Stream */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3.5 overscroll-contain">
+          {foodChatMessages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex gap-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              {msg.sender === 'bot' && (
+                <div className="w-8 h-8 rounded-full bg-pink-100 border border-pink-300 flex items-center justify-center text-base shrink-0 shadow-2xs mt-1">
+                  🐷
+                </div>
+              )}
 
-        {/* Take Photo Button */}
-        <button
-          onClick={() => {
-            if (!effectiveGeminiKey) {
-              setApiKeyInput(getDefaultGeminiApiKey());
-              setShowApiKeyModal(true);
-              return;
-            }
-            cameraInputRef.current?.click();
-          }}
-          disabled={isFoodScanning}
-          className={`py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 text-white font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs shadow-pink-200/50 active:scale-95 transition group cursor-pointer min-h-[52px] ${
-            isFoodScanning ? 'opacity-70 cursor-not-allowed' : ''
-          }`}
-          title="ถ่ายรูปอาหาร (เปิดกล้องถ่ายสด → AI วิเคราะห์)"
+              <div
+                className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-3 text-xs sm:text-sm ${
+                  msg.sender === 'user'
+                    ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white rounded-tr-xs shadow-xs'
+                    : 'bg-pink-50/50 border border-pink-200/70 text-slate-800 rounded-tl-xs shadow-2xs space-y-2'
+                }`}
+              >
+                {/* Photo Preview if user sent an image */}
+                {msg.imageUrl && (
+                  <div className="w-28 h-32 sm:w-36 sm:h-40 rounded-xl overflow-hidden border border-white/50 shadow-xs mb-1 bg-slate-800">
+                    <img src={msg.imageUrl} alt="Food preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+
+                {msg.text && <p className="leading-relaxed font-medium">{msg.text}</p>}
+
+                {/* Nutritional Card if meal items detected */}
+                {msg.items && msg.items.length > 0 && (
+                  <div className="bg-white rounded-xl p-3 border border-pink-200 shadow-2xs space-y-2 mt-1">
+                    {msg.items.map((it, idx) => (
+                      <div key={idx} className="border-b border-pink-100 last:border-b-0 pb-1.5 last:pb-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-extrabold text-slate-800 text-xs truncate">{it.name}</span>
+                          <span className="font-mono font-black text-pink-600 text-xs">{it.kcal} kcal</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500 font-semibold mt-0.5">
+                          <span>⚖️ {it.grams}g</span>
+                          <span>🥩 P: {it.protein_g}g</span>
+                          <span>🍚 C: {it.carb_g}g</span>
+                          <span>🥑 F: {it.fat_g}g</span>
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="flex items-center gap-1.5 flex-wrap pt-1 border-t border-pink-100 text-[10px]">
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold flex items-center gap-1">
+                        <span>🟢 บันทึกลงมื้ออาหารแล้ว</span>
+                      </span>
+
+                      {msg.priceThb && (
+                        <button
+                          type="button"
+                          onClick={() => setActiveWorld('setthi')}
+                          className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-300 font-bold hover:bg-amber-100 transition cursor-pointer flex items-center gap-1"
+                          title="แตะเพื่อเปิดดูในหมูอ้วนเศรษฐี"
+                        >
+                          <span>💰 ลงเศรษฐีแล้ว ฿{msg.priceThb} ➜</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <span
+                  className={`block text-[10px] mt-1 text-right ${
+                    msg.sender === 'user' ? 'text-pink-100' : 'text-slate-400'
+                  }`}
+                >
+                  {msg.createdAt}
+                </span>
+              </div>
+            </div>
+          ))}
+
+          {isFoodChatProcessing && (
+            <div className="flex gap-2.5 justify-start items-center animate-pulse">
+              <div className="w-8 h-8 rounded-full bg-pink-100 border border-pink-300 flex items-center justify-center text-base shrink-0 shadow-2xs">
+                🐷
+              </div>
+              <div className="bg-pink-50 border border-pink-200 rounded-2xl px-3.5 py-2 text-xs font-bold text-pink-800 flex items-center gap-2">
+                <Loader2 size={14} className="animate-spin text-pink-500" />
+                <span>{foodChatStatus || 'หมูอ้วนกำลังคำนวณ...'}</span>
+              </div>
+            </div>
+          )}
+
+          <div ref={foodChatBottomRef} />
+        </div>
+
+        {/* Quick Food Prompt Chips */}
+        <div className="px-3 py-1.5 bg-pink-50/50 border-t border-pink-100 flex items-center gap-1.5 overflow-x-auto text-[11px] no-scrollbar">
+          <span className="text-pink-400 font-bold shrink-0">ด่วน:</span>
+          {[
+            'ข้าวมันไก่ 1 จาน 65 บาท kbank',
+            'อกไก่ย่าง 150g',
+            'ไข่ต้ม 2 ฟอง',
+            'เวย์โปรตีน 1 สกู๊ป',
+            'กะเพราไก่ไข่ดาว 60 บาท',
+          ].map((chip) => (
+            <button
+              key={chip}
+              type="button"
+              onClick={() => setFoodChatInput(chip)}
+              className="px-2.5 py-1 rounded-full bg-white border border-pink-200 text-slate-700 font-semibold hover:border-pink-300 hover:text-pink-700 whitespace-nowrap cursor-pointer shrink-0"
+            >
+              {chip}
+            </button>
+          ))}
+        </div>
+
+        {/* Chat Input Bar */}
+        <form
+          onSubmit={handleSendFoodChatMessage}
+          className="p-2.5 sm:p-3 bg-white border-t border-pink-100 flex items-center gap-2 shrink-0"
         >
-          <Camera size={18} className={`stroke-[2.5] shrink-0 ${isFoodScanning ? 'animate-pulse' : ''}`} />
-          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">
-            {isFoodScanning ? 'สแกน...' : 'ถ่ายรูป'}
-          </span>
-        </button>
+          {/* Photo Upload Button */}
+          <button
+            type="button"
+            onClick={() => foodPhotoInputRef.current?.click()}
+            disabled={isFoodChatProcessing}
+            className="p-2 sm:px-3 sm:py-2 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-800 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 disabled:opacity-50"
+            title="ถ่ายรูปอาหารหรือเลือกจากอัลบั้ม"
+          >
+            <Camera size={18} className="text-pink-600" />
+            <span className="hidden sm:inline">ถ่ายรูป</span>
+          </button>
 
-        {/* Choose from Gallery / Files */}
-        <button
-          onClick={() => {
-            if (!effectiveGeminiKey) {
-              setApiKeyInput(getDefaultGeminiApiKey());
-              setShowApiKeyModal(true);
-              return;
-            }
-            galleryInputRef.current?.click();
-          }}
-          disabled={isFoodScanning}
-          className={`py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-white/95 hover:bg-pink-50/70 border border-pink-200/80 text-pink-600 font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs active:scale-95 transition group cursor-pointer min-h-[52px] ${
-            isFoodScanning ? 'opacity-70 cursor-not-allowed' : ''
-          }`}
-          title="อัปโหลดรูปจากคลังภาพ / ไฟล์"
-        >
-          <Upload size={17} className="shrink-0 group-hover:scale-110 transition" />
-          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">
-            คลังภาพ
-          </span>
-        </button>
+          {/* Text Input */}
+          <input
+            type="text"
+            value={foodChatInput}
+            onChange={(e) => setFoodChatInput(e.target.value)}
+            placeholder="พิมพ์ เช่น 'ข้าวกะเพราหมูกรอบ 70 kbank' หรือส่งรูป..."
+            disabled={isFoodChatProcessing}
+            className="flex-1 px-3 py-2 bg-pink-50/40 border border-pink-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-pink-400 focus:bg-white transition"
+          />
 
-        {/* AI Text Search & Calculate Button */}
-        <button
-          onClick={() => {
-            if (!effectiveGeminiKey) {
-              setApiKeyInput(getDefaultGeminiApiKey());
-              setShowApiKeyModal(true);
-              return;
-            }
-            setAiTextUserId(selectedUserKey);
-            setShowAiTextModal(true);
-          }}
-          className="py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 hover:from-purple-600 hover:via-indigo-600 hover:to-pink-600 text-white font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs shadow-purple-200/50 active:scale-95 transition group cursor-pointer min-h-[52px]"
-          title="พิมพ์สั่ง AI ค้นหาแคลและสารอาหาร"
-        >
-          <Sparkles size={17} className="animate-pulse shrink-0" />
-          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">
-            สั่ง AI
-          </span>
-        </button>
-
-        {/* Quick Food Database Reference Button */}
-        <button
-          onClick={() => setShowFoodDbModal(true)}
-          className="py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100/80 hover:to-teal-100/80 border border-emerald-200/80 text-emerald-800 font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs active:scale-95 transition group cursor-pointer min-h-[52px]"
-          title="เปิดตารางอาหารด่วน แตะลงมื้อทันที"
-        >
-          <BookOpen size={17} className="text-emerald-600 shrink-0 group-hover:scale-110 transition" />
-          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">
-            ตารางด่วน
-          </span>
-        </button>
-
-        {/* Manual Add Button */}
-        <button
-          onClick={() => setShowManualModal(true)}
-          className="py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-white/95 hover:bg-pink-50/70 border border-pink-200/80 text-slate-700 font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs active:scale-95 transition group cursor-pointer min-h-[52px]"
-          title="กรอกรายการและสารอาหารเอง"
-        >
-          <Plus size={18} className="text-pink-500 shrink-0 group-hover:scale-110 transition" />
-          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">
-            กรอกเอง
-          </span>
-        </button>
+          {/* Send Button */}
+          <button
+            type="submit"
+            disabled={!foodChatInput.trim() || isFoodChatProcessing}
+            className="p-2 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-xs shrink-0 disabled:opacity-40"
+          >
+            <Send size={15} />
+            <span className="hidden sm:inline">ส่ง</span>
+          </button>
+        </form>
       </div>
 
       {/* Non-blocking Background Analyzing Indicator */}

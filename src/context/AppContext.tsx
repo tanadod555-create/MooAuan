@@ -1571,6 +1571,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     settings.appsScriptUrl
   );
 
+  // Initial Hydration: Load transactions from Google Sheet on startup
+  useEffect(() => {
+    if (settings.appsScriptUrl) {
+      sheetsService.fetchTransactions().then((sheetTxs) => {
+        if (sheetTxs && sheetTxs.length > 0) {
+          setAllTransactions((prev) => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const newFromSheet = sheetTxs.filter(st => !existingIds.has(st.id));
+            if (newFromSheet.length === 0) return prev;
+            const merged = [...newFromSheet, ...prev];
+            try {
+              localStorage.setItem('ft_transactions_unified', JSON.stringify(merged));
+            } catch (e) {}
+            return merged;
+          });
+        }
+      }).catch(console.warn);
+    }
+  }, [settings.appsScriptUrl]);
+
   // Sync state to local storage
   useEffect(() => {
     localStorage.setItem('ft_active_profile', activeProfileKey);
@@ -2457,6 +2477,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (settings.appsScriptUrl) {
       fetch(settings.appsScriptUrl, {
         method: 'POST',
+        mode: 'no-cors',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
           action: 'add_transaction',
