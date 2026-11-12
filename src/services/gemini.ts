@@ -407,6 +407,150 @@ Return ONLY valid JSON matching this schema, no markdown codeblocks, no extra te
   return JSON.parse(cleanedText);
 }
 
+export interface SlipAnalysisResponse {
+  bank: string;
+  merchant: string;
+  amount: number;
+  datetime: string;
+  slipRef: string;
+  suggestedCategory: string;
+  isFood: boolean;
+  estimatedKcal?: number;
+  type: 'EXPENSE' | 'INCOME';
+  note: string;
+}
+
+export async function analyzeSlipImage({
+  base64Image,
+  mimeType,
+  userNotes,
+  apiKey,
+}: {
+  base64Image: string;
+  mimeType: string;
+  userNotes?: string;
+  apiKey?: string;
+}): Promise<SlipAnalysisResponse> {
+  const activeKey =
+    apiKey ||
+    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) ||
+    (typeof window !== 'undefined' ? localStorage.getItem('fittrack_gemini_key') : '') ||
+    getDefaultGeminiApiKey();
+
+  if (!activeKey) {
+    throw new Error('กรุณาระบุ Gemini API Key ในหน้าการตั้งค่า หรือตรวจสอบการเชื่อมต่อ');
+  }
+
+  const candidateModels = [
+    'gemini-flash-lite-latest',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-flash-latest',
+  ];
+
+  const customNotesContext = userNotes && userNotes.trim() ? userNotes.trim() : 'ไม่มีข้อความเพิ่มเติม';
+
+  const systemPrompt = `You are an expert Thai banking slip and receipt OCR assistant for the Setthi MooAuan financial tracking app.
+Analyze the provided slip or receipt image. Extract key details accurately:
+- bank: Name of the bank or e-wallet (e.g. KBank, SCB, PromptPay, TrueMoney, Krungthai, BBL, TTB)
+- merchant: Name of the payee, receiver, or merchant/shop
+- amount: The final transaction amount in THB (number, e.g. 60 or 150.50)
+- datetime: Transaction datetime formatted as "YYYY-MM-DD HH:mm"
+- slipRef: Reference number or transaction ID from the slip
+- suggestedCategory: Choose the single best category: [อาหารและเครื่องดื่ม, เดินทาง / น้ำมัน, ของใช้ & ช้อปปิ้ง, บิล & ค่าน้ำค่าไฟ, สุขภาพ / ยา / คลินิก, บันเทิง & สังสรรค์, ค่าใช้จ่ายอื่นๆ, เงินเดือนประจำ, รับโอนเงิน / เพื่อนคืน, รายรับพิเศษ / อื่นๆ]
+- isFood: boolean (true if this expense is food, drink, dining, or restaurant)
+- estimatedKcal: estimated total calories if this is food/dining (number, e.g. 500)
+- type: 'EXPENSE' or 'INCOME' (default 'EXPENSE')
+- note: Brief summary note
+
+CRITICAL USER NOTES / INSTRUCTIONS (Use this to understand who paid, what was bought, or if it was split among people):
+"${customNotesContext}"
+
+Return ONLY valid JSON matching this schema, no markdown codeblocks:
+{
+  "bank": "string",
+  "merchant": "string",
+  "amount": number,
+  "datetime": "string",
+  "slipRef": "string",
+  "suggestedCategory": "string",
+  "isFood": boolean,
+  "estimatedKcal": number,
+  "type": "EXPENSE",
+  "note": "string"
+}`;
+
+  const requestBody = {
+    contents: [
+      {
+        parts: [
+          { text: systemPrompt },
+          {
+            inline_data: {
+              mime_type: mimeType || 'image/jpeg',
+              data: base64Image,
+            },
+          },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.1,
+      response_mime_type: 'application/json',
+    },
+  };
+
+  const defaultKey = getDefaultGeminiApiKey();
+  const keysToTry = [activeKey];
+  if (defaultKey && defaultKey !== activeKey) {
+    keysToTry.push(defaultKey);
+  }
+
+  let response = null;
+  let lastErrorText = '';
+
+  for (const currentKey of keysToTry) {
+    for (const model of candidateModels) {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`;
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+
+        if (res.ok) {
+          response = res;
+          break;
+        } else {
+          lastErrorText = await res.text();
+        }
+      } catch (err: any) {
+        lastErrorText = err?.message || 'Network error';
+      }
+    }
+    if (response) break;
+  }
+
+  if (!response) {
+    throw new Error(`ไม่สามารถเชื่อมต่อ Gemini API เพื่อสแกนสลิปได้: ${lastErrorText.substring(0, 150)}`);
+  }
+
+  const json = await response.json();
+  const textOutput = json.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!textOutput) {
+    throw new Error('AI ไม่สามารถอ่านข้อมูลจากสลิปได้ กรุณาลองใหม่อีกครั้ง');
+  }
+
+  let cleaned = textOutput.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+  const firstBrace = cleaned.indexOf('{');
+  const lastBrace = cleaned.lastIndexOf('}');
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+  }
+  return JSON.parse(cleaned);
+}
+
 export interface TrainerContextData {
   userName: string;
   goal: string;

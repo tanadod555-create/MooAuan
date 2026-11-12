@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Transaction, TransactionType, MealType } from '../types';
-import { getDefaultGeminiApiKey } from '../services/gemini';
+import { getDefaultGeminiApiKey, analyzeSlipImage } from '../services/gemini';
 import {
   DollarSign,
   PieChart,
@@ -22,6 +22,7 @@ import {
   UploadCloud,
   Send,
   Loader2,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { getUserAvatar } from '../utils/mascotLevels';
 
@@ -97,13 +98,16 @@ export const SetthiMooAuanView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
+  // Staged Slips State (Allows typing notes before sending!)
+  const [stagedSlips, setStagedSlips] = useState<{ file: File; previewUrl: string }[]>([]);
+
   // Initial Chat Messages (greeting + today's existing transactions)
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
     return [
       {
         id: 'msg-welcome',
         sender: 'bot',
-        text: 'สวัสดีครับ! ผมคือหมูอ้วนช่วยจด 🐷💰 พิมพ์ค่าใช้จ่าย เช่น "กะเพราไข่ดาว 60 kbank" หรือกดปุ่ม 📸 แนบรูปสลิปโอนเงินได้เลยครับ เดี๋ยวผมบันทึกบัญชี ซิงค์ลง Google Sheet และเชื่อมต่อไปยังหมูอ้วนฟิตให้ทันที!',
+        text: 'สวัสดีครับ! ผมคือหมูอ้วนช่วยจด 🐷💰 พิมพ์ค่าใช้จ่าย เช่น "กะเพราไข่ดาว 60 kbank" หรือกดปุ่ม 📸 แนบรูปสลิปและพิมพ์บอกรายละเอียดได้เลยครับ เดี๋ยวผมบันทึกบัญชี ซิงค์ลง Google Sheet และเชื่อมต่อไปยังหมูอ้วนฟิตให้ทันที!',
         createdAt: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
       },
     ];
@@ -112,6 +116,9 @@ export const SetthiMooAuanView: React.FC = () => {
   useEffect(() => {
     chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isProcessing]);
+
+  // Smart Deletion Modal State
+  const [deletingTx, setDeletingTx] = useState<Transaction | null>(null);
 
   // Manual Add Modal State
   const [showAddModal, setShowAddModal] = useState(false);
@@ -186,22 +193,158 @@ export const SetthiMooAuanView: React.FC = () => {
     };
   };
 
-  // Send Natural Text in Chat
-  const handleSendTextMessage = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const text = chatInputText.trim();
-    if (!text || isProcessing) return;
+  // Handle files selected -> Put into Staged Slips for typing details before send
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    const userMsgId = 'msg-' + Date.now();
+    const newStaged = Array.from(files).map((f) => ({
+      file: f,
+      previewUrl: URL.createObjectURL(f),
+    }));
+
+    setStagedSlips((prev) => [...prev, ...newStaged]);
+    e.target.value = '';
+  };
+
+  const removeStagedSlip = (index: number) => {
+    setStagedSlips((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  // Main Submit Handler (Handles both Staged Slips + Typed Note OR Text-only)
+  const handleChatSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (isProcessing) return;
+
+    const typedNotes = chatInputText.trim();
+    const hasSlips = stagedSlips.length > 0;
+
+    if (!typedNotes && !hasSlips) return;
+
     const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
-    // Add user message to chat immediately
+    // Case 1: Slips attached (with or without typed text)
+    if (hasSlips) {
+      const slipsToProcess = [...stagedSlips];
+      const previewUrls = slipsToProcess.map((s) => s.previewUrl);
+
+      // Add user message with both slip images and typed text
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: 'user-slips-' + Date.now(),
+          sender: 'user',
+          text: typedNotes ? `${typedNotes} (แนบสลิป ${slipsToProcess.length} รูป)` : `แนบสลิป ${slipsToProcess.length} รูป`,
+          images: previewUrls,
+          createdAt: nowTime,
+        },
+      ]);
+
+      setStagedSlips([]);
+      setChatInputText('');
+      setIsProcessing(true);
+
+      for (let i = 0; i < slipsToProcess.length; i++) {
+        const item = slipsToProcess[i];
+        setProcessingStatus(`กำลังสแกนสลิปใบที่ ${i + 1}/${slipsToProcess.length} ด้วย AI...`);
+
+        try {
+          const base64Data = await fileToBase64(item.file);
+          const cleanBase64 = base64Data.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '');
+
+          // Call tested analyzeSlipImage with candidate models
+          const parsed = await analyzeSlipImage({
+            base64Image: cleanBase64,
+            mimeType: item.file.type || 'image/jpeg',
+            userNotes: typedNotes || undefined,
+            apiKey: effectiveGeminiKey,
+          });
+
+          const isFood = parsed.isFood || parsed.suggestedCategory === 'อาหารและเครื่องดื่ม';
+          const foodKcalAmt = parsed.estimatedKcal || 450;
+          let foodId: string | undefined = undefined;
+
+          const dateParts = (parsed.datetime || '').split(' ');
+          const slipDate = dateParts[0] || selectedDate;
+          const slipTime = dateParts[1] || nowTime;
+
+          // Auto Two-Way Dual-Log to Fit if food
+          if (isFood && parsed.type === 'EXPENSE') {
+            foodId = 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+            await addFoodLog({
+              date: slipDate,
+              time: slipTime,
+              meal: 'lunch',
+              name: parsed.merchant || 'มื้ออาหาร',
+              grams: 200,
+              kcal: foodKcalAmt,
+              protein_g: 22,
+              carb_g: 45,
+              fat_g: 12,
+              source: 'ai',
+              price_thb: Number(parsed.amount) || 0,
+              payment_channel: parsed.bank || 'KBank',
+              note: typedNotes ? `สแกนสลิป (${typedNotes})` : 'สแกนสลิปจากเศรษฐีหมูอ้วน',
+            });
+          }
+
+          // Add Transaction (which triggers Google Sheets realtime sync)
+          const newTx = await addTransaction({
+            user_id: activeProfileKey,
+            user_name: isMaxnum ? 'แม็กนั่ม (Maxnum)' : 'มะนาว (Manow)',
+            date: slipDate,
+            time: slipTime,
+            type: parsed.type || 'EXPENSE',
+            category: parsed.suggestedCategory || 'อาหารและเครื่องดื่ม',
+            amount: Number(parsed.amount) || 0,
+            wallet: parsed.bank || 'KBank',
+            merchant: parsed.merchant || 'สลิปโอนเงิน',
+            note: typedNotes || parsed.note || '',
+            slipRef: parsed.slipRef,
+            linked_food_log_id: foodId,
+            food_kcal: isFood ? foodKcalAmt : undefined,
+          });
+
+          // Add Bot message
+          setChatMessages((prev) => [
+            ...prev,
+            {
+              id: 'bot-slip-' + Date.now() + '-' + i,
+              sender: 'bot',
+              text: `สแกนสลิป "${newTx.merchant}" ยอด ฿${newTx.amount.toLocaleString()} สำเร็จแล้วครับ! 🐷`,
+              transaction: newTx,
+              foodKcal: isFood ? foodKcalAmt : undefined,
+              isSyncedGoogleSheet: true,
+              createdAt: nowTime,
+            },
+          ]);
+        } catch (err: any) {
+          console.error(err);
+          setChatMessages((prev) => [
+            ...prev,
+            {
+              id: 'bot-err-' + Date.now() + '-' + i,
+              sender: 'bot',
+              text: `ขออภัยครับ สแกนสลิปใบที่ ${i + 1} ไม่สำเร็จ (${err.message || 'ตรวจไม่พบข้อมูล'}) คุณสามารถพิมพ์บอกจำนวนเงินแทนได้เลยครับ 🐷`,
+              createdAt: nowTime,
+            },
+          ]);
+        }
+      }
+
+      setIsProcessing(false);
+      setProcessingStatus('');
+      return;
+    }
+
+    // Case 2: Text-only message
+    const userMsgId = 'msg-' + Date.now();
     setChatMessages((prev) => [
       ...prev,
       {
         id: userMsgId,
         sender: 'user',
-        text,
+        text: typedNotes,
         createdAt: nowTime,
       },
     ]);
@@ -214,9 +357,16 @@ export const SetthiMooAuanView: React.FC = () => {
       let parsed: any = null;
 
       if (effectiveGeminiKey) {
+        const candidateModels = [
+          'gemini-flash-lite-latest',
+          'gemini-2.0-flash',
+          'gemini-1.5-flash',
+          'gemini-flash-latest',
+        ];
+
         const prompt = `
 คุณคือ "หมูอ้วนช่วยจด" 🐷 ผู้ช่วยอัจฉริยะด้านการเงินและจดบันทึกรายรับรายจ่ายของแอป "เศรษฐีหมูอ้วน"
-ผู้ใช้พิมพ์ข้อความมา: "${text}"
+ผู้ใช้พิมพ์ข้อความมา: "${typedNotes}"
 
 วิเคราะห์และตอบกลับเป็น JSON Object เท่านั้น:
 {
@@ -232,26 +382,33 @@ export const SetthiMooAuanView: React.FC = () => {
   "replyMessage": "ข้อความตอบกลับน่ารัก อู๊ดๆ 🐷"
 }
 `;
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${effectiveGeminiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
-            }),
-          }
-        );
+        for (const model of candidateModels) {
+          try {
+            const res = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveGeminiKey}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
+                }),
+              }
+            );
 
-        if (res.ok) {
-          const data = await res.json();
-          const raw = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (raw) parsed = JSON.parse(raw.trim());
+            if (res.ok) {
+              const data = await res.json();
+              const raw = data.candidates?.[0]?.content?.parts?.[0]?.text;
+              if (raw) {
+                parsed = JSON.parse(raw.trim());
+                break;
+              }
+            }
+          } catch {}
         }
       }
 
-      if (!parsed) parsed = localRegexParse(text);
+      if (!parsed) parsed = localRegexParse(typedNotes);
 
       if (parsed.amount > 0) {
         const isFood = parsed.isFood || parsed.category === 'อาหารและเครื่องดื่ม';
@@ -289,7 +446,7 @@ export const SetthiMooAuanView: React.FC = () => {
           amount: Number(parsed.amount),
           wallet: parsed.wallet || 'เงินสด',
           merchant: parsed.merchant || 'รายการจดด่วน',
-          note: parsed.note || text,
+          note: parsed.note || typedNotes,
           linked_food_log_id: foodId,
           food_kcal: isFood ? foodKcalAmt : undefined,
         });
@@ -320,7 +477,7 @@ export const SetthiMooAuanView: React.FC = () => {
       }
     } catch (err) {
       console.error(err);
-      const fallback = localRegexParse(text);
+      const fallback = localRegexParse(typedNotes);
       if (fallback.amount > 0) {
         const newTx = await addTransaction({
           user_id: activeProfileKey,
@@ -350,159 +507,6 @@ export const SetthiMooAuanView: React.FC = () => {
       setIsProcessing(false);
       setProcessingStatus('');
     }
-  };
-
-  // Handle Slip Upload(s) directly into Chat
-  const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0 || isProcessing) return;
-
-    const filesArray = Array.from(files);
-    e.target.value = ''; // Reset input so same file can be picked again
-
-    // Create user message with preview URLs immediately
-    const previewUrls = filesArray.map((f) => URL.createObjectURL(f));
-    const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-
-    setChatMessages((prev) => [
-      ...prev,
-      {
-        id: 'user-slips-' + Date.now(),
-        sender: 'user',
-        text: `แนบสลิป ${filesArray.length} รายการ`,
-        images: previewUrls,
-        createdAt: nowTime,
-      },
-    ]);
-
-    setIsProcessing(true);
-
-    for (let i = 0; i < filesArray.length; i++) {
-      const file = filesArray[i];
-      setProcessingStatus(`กำลังสแกนสลิปใบที่ ${i + 1}/${filesArray.length} ด้วย AI...`);
-
-      try {
-        const base64Data = await fileToBase64(file);
-        const cleanBase64 = base64Data.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '');
-
-        const prompt = `
-วิเคราะห์ภาพสลิปโอนเงินธนาคารไทย หรือใบเสร็จร้านค้า ตอบกลับเป็น JSON เท่านั้น:
-{
-  "bank": "ชื่อธนาคาร เช่น KBank, SCB, PromptPay, TrueMoney",
-  "merchant": "ชื่อผู้รับเงิน หรือชื่อร้านค้า",
-  "amount": 0.00,
-  "datetime": "YYYY-MM-DD HH:mm",
-  "slipRef": "เลขอ้างอิงสลิป",
-  "suggestedCategory": "เลือก 1 ชื่อหมวดหมู่: [อาหารและเครื่องดื่ม, เดินทาง / น้ำมัน, ของใช้ & ช้อปปิ้ง, บิล & ค่าน้ำค่าไฟ, สุขภาพ / ยา / คลินิก, บันเทิง & สังสรรค์, ค่าใช้จ่ายอื่นๆ]",
-  "isFood": false,
-  "estimatedKcal": 450,
-  "type": "EXPENSE",
-  "note": "บันทึกช่วยจำในสลิป"
-}
-`;
-        const res = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${effectiveGeminiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [
-                {
-                  parts: [
-                    { text: prompt },
-                    {
-                      inline_data: {
-                        mime_type: file.type || 'image/jpeg',
-                        data: cleanBase64,
-                      },
-                    },
-                  ],
-                },
-              ],
-              generationConfig: { responseMimeType: 'application/json', temperature: 0.1 },
-            }),
-          }
-        );
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        const parsed = JSON.parse(rawJson.trim());
-
-        const isFood = parsed.isFood || parsed.suggestedCategory === 'อาหารและเครื่องดื่ม';
-        const foodKcalAmt = parsed.estimatedKcal || 450;
-        let foodId: string | undefined = undefined;
-
-        const dateParts = (parsed.datetime || '').split(' ');
-        const slipDate = dateParts[0] || selectedDate;
-        const slipTime = dateParts[1] || nowTime;
-
-        // Auto Two-Way Dual-Log to Fit if food
-        if (isFood && parsed.type === 'EXPENSE') {
-          foodId = 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
-          await addFoodLog({
-            date: slipDate,
-            time: slipTime,
-            meal: 'lunch',
-            name: parsed.merchant || 'มื้ออาหาร',
-            grams: 200,
-            kcal: foodKcalAmt,
-            protein_g: 22,
-            carb_g: 45,
-            fat_g: 12,
-            source: 'ai',
-            price_thb: Number(parsed.amount) || 0,
-            payment_channel: parsed.bank || 'KBank',
-            note: 'สแกนสลิปจากเศรษฐีหมูอ้วน',
-          });
-        }
-
-        // Add Transaction (which triggers Google Sheets realtime sync)
-        const newTx = await addTransaction({
-          user_id: activeProfileKey,
-          user_name: isMaxnum ? 'แม็กนั่ม (Maxnum)' : 'มะนาว (Manow)',
-          date: slipDate,
-          time: slipTime,
-          type: parsed.type || 'EXPENSE',
-          category: parsed.suggestedCategory || 'อาหารและเครื่องดื่ม',
-          amount: Number(parsed.amount) || 0,
-          wallet: parsed.bank || 'KBank',
-          merchant: parsed.merchant || 'สลิปโอนเงิน',
-          note: parsed.note || '',
-          slipRef: parsed.slipRef,
-          linked_food_log_id: foodId,
-          food_kcal: isFood ? foodKcalAmt : undefined,
-        });
-
-        // Add Bot message
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            id: 'bot-slip-' + Date.now() + '-' + i,
-            sender: 'bot',
-            text: `สแกนสลิป "${newTx.merchant}" ยอด ฿${newTx.amount.toLocaleString()} สำเร็จแล้วครับ! 🐷`,
-            transaction: newTx,
-            foodKcal: isFood ? foodKcalAmt : undefined,
-            isSyncedGoogleSheet: true,
-            createdAt: nowTime,
-          },
-        ]);
-      } catch (err: any) {
-        console.error(err);
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            id: 'bot-err-' + Date.now() + '-' + i,
-            sender: 'bot',
-            text: `ขออภัยครับ สแกนสลิปใบที่ ${i + 1} ไม่สำเร็จ (${err.message || 'ตรวจไม่พบข้อมูล'}) คุณสามารถพิมพ์บอกจำนวนเงินแทนได้เลยครับ 🐷`,
-            createdAt: nowTime,
-          },
-        ]);
-      }
-    }
-
-    setIsProcessing(false);
-    setProcessingStatus('');
   };
 
   // Handle Manual Save from Modal
@@ -824,9 +828,39 @@ export const SetthiMooAuanView: React.FC = () => {
             ))}
           </div>
 
+          {/* Staged Slip Previews Bar (Upload + Type details before Send!) */}
+          {stagedSlips.length > 0 && (
+            <div className="p-2.5 bg-amber-50/90 border-t border-amber-200 flex items-center gap-2 overflow-x-auto animate-fadeIn">
+              <span className="text-[11px] font-bold text-amber-900 shrink-0">
+                แนบสลิป ({stagedSlips.length}):
+              </span>
+              <div className="flex items-center gap-2">
+                {stagedSlips.map((st, idx) => (
+                  <div
+                    key={idx}
+                    className="relative w-12 h-16 rounded-lg overflow-hidden border border-amber-300 shadow-2xs shrink-0 bg-slate-800"
+                  >
+                    <img src={st.previewUrl} alt="Staged slip" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeStagedSlip(idx)}
+                      className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/70 hover:bg-rose-500 text-white flex items-center justify-center text-[9px] cursor-pointer"
+                      title="ลบสลิปนี้"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <span className="text-[10px] text-amber-700 italic">
+                (พิมพ์รายละเอียด เช่น "หาร 3 คน" แล้วกดส่งได้เลย)
+              </span>
+            </div>
+          )}
+
           {/* Chat Input Bar */}
           <form
-            onSubmit={handleSendTextMessage}
+            onSubmit={handleChatSubmit}
             className="p-2.5 sm:p-3 bg-white border-t border-slate-200 flex items-center gap-2 shrink-0"
           >
             {/* Camera / Slip Upload Button */}
@@ -834,11 +868,17 @@ export const SetthiMooAuanView: React.FC = () => {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isProcessing}
-              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 disabled:opacity-50"
+              className={`p-2 sm:px-3 sm:py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 disabled:opacity-50 ${
+                stagedSlips.length > 0
+                  ? 'bg-amber-500 text-white'
+                  : 'bg-amber-100 hover:bg-amber-200 text-amber-800'
+              }`}
               title="แนบรูปสลิปโอนเงิน (เลือกได้หลายรูป)"
             >
-              <Camera size={18} className="text-amber-700" />
-              <span className="hidden sm:inline">แนบสลิป</span>
+              <Camera size={18} className={stagedSlips.length > 0 ? 'text-white' : 'text-amber-700'} />
+              <span className="hidden sm:inline">
+                {stagedSlips.length > 0 ? `แนบแล้ว (${stagedSlips.length})` : 'แนบสลิป'}
+              </span>
             </button>
 
             {/* Text Input */}
@@ -846,7 +886,11 @@ export const SetthiMooAuanView: React.FC = () => {
               type="text"
               value={chatInputText}
               onChange={(e) => setChatInputText(e.target.value)}
-              placeholder="พิมพ์ เช่น 'ข้าวกะเพรา 60 kbank' หรือกดแนบสลิป..."
+              placeholder={
+                stagedSlips.length > 0
+                  ? 'พิมพ์รายละเอียดสลิป เช่น "หาร 3 คน" แล้วกดส่ง...'
+                  : "พิมพ์ เช่น 'ข้าวกะเพรา 60 kbank' หรือกดแนบสลิป..."
+              }
               disabled={isProcessing}
               className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-amber-400 focus:bg-white transition"
             />
@@ -854,7 +898,7 @@ export const SetthiMooAuanView: React.FC = () => {
             {/* Send Button */}
             <button
               type="submit"
-              disabled={!chatInputText.trim() || isProcessing}
+              disabled={(!chatInputText.trim() && stagedSlips.length === 0) || isProcessing}
               className="p-2 sm:px-4 sm:py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-xs shrink-0 disabled:opacity-40"
             >
               <Send size={15} />
@@ -1054,17 +1098,23 @@ export const SetthiMooAuanView: React.FC = () => {
                           type="button"
                           onClick={() => setEditingTransaction(tx)}
                           className="p-1 rounded-lg text-slate-400 hover:text-slate-700 cursor-pointer"
+                          title="แก้ไขรายการ"
                         >
                           <Edit2 size={13} />
                         </button>
                         <button
                           type="button"
                           onClick={() => {
-                            if (confirm(`ต้องการลบรายการ "${tx.merchant}" หรือไม่?`)) {
-                              deleteTransaction(tx.id);
+                            if (tx.linked_food_log_id) {
+                              setDeletingTx(tx);
+                            } else {
+                              if (confirm(`ต้องการลบรายการ "${tx.merchant}" หรือไม่?`)) {
+                                deleteTransaction(tx.id);
+                              }
                             }
                           }}
                           className="p-1 rounded-lg text-slate-400 hover:text-rose-500 cursor-pointer"
+                          title="ลบรายการ"
                         >
                           <Trash2 size={13} />
                         </button>
@@ -1074,6 +1124,68 @@ export const SetthiMooAuanView: React.FC = () => {
                 })}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Smart Linked Deletion Modal */}
+      {deletingTx && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl border border-slate-200 space-y-4">
+            <div className="flex items-center justify-between border-b pb-2">
+              <h3 className="font-black text-slate-800 text-sm flex items-center gap-1.5">
+                <span>⚠️ ยืนยันการลบรายการ</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setDeletingTx(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="text-xs text-slate-600 space-y-2">
+              <p>
+                รายการ <strong>"{deletingTx.merchant}"</strong> (฿{deletingTx.amount.toLocaleString()}) มีการเชื่อมโยงกับมื้ออาหารใน <strong>หมูอ้วนฟิต</strong>
+              </p>
+              <p className="text-slate-400">
+                คุณต้องการลบเฉพาะรายการเงิน หรือลบมื้ออาหารในหมูอ้วนฟิตออกด้วย?
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  deleteTransaction(deletingTx.id, true);
+                  setDeletingTx(null);
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-95 transition"
+              >
+                <Trash2 size={14} />
+                <span>ลบทั้งสองฝั่ง (ทั้งเงินและอาหาร)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  deleteTransaction(deletingTx.id, false);
+                  setDeletingTx(null);
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition"
+              >
+                <span>ลบเฉพาะรายการเงิน (เก็บอาหารไว้)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDeletingTx(null)}
+                className="w-full py-1.5 text-center text-xs font-semibold text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -81,6 +81,12 @@ export const FoodView: React.FC = () => {
 
   // Sub-tab Navigation: 'daily' (Daily Food Log) | 'analytics' (Nutrition & History Analytics)
   const [subTab, setSubTab] = useState<'daily' | 'analytics'>('daily');
+  // Daily Subtab: 'chat' (AI Food Chat) | 'history' (Today Food Logs)
+  const [foodSubTab, setFoodSubTab] = useState<'chat' | 'history'>('chat');
+  // Staged Food Photos for chat (allows typing notes before sending!)
+  const [stagedFoodPhotos, setStagedFoodPhotos] = useState<{ file: File; previewUrl: string }[]>([]);
+  // Smart Linked Deletion state
+  const [deletingFoodLog, setDeletingFoodLog] = useState<FoodLog | null>(null);
 
   // Quick Food Reference & AI Trainer Modal state
   const [showFoodDbModal, setShowFoodDbModal] = useState(false);
@@ -720,34 +726,177 @@ export const FoodView: React.FC = () => {
     }
   };
 
-  // Send Natural Text in Food Chat
+  // Staged Food Photos Handlers
+  const handleFoodPhotoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const newStaged = Array.from(files).map((f) => ({
+      file: f,
+      previewUrl: URL.createObjectURL(f),
+    }));
+    setStagedFoodPhotos((prev) => [...prev, ...newStaged]);
+    e.target.value = '';
+  };
+
+  const removeStagedFoodPhoto = (index: number) => {
+    setStagedFoodPhotos((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  // Smart Delete Food Log Handler
+  const handleDeleteFoodClick = (log: FoodLog) => {
+    if (log.linked_transaction_id || (log.price_thb && log.price_thb > 0)) {
+      setDeletingFoodLog(log);
+    } else {
+      if (confirm(`ต้องการลบรายการอาหาร "${log.name}" หรือไม่?`)) {
+        deleteFoodLog(log.log_id, false);
+      }
+    }
+  };
+
+  // Send Food Chat (Handles Staged Photos + Typed Notes OR Text-Only)
   const handleSendFoodChatMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const text = foodChatInput.trim();
-    if (!text || isFoodChatProcessing) return;
+    const typedNotes = foodChatInput.trim();
+    const hasPhotos = stagedFoodPhotos.length > 0;
+    if (!typedNotes && !hasPhotos) return;
+    if (isFoodChatProcessing) return;
 
     const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
 
     // Extract price if any
     let detectedPrice: number | undefined = undefined;
-    const priceMatch = text.match(/(\d+(\.\d+)?)\s*(บาท|บ\.)/i) || text.match(/(\d+)\s*(kbank|scb|promptpay|เงินสด|บัตร)/i);
+    const priceMatch = typedNotes.match(/(\d+(\.\d+)?)\s*(บาท|บ\.)/i) || typedNotes.match(/(\d+)\s*(kbank|scb|promptpay|เงินสด|บัตร)/i);
     if (priceMatch) {
       detectedPrice = parseFloat(priceMatch[1]);
     }
 
     // Extract wallet if any
     let detectedWallet = 'KBank';
-    if (text.toLowerCase().includes('scb') || text.includes('ไทยพาณิชย์')) detectedWallet = 'SCB';
-    else if (text.includes('พร้อมเพย์') || text.toLowerCase().includes('promptpay')) detectedWallet = 'PromptPay';
-    else if (text.includes('เงินสด')) detectedWallet = 'เงินสด';
-    else if (text.includes('บัตร')) detectedWallet = 'บัตรเครดิต';
+    if (typedNotes.toLowerCase().includes('scb') || typedNotes.includes('ไทยพาณิชย์')) detectedWallet = 'SCB';
+    else if (typedNotes.includes('พร้อมเพย์') || typedNotes.toLowerCase().includes('promptpay')) detectedWallet = 'PromptPay';
+    else if (typedNotes.includes('เงินสด')) detectedWallet = 'เงินสด';
+    else if (typedNotes.includes('บัตร')) detectedWallet = 'บัตรเครดิต';
 
+    // CASE 1: Photos are staged (with or without typed notes)
+    if (hasPhotos) {
+      const photosToProcess = [...stagedFoodPhotos];
+      const previewUrls = photosToProcess.map((p) => p.previewUrl);
+
+      setFoodChatMessages((prev) => [
+        ...prev,
+        {
+          id: 'user-photo-' + Date.now(),
+          sender: 'user',
+          text: typedNotes ? `${typedNotes} (แนบรูปอาหาร ${photosToProcess.length} รูป)` : `ถ่ายรูปอาหาร ${photosToProcess.length} รูป`,
+          imageUrl: previewUrls[0],
+          createdAt: nowTime,
+        },
+      ]);
+
+      setStagedFoodPhotos([]);
+      setFoodChatInput('');
+      setIsFoodChatProcessing(true);
+      setFoodChatStatus('หมูอ้วนกำลังดูรูปและคำนวณสารอาหาร...');
+
+      try {
+        const resizedImages = await Promise.all(
+          photosToProcess.map((p) => resizeImageToMaxDimension(p.file, 1024, 0.85))
+        );
+
+        const response = await analyzeFoodImage({
+          base64Images: resizedImages.map((img) => ({ base64: img.base64, mimeType: img.mimeType })),
+          apiKey: effectiveGeminiKey,
+          userNotes: typedNotes || undefined,
+        });
+
+        if (response.items && response.items.length > 0) {
+          let totalKcal = 0;
+          for (let i = 0; i < response.items.length; i++) {
+            const item = response.items[i];
+            const itemPrice = (detectedPrice && i === 0) ? detectedPrice : undefined;
+            totalKcal += item.kcal;
+
+            const payload = {
+              date: selectedDate,
+              time: nowTime,
+              meal: 'lunch' as MealType,
+              name: item.name,
+              grams: Number(item.grams) || 0,
+              kcal: Number(item.kcal) || 0,
+              protein_g: Number(item.protein_g) || 0,
+              carb_g: Number(item.carb_g) || 0,
+              fat_g: Number(item.fat_g) || 0,
+              fiber_g: typeof item.fiber_g === 'number' ? item.fiber_g : (item.fiber_g ? Number(item.fiber_g) : undefined),
+              sugar_g: typeof item.sugar_g === 'number' ? item.sugar_g : (item.sugar_g ? Number(item.sugar_g) : undefined),
+              sodium_mg: typeof item.sodium_mg === 'number' ? item.sodium_mg : (item.sodium_mg ? Number(item.sodium_mg) : undefined),
+              micros: item.micros,
+              source: 'ai' as const,
+              confidence: item.confidence ?? 0.95,
+              user_id: selectedUserKey,
+              note: typedNotes || undefined,
+              price_thb: itemPrice,
+              payment_channel: itemPrice ? detectedWallet : undefined,
+            };
+
+            if (itemPrice && itemPrice > 0) {
+              await addFoodLogWithFinance(payload, {
+                price: itemPrice,
+                wallet: detectedWallet,
+              });
+            } else {
+              await addFoodLog(payload);
+            }
+          }
+
+          setFoodChatMessages((prev) => [
+            ...prev,
+            {
+              id: 'bot-photo-' + Date.now(),
+              sender: 'bot',
+              text: `สแกนจากรูปอาหารเรียบร้อยแล้วครับ! รวมประมาณ ${totalKcal} kcal 🐷🍽️`,
+              items: response.items,
+              totalKcal,
+              priceThb: detectedPrice,
+              wallet: detectedWallet,
+              createdAt: nowTime,
+            },
+          ]);
+        } else {
+          setFoodChatMessages((prev) => [
+            ...prev,
+            {
+              id: 'bot-' + Date.now(),
+              sender: 'bot',
+              text: 'ขออภัยครับ หมูอ้วนไม่พบอาหารจากรูปนี้ กรุณาลองพิมพ์ชื่ออาหารหรือถ่ายใหม่อีกครั้งครับ 🐷',
+              createdAt: nowTime,
+            },
+          ]);
+        }
+      } catch (err: any) {
+        console.error(err);
+        setFoodChatMessages((prev) => [
+          ...prev,
+          {
+            id: 'bot-' + Date.now(),
+            sender: 'bot',
+            text: `สแกนรูปอาหารไม่สำเร็จ (${err?.message || 'เกิดข้อผิดพลาด'}) คุณสามารถพิมพ์บอกชื่ออาหารแทนได้ครับ 🐷`,
+            createdAt: nowTime,
+          },
+        ]);
+      } finally {
+        setIsFoodChatProcessing(false);
+        setFoodChatStatus('');
+      }
+      return;
+    }
+
+    // CASE 2: Text-Only Food Chat
     setFoodChatMessages((prev) => [
       ...prev,
       {
         id: 'user-' + Date.now(),
         sender: 'user',
-        text,
+        text: typedNotes,
         createdAt: nowTime,
       },
     ]);
@@ -758,7 +907,7 @@ export const FoodView: React.FC = () => {
 
     try {
       const response = await analyzeFoodText({
-        query: text,
+        query: typedNotes,
         apiKey: effectiveGeminiKey,
       });
 
@@ -786,7 +935,7 @@ export const FoodView: React.FC = () => {
             source: 'ai' as const,
             confidence: item.confidence ?? 0.95,
             user_id: selectedUserKey,
-            note: text,
+            note: typedNotes,
             price_thb: itemPrice,
             payment_channel: itemPrice ? detectedWallet : undefined,
           };
@@ -832,7 +981,7 @@ export const FoodView: React.FC = () => {
         date: selectedDate,
         time: nowTime,
         meal: 'lunch',
-        name: text,
+        name: typedNotes,
         grams: 200,
         kcal: fallbackKcal,
         protein_g: 20,
@@ -848,105 +997,9 @@ export const FoodView: React.FC = () => {
         {
           id: 'bot-' + Date.now(),
           sender: 'bot',
-          text: `บันทึก "${text}" ลงมื้ออาหารเรียบร้อยแล้วครับ! 🐷`,
+          text: `บันทึก "${typedNotes}" ลงมื้ออาหารเรียบร้อยแล้วครับ! 🐷`,
           totalKcal: fallbackKcal,
           priceThb: detectedPrice,
-          createdAt: nowTime,
-        },
-      ]);
-    } finally {
-      setIsFoodChatProcessing(false);
-      setFoodChatStatus('');
-    }
-  };
-
-  // Handle Photo uploaded in Food Chat
-  const handleFoodPhotoInChat = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0 || isFoodChatProcessing) return;
-
-    const file = files[0];
-    e.target.value = '';
-
-    const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-    const { base64, mimeType } = await resizeImageToMaxDimension(file, 1024, 0.85);
-    const previewUrl = `data:${mimeType};base64,${base64}`;
-
-    setFoodChatMessages((prev) => [
-      ...prev,
-      {
-        id: 'user-photo-' + Date.now(),
-        sender: 'user',
-        text: 'ถ่ายรูปอาหาร',
-        imageUrl: previewUrl,
-        createdAt: nowTime,
-      },
-    ]);
-
-    setIsFoodChatProcessing(true);
-    setFoodChatStatus('หมูอ้วนกำลังดูรูปและคำนวณแคลอรี่...');
-
-    try {
-      const response = await analyzeFoodImage({
-        base64Image: base64,
-        mimeType,
-        apiKey: effectiveGeminiKey,
-      });
-
-      if (response.items && response.items.length > 0) {
-        let totalKcal = 0;
-        for (const item of response.items) {
-          totalKcal += item.kcal;
-          await addFoodLog({
-            date: selectedDate,
-            time: nowTime,
-            meal: 'lunch',
-            name: item.name,
-            grams: Number(item.grams) || 0,
-            kcal: Number(item.kcal) || 0,
-            protein_g: Number(item.protein_g) || 0,
-            carb_g: Number(item.carb_g) || 0,
-            fat_g: Number(item.fat_g) || 0,
-            fiber_g: typeof item.fiber_g === 'number' ? item.fiber_g : undefined,
-            sugar_g: typeof item.sugar_g === 'number' ? item.sugar_g : undefined,
-            sodium_mg: typeof item.sodium_mg === 'number' ? item.sodium_mg : undefined,
-            micros: item.micros,
-            source: 'ai',
-            confidence: item.confidence ?? 0.9,
-            user_id: selectedUserKey,
-          });
-        }
-
-        setFoodChatMessages((prev) => [
-          ...prev,
-          {
-            id: 'bot-photo-' + Date.now(),
-            sender: 'bot',
-            text: `สแกนจากรูปภาพเรียบร้อยแล้วครับ! ทั้งหมดประมาณ ${totalKcal} kcal 🐷🍽️`,
-            items: response.items,
-            totalKcal,
-            createdAt: nowTime,
-          },
-        ]);
-      } else {
-        setFoodChatMessages((prev) => [
-          ...prev,
-          {
-            id: 'bot-' + Date.now(),
-            sender: 'bot',
-            text: 'ขออภัยครับ ตรวจไม่พบอาหารจากรูปนี้ คุณสามารถพิมพ์บอกชื่ออาหารแทนได้เลยครับ 🐷',
-            createdAt: nowTime,
-          },
-        ]);
-      }
-    } catch (err: any) {
-      console.error(err);
-      setFoodChatMessages((prev) => [
-        ...prev,
-        {
-          id: 'bot-' + Date.now(),
-          sender: 'bot',
-          text: `สแกนรูปอาหารไม่สำเร็จ (${err.message || 'เกิดข้อผิดพลาด'}) คุณสามารถพิมพ์บอกชื่ออาหารแทนได้ครับ 🐷`,
           createdAt: nowTime,
         },
       ]);
@@ -1755,13 +1808,45 @@ export const FoodView: React.FC = () => {
         type="file"
         accept="image/*"
         ref={foodPhotoInputRef}
-        onChange={handleFoodPhotoInChat}
+        onChange={handleFoodPhotoSelected}
+        multiple
         className="hidden"
       />
 
       {/* ======================================================== */}
-      {/* CHAT-FIRST INTERFACE: หมูอ้วนสายกิน (AI Food Chat)     */}
+      {/* SUBTAB SWITCHER: Chat vs Today's Food List (Matching Setthi) */}
       {/* ======================================================== */}
+      <div className="flex bg-pink-100/70 p-1 rounded-2xl border border-pink-200 shadow-2xs">
+        <button
+          type="button"
+          onClick={() => setFoodSubTab('chat')}
+          className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            foodSubTab === 'chat'
+              ? 'bg-pink-500 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <MessageCircle size={15} />
+          <span>แชทบันทึกอาหาร</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setFoodSubTab('history')}
+          className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            foodSubTab === 'history'
+              ? 'bg-pink-500 text-white shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <UtensilsCrossed size={15} />
+          <span>รายการอาหารวันนี้ ({todayLogs.length})</span>
+        </button>
+      </div>
+
+      {/* ======================================================== */}
+      {/* SUBTAB 1: CHAT-FIRST INTERFACE: หมูอ้วนสายกิน (AI Food Chat) */}
+      {/* ======================================================== */}
+      {foodSubTab === 'chat' && (
       <div className="bg-white rounded-3xl border-2 border-pink-200 shadow-sm overflow-hidden flex flex-col h-[52vh] sm:h-[56vh]">
         {/* Chat Messages Stream */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3.5 overscroll-contain">
@@ -1876,6 +1961,35 @@ export const FoodView: React.FC = () => {
           ))}
         </div>
 
+        {/* Staged Food Photos Preview Bar (Shows selected photos & allows typing details before sending!) */}
+        {stagedFoodPhotos.length > 0 && (
+          <div className="px-3 py-2 bg-pink-50 border-t border-pink-100 flex items-center gap-2 overflow-x-auto">
+            <span className="text-[11px] font-bold text-pink-700 shrink-0">รูปที่เลือก:</span>
+            {stagedFoodPhotos.map((photo, idx) => (
+              <div key={idx} className="relative w-12 h-12 rounded-lg overflow-hidden border border-pink-300 shadow-2xs shrink-0 bg-slate-900">
+                <img src={photo.previewUrl} alt="staged food" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => removeStagedFoodPhoto(idx)}
+                  className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/70 hover:bg-rose-500 text-white flex items-center justify-center text-[9px] cursor-pointer"
+                  title="ลบรูปนี้"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => foodPhotoInputRef.current?.click()}
+              className="w-12 h-12 rounded-lg border border-dashed border-pink-300 flex flex-col items-center justify-center text-pink-500 hover:bg-pink-100/50 text-[10px] shrink-0 cursor-pointer"
+              title="เพิ่มรูปมุมอื่น"
+            >
+              <Plus size={14} />
+              <span>เพิ่ม</span>
+            </button>
+          </div>
+        )}
+
         {/* Chat Input Bar */}
         <form
           onSubmit={handleSendFoodChatMessage}
@@ -1886,11 +2000,17 @@ export const FoodView: React.FC = () => {
             type="button"
             onClick={() => foodPhotoInputRef.current?.click()}
             disabled={isFoodChatProcessing}
-            className="p-2 sm:px-3 sm:py-2 rounded-xl bg-pink-100 hover:bg-pink-200 text-pink-800 font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 disabled:opacity-50"
+            className={`p-2 sm:px-3 sm:py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-2xs shrink-0 disabled:opacity-50 ${
+              stagedFoodPhotos.length > 0
+                ? 'bg-pink-500 text-white'
+                : 'bg-pink-100 hover:bg-pink-200 text-pink-800'
+            }`}
             title="ถ่ายรูปอาหารหรือเลือกจากอัลบั้ม"
           >
-            <Camera size={18} className="text-pink-600" />
-            <span className="hidden sm:inline">ถ่ายรูป</span>
+            <Camera size={18} className={stagedFoodPhotos.length > 0 ? 'text-white' : 'text-pink-600'} />
+            <span className="hidden sm:inline">
+              {stagedFoodPhotos.length > 0 ? `รูป (${stagedFoodPhotos.length})` : 'ถ่ายรูป'}
+            </span>
           </button>
 
           {/* Text Input */}
@@ -1898,7 +2018,11 @@ export const FoodView: React.FC = () => {
             type="text"
             value={foodChatInput}
             onChange={(e) => setFoodChatInput(e.target.value)}
-            placeholder="พิมพ์ เช่น 'ข้าวกะเพราหมูกรอบ 70 kbank' หรือส่งรูป..."
+            placeholder={
+              stagedFoodPhotos.length > 0
+                ? "พิมพ์รายละเอียด เช่น 'กินครึ่งเดียว 50 บาท' แล้วกดส่ง..."
+                : "พิมพ์ เช่น 'ข้าวกะเพราหมูกรอบ 70 kbank' หรือส่งรูป..."
+            }
             disabled={isFoodChatProcessing}
             className="flex-1 px-3 py-2 bg-pink-50/40 border border-pink-200 rounded-xl text-xs sm:text-sm text-slate-800 focus:outline-none focus:border-pink-400 focus:bg-white transition"
           />
@@ -1906,7 +2030,7 @@ export const FoodView: React.FC = () => {
           {/* Send Button */}
           <button
             type="submit"
-            disabled={!foodChatInput.trim() || isFoodChatProcessing}
+            disabled={(!foodChatInput.trim() && stagedFoodPhotos.length === 0) || isFoodChatProcessing}
             className="p-2 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer shadow-xs shrink-0 disabled:opacity-40"
           >
             <Send size={15} />
@@ -1914,6 +2038,7 @@ export const FoodView: React.FC = () => {
           </button>
         </form>
       </div>
+      )}
 
       {/* Non-blocking Background Analyzing Indicator */}
       {isFoodScanning && (
@@ -1973,7 +2098,10 @@ export const FoodView: React.FC = () => {
         </div>
       )}
 
-      {/* Today's Logged Food List */}
+      {/* ======================================================== */}
+      {/* SUBTAB 2: TODAY'S LOGGED FOOD LIST                       */}
+      {/* ======================================================== */}
+      {foodSubTab === 'history' && (
       <div className="bg-white/90 p-5 rounded-3xl border border-pink-200/70 shadow-sm shadow-pink-100/30 space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-pink-100">
           <div>
@@ -2068,12 +2196,8 @@ export const FoodView: React.FC = () => {
                     <Edit2 size={13} />
                   </button>
                   <button
-                    onClick={() => {
-                      if (confirm(`ต้องการลบรายการ "${log.name}" หรือไม่?`)) {
-                        deleteFoodLog(log.log_id);
-                      }
-                    }}
-                    className="p-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-500 border border-pink-200/70 transition"
+                    onClick={() => handleDeleteFoodClick(log)}
+                    className="p-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-500 border border-pink-200/70 transition cursor-pointer"
                     title="ลบรายการ"
                   >
                     <Trash2 size={13} />
@@ -2084,7 +2208,58 @@ export const FoodView: React.FC = () => {
           </div>
         )}
       </div>
+      )}
         </>
+      )}
+
+      {/* Smart Linked Deletion Modal for Food Log */}
+      {deletingFoodLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="bg-white rounded-3xl p-5 max-w-sm w-full space-y-4 shadow-2xl border border-pink-200">
+            <div className="text-center space-y-1">
+              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-xl">
+                🗑️
+              </div>
+              <h3 className="font-bold text-slate-800 text-base">ลบรายการอาหาร</h3>
+              <p className="text-xs text-slate-500">
+                รายการ "{deletingFoodLog.name}" เชื่อมโยงกับรายจ่าย{' '}
+                {deletingFoodLog.price_thb ? `฿${deletingFoodLog.price_thb.toLocaleString()}` : ''} ในหมูอ้วนเศรษฐี
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  deleteFoodLog(deletingFoodLog.log_id, true);
+                  setDeletingFoodLog(null);
+                }}
+                className="w-full py-2.5 px-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-sm"
+              >
+                <span>ลบทั้งสองฝั่ง (ทั้งอาหารและรายจ่าย)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  deleteFoodLog(deletingFoodLog.log_id, false);
+                  setDeletingFoodLog(null);
+                }}
+                className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer"
+              >
+                <span>ลบเฉพาะอาหาร (เก็บรายจ่ายไว้)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setDeletingFoodLog(null)}
+                className="w-full py-2 px-3 rounded-xl text-slate-400 hover:text-slate-600 font-semibold text-xs cursor-pointer"
+              >
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Photo Preview & Note Modal (Appears immediately AFTER taking or uploading photo(s)) */}

@@ -124,7 +124,7 @@ interface AppContextType {
   allFoodLogs: FoodLog[];
   addFoodLog: (log: Omit<FoodLog, 'log_id'>) => Promise<void>;
   updateFoodLog: (log_id: string, updates: Partial<FoodLog>) => Promise<void>;
-  deleteFoodLog: (log_id: string) => void;
+  deleteFoodLog: (log_id: string, deleteLinkedTransaction?: boolean) => void;
   // Global AI Food Scanning (Persistent background scan)
   isFoodScanning: boolean;
   foodScanStatus: string | null;
@@ -196,7 +196,7 @@ interface AppContextType {
   allTransactions: Transaction[];
   addTransaction: (tx: Omit<Transaction, 'id' | 'createdAt'>) => Promise<Transaction>;
   updateTransaction: (id: string, updates: Partial<Transaction>) => Promise<void>;
-  deleteTransaction: (id: string) => Promise<void>;
+  deleteTransaction: (id: string, deleteLinkedFood?: boolean) => Promise<void>;
   addFoodLogWithFinance: (
     food: Omit<FoodLog, 'log_id'>,
     financeOption?: { price: number; wallet?: string }
@@ -2434,8 +2434,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const deleteFoodLog = (log_id: string) => {
+  const deleteFoodLog = (log_id: string, deleteLinkedTransaction: boolean = false) => {
     markDeletedId(log_id);
+    const targetLog = allFoodLogs.find((l) => l.log_id === log_id);
+
     setAllFoodLogs((prev) => {
       const updated = prev.filter((l) => l.log_id !== log_id);
       try {
@@ -2444,6 +2446,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch {}
       return updated;
     });
+
+    if (deleteLinkedTransaction && targetLog?.linked_transaction_id) {
+      deleteTransaction(targetLog.linked_transaction_id, false);
+    }
 
     const db = firestoreDbRef.current || getFirestoreInstance();
     if (db) {
@@ -2502,7 +2508,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  const deleteTransaction = async (id: string) => {
+  const deleteTransaction = async (id: string, deleteLinkedFood: boolean = false) => {
+    const targetTx = allTransactions.find((t) => t.id === id);
+
     setAllTransactions((prev) => {
       const updated = prev.filter((t) => t.id !== id);
       try {
@@ -2512,6 +2520,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       return updated;
     });
+
+    if (deleteLinkedFood && targetTx?.linked_food_log_id) {
+      deleteFoodLog(targetTx.linked_food_log_id, false);
+    }
   };
 
   const addFoodLogWithFinance = async (
