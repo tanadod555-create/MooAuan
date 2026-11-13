@@ -330,5 +330,7 @@ export interface AppSettings {
   autoSyncGoogleSheets: boolean;
   firebaseConfig?: FirebaseConfig;
   useFirebase?: boolean;
+  monthlyLimit?: number;
+  dailyBudget?: number;
 }
 

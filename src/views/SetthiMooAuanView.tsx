@@ -97,6 +97,7 @@ export const SetthiMooAuanView: React.FC = () => {
   const [processingStatus, setProcessingStatus] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+  const chatTextInputRef = useRef<HTMLInputElement>(null);
 
   // Staged Slips State (Allows typing notes before sending!)
   const [stagedSlips, setStagedSlips] = useState<{ file: File; previewUrl: string }[]>([]);
@@ -205,6 +206,11 @@ export const SetthiMooAuanView: React.FC = () => {
 
     setStagedSlips((prev) => [...prev, ...newStaged]);
     e.target.value = '';
+
+    setTimeout(() => {
+      chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      chatTextInputRef.current?.focus();
+    }, 100);
   };
 
   const removeStagedSlip = (index: number) => {
@@ -804,6 +810,69 @@ export const SetthiMooAuanView: React.FC = () => {
               </div>
             )}
 
+            {/* Live Pending Draft Bubble (Shows image staged in chat with real-time typed text!) */}
+            {stagedSlips.length > 0 && (
+              <div className="flex gap-2.5 justify-end animate-fadeIn">
+                <div className="max-w-[85%] sm:max-w-[75%] rounded-2xl p-3 text-xs sm:text-sm bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-dashed border-amber-400 text-amber-950 rounded-tr-xs shadow-md space-y-2.5">
+                  <div className="flex items-center justify-between text-[11px] font-black text-amber-900 pb-1.5 border-b border-amber-200/70">
+                    <span className="flex items-center gap-1.5">
+                      <span>📸 แนบรูปสลิปแล้ว ({stagedSlips.length} รูป)</span>
+                    </span>
+                    <span className="text-[10px] text-amber-800 bg-amber-200/70 px-2 py-0.5 rounded-full font-bold animate-pulse">
+                      ค้างไว้รอส่ง ⏳
+                    </span>
+                  </div>
+
+                  {/* Grid of staged slip images with clear remove buttons */}
+                  <div className="flex gap-2 flex-wrap">
+                    {stagedSlips.map((st, idx) => (
+                      <div
+                        key={idx}
+                        className="relative w-20 h-28 sm:w-24 sm:h-32 rounded-xl overflow-hidden border-2 border-amber-300 shadow-sm bg-slate-900 shrink-0"
+                      >
+                        <img src={st.previewUrl} alt="Staged slip" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeStagedSlip(idx)}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/80 hover:bg-rose-500 text-white flex items-center justify-center text-[10px] font-bold cursor-pointer shadow-md transition"
+                          title="ลบรูปสลิปนี้"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Live typing text preview */}
+                  <div className="bg-white/90 p-2.5 rounded-xl border border-amber-200/80 shadow-2xs">
+                    {chatInputText.trim() ? (
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-bold text-amber-700 block">ข้อความกำกับ:</span>
+                        <p className="font-bold text-slate-800 text-xs sm:text-sm break-words leading-relaxed">
+                          {chatInputText}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-amber-700 italic flex items-center gap-1.5">
+                        <span>✏️ พิมพ์รายละเอียดสลิปในช่องด้านล่าง (เช่น "หาร 3 คน 60 kbank") แล้วกดส่ง 🚀</span>
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between pt-0.5 text-[10px] text-amber-700">
+                    <span>กดปุ่ม "ส่ง" ด้านล่างเมื่อพิมพ์เสร็จ</span>
+                    <button
+                      type="button"
+                      onClick={() => setStagedSlips([])}
+                      className="text-rose-600 hover:underline font-bold cursor-pointer"
+                    >
+                      ยกเลิกรูปทั้งหมด
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div ref={chatBottomRef} />
           </div>
 
@@ -883,6 +952,7 @@ export const SetthiMooAuanView: React.FC = () => {
 
             {/* Text Input */}
             <input
+              ref={chatTextInputRef}
               type="text"
               value={chatInputText}
               onChange={(e) => setChatInputText(e.target.value)}
@@ -913,6 +983,24 @@ export const SetthiMooAuanView: React.FC = () => {
       {/* ======================================================== */}
       {subTab === 'dashboard' && (
         <div className="space-y-4">
+          {/* Budget Progress Ring */}
+          <div className="p-5 bg-white rounded-3xl border-2 border-slate-200 shadow-sm flex items-center gap-5">
+            <div className="relative w-20 h-20 flex items-center justify-center shrink-0">
+               <svg className="w-full h-full -rotate-90">
+                 <circle cx="40" cy="40" r="36" className="stroke-slate-100" strokeWidth="8" fill="none" />
+                 <circle cx="40" cy="40" r="36" className="stroke-pink-500" strokeWidth="8" fill="none" strokeDasharray={`${Math.min((monthExpense / (settings.monthlyLimit || 20000)) * 226, 226)} 226`} strokeLinecap="round" />
+               </svg>
+               <span className="absolute text-xs font-black text-slate-700">{Math.round((monthExpense / (settings.monthlyLimit || 20000)) * 100)}%</span>
+            </div>
+            <div className="space-y-1">
+               <h3 className="font-black text-slate-800 text-sm">งบรายจ่ายเดือนนี้</h3>
+               <p className="text-xs text-slate-500 font-bold">ใช้ไปแล้ว ฿{monthExpense.toLocaleString()} / ฿{(settings.monthlyLimit || 20000).toLocaleString()}</p>
+               <p className={`text-[11px] font-bold ${monthExpense > (settings.monthlyLimit || 20000) ? 'text-rose-500' : 'text-emerald-600'}`}>
+                 {monthExpense > (settings.monthlyLimit || 20000) ? 'เกินงบแล้ว!' : 'ยังอยู่ในงบ'}
+               </p>
+            </div>
+          </div>
+
           {/* Monthly Financial Summary Card */}
           <div className="p-4 sm:p-5 bg-white rounded-3xl border-2 border-slate-200 shadow-sm space-y-4">
             <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">

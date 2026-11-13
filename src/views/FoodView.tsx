@@ -327,6 +327,7 @@ export const FoodView: React.FC = () => {
   const [foodChatStatus, setFoodChatStatus] = useState('');
   const foodChatBottomRef = useRef<HTMLDivElement>(null);
   const foodPhotoInputRef = useRef<HTMLInputElement>(null);
+  const foodChatTextInputRef = useRef<HTMLInputElement>(null);
   const [foodChatMessages, setFoodChatMessages] = useState<FoodChatMessage[]>([
     {
       id: 'food-welcome',
@@ -736,6 +737,11 @@ export const FoodView: React.FC = () => {
     }));
     setStagedFoodPhotos((prev) => [...prev, ...newStaged]);
     e.target.value = '';
+
+    setTimeout(() => {
+      foodChatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      foodChatTextInputRef.current?.focus();
+    }, 100);
   };
 
   const removeStagedFoodPhoto = (index: number) => {
@@ -1937,6 +1943,69 @@ export const FoodView: React.FC = () => {
             </div>
           )}
 
+          {/* Live Pending Draft Bubble for Food Photos (Shows image staged in chat with real-time typed text!) */}
+          {stagedFoodPhotos.length > 0 && (
+            <div className="flex gap-2.5 justify-end animate-fadeIn">
+              <div className="max-w-[85%] sm:max-w-[75%] rounded-2xl p-3 text-xs sm:text-sm bg-gradient-to-br from-pink-50 to-rose-50 border-2 border-dashed border-pink-400 text-pink-950 rounded-tr-xs shadow-md space-y-2.5">
+                <div className="flex items-center justify-between text-[11px] font-black text-pink-900 pb-1.5 border-b border-pink-200/70">
+                  <span className="flex items-center gap-1.5">
+                    <span>📸 แนบรูปอาหารแล้ว ({stagedFoodPhotos.length} รูป)</span>
+                  </span>
+                  <span className="text-[10px] text-pink-700 bg-pink-200/70 px-2 py-0.5 rounded-full font-bold animate-pulse">
+                    ค้างไว้รอส่ง ⏳
+                  </span>
+                </div>
+
+                {/* Grid of staged food photos with clear remove buttons */}
+                <div className="flex gap-2 flex-wrap">
+                  {stagedFoodPhotos.map((photo, idx) => (
+                    <div
+                      key={idx}
+                      className="relative w-20 h-28 sm:w-24 sm:h-32 rounded-xl overflow-hidden border-2 border-pink-300 shadow-sm bg-slate-900 shrink-0"
+                    >
+                      <img src={photo.previewUrl} alt="Staged food" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removeStagedFoodPhoto(idx)}
+                        className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/75 hover:bg-rose-500 text-white flex items-center justify-center text-[10px] font-bold cursor-pointer shadow-md transition"
+                        title="ลบรูปนี้"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Live typing text preview */}
+                <div className="bg-white/90 p-2.5 rounded-xl border border-pink-200/80 shadow-2xs">
+                  {foodChatInput.trim() ? (
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold text-pink-700 block">ข้อความกำกับ:</span>
+                      <p className="font-bold text-slate-800 text-xs sm:text-sm break-words leading-relaxed">
+                        {foodChatInput}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-pink-700 italic flex items-center gap-1.5">
+                      <span>✏️ พิมพ์รายละเอียดอาหารในช่องด้านล่าง (เช่น "กินครึ่งเดียว 50 บาท") แล้วกดส่ง 🚀</span>
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between pt-0.5 text-[10px] text-pink-700">
+                  <span>กดปุ่ม "ส่ง" ด้านล่างเมื่อพิมพ์เสร็จ</span>
+                  <button
+                    type="button"
+                    onClick={() => setStagedFoodPhotos([])}
+                    className="text-rose-600 hover:underline font-bold cursor-pointer"
+                  >
+                    ยกเลิกรูปทั้งหมด
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div ref={foodChatBottomRef} />
         </div>
 
@@ -2015,6 +2084,7 @@ export const FoodView: React.FC = () => {
 
           {/* Text Input */}
           <input
+            ref={foodChatTextInputRef}
             type="text"
             value={foodChatInput}
             onChange={(e) => setFoodChatInput(e.target.value)}
