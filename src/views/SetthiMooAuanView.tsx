@@ -1,7 +1,13 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Transaction, TransactionType, MealType } from '../types';
-import { getDefaultGeminiApiKey, analyzeSlipImage } from '../services/gemini';
+import {
+  getDefaultGeminiApiKey,
+  analyzeSlipImage,
+  resizeImageToMaxDimension,
+  GEMINI_FLASH_MODELS,
+  fetchWithTimeout,
+} from '../services/gemini';
 import {
   DollarSign,
   PieChart,
@@ -245,12 +251,11 @@ export const SetthiMooAuanView: React.FC = () => {
       onProgress?.(`กำลังสแกนสลิปใบที่ ${i + 1}/${slipsToProcess.length} ด้วย AI...`);
 
       try {
-        const base64Data = await fileToBase64(item.file);
-        const cleanBase64 = base64Data.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '');
+        const { base64: cleanBase64, mimeType } = await resizeImageToMaxDimension(item.file, 1024, 0.8);
 
         const parsed = await analyzeSlipImage({
           base64Image: cleanBase64,
-          mimeType: item.file.type || 'image/jpeg',
+          mimeType,
           userNotes: typedNotes || undefined,
           apiKey: effectiveGeminiKey,
         });
@@ -336,12 +341,7 @@ export const SetthiMooAuanView: React.FC = () => {
       let parsed: any = null;
 
       if (effectiveGeminiKey) {
-        const candidateModels = [
-          'gemini-flash-lite-latest',
-          'gemini-2.0-flash',
-          'gemini-1.5-flash',
-          'gemini-flash-latest',
-        ];
+        const candidateModels = GEMINI_FLASH_MODELS;
 
         const prompt = `
 คุณคือ "หมูอ้วนช่วยจด" 🐷 ผู้ช่วยอัจฉริยะด้านการเงินและจดบันทึกรายรับรายจ่ายของแอป "เศรษฐีหมูอ้วน"
@@ -363,7 +363,7 @@ export const SetthiMooAuanView: React.FC = () => {
 `;
         for (const model of candidateModels) {
           try {
-            const res = await fetch(
+            const res = await fetchWithTimeout(
               `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveGeminiKey}`,
               {
                 method: 'POST',
@@ -372,7 +372,8 @@ export const SetthiMooAuanView: React.FC = () => {
                   contents: [{ parts: [{ text: prompt }] }],
                   generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
                 }),
-              }
+              },
+              10000
             );
 
             if (res.ok) {

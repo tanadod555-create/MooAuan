@@ -1,3 +1,33 @@
+export const GEMINI_FLASH_MODELS = [
+  'gemini-flash-lite-latest',
+  'gemini-3.1-flash-lite',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3-flash-preview',
+  'gemini-flash-latest',
+];
+
+/**
+ * Fetch wrapper with AbortController timeout so slow/stalled mobile requests never hang indefinitely.
+ */
+export async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeoutMs = 15000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      throw new Error(`หมดเวลาเชื่อมต่อ AI (${Math.round(timeoutMs / 1000)} วินาที)`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export interface GeminiFoodItem {
   name: string;
   grams: number;
@@ -184,16 +214,7 @@ export async function analyzeFoodImage({
     throw new Error('กรุณาระบุ Gemini API Key ในหน้าการตั้งค่า หรือเชื่อมต่อผ่าน Proxy');
   }
 
-  const candidateModels = [
-    'gemini-flash-lite-latest',
-    'gemini-3.5-flash-lite',
-    'gemini-3.5-flash',
-    'gemini-3.6-flash',
-    'gemini-3.1-flash-lite',
-    'gemini-flash-latest',
-    'gemini-3.8-flash',
-    'gemini-3.7-flash',
-  ];
+  const candidateModels = GEMINI_FLASH_MODELS;
 
   const promptText = userNotes && userNotes.trim()
     ? `${SYSTEM_PROMPT}\n\nCRITICAL USER NOTES / CUSTOM CONTEXT (Strictly adjust portion size, exclude ingredients if requested, and compute nutrition accordingly): "${userNotes.trim()}"`
@@ -234,11 +255,11 @@ export async function analyzeFoodImage({
     for (const model of candidateModels) {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`;
       try {
-        const res = await fetch(endpoint, {
+        const res = await fetchWithTimeout(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody),
-        });
+        }, 18000);
 
         if (res.ok) {
           response = res;
@@ -297,16 +318,7 @@ export async function analyzeFoodText({
     throw new Error('กรุณาระบุ Gemini API Key ในหน้าการตั้งค่า หรือตรวจสอบการเชื่อมต่อ');
   }
 
-  const candidateModels = [
-    'gemini-flash-lite-latest',
-    'gemini-3.5-flash-lite',
-    'gemini-3.5-flash',
-    'gemini-3.6-flash',
-    'gemini-3.1-flash-lite',
-    'gemini-flash-latest',
-    'gemini-3.8-flash',
-    'gemini-3.7-flash',
-  ];
+  const candidateModels = GEMINI_FLASH_MODELS;
 
   const systemPrompt = `You are an expert nutrition analysis assistant.
 The user will provide a food name, menu description, portion, or meal in natural language (Thai or English), e.g. "ข้าวมันไก่พิเศษไม่เอาหนัง + ไข่ต้ม 2 ฟอง" or "แซลมอนย่างซีอิ๊ว 150g กับข้าวกล้อง 1 ถ้วย".
@@ -367,11 +379,11 @@ Return ONLY valid JSON matching this schema, no markdown codeblocks, no extra te
     for (const model of candidateModels) {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`;
       try {
-        const res = await fetch(endpoint, {
+        const res = await fetchWithTimeout(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody),
-        });
+        }, 18000);
 
         if (res.ok) {
           response = res;
@@ -441,12 +453,7 @@ export async function analyzeSlipImage({
     throw new Error('กรุณาระบุ Gemini API Key ในหน้าการตั้งค่า หรือตรวจสอบการเชื่อมต่อ');
   }
 
-  const candidateModels = [
-    'gemini-flash-lite-latest',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-flash-latest',
-  ];
+  const candidateModels = GEMINI_FLASH_MODELS;
 
   const customNotesContext = userNotes && userNotes.trim() ? userNotes.trim() : 'ไม่มีข้อความเพิ่มเติม';
 
@@ -513,11 +520,11 @@ Return ONLY valid JSON matching this schema, no markdown codeblocks:
     for (const model of candidateModels) {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`;
       try {
-        const res = await fetch(endpoint, {
+        const res = await fetchWithTimeout(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBody),
-        });
+        }, 18000);
 
         if (res.ok) {
           response = res;
@@ -614,16 +621,7 @@ export async function chatWithTrainer({
     throw new Error('กรุณาระบุ Gemini API Key ในการตั้งค่าเพื่อสนทนากับโค้ช AI');
   }
 
-  const candidateModels = [
-    'gemini-flash-lite-latest',
-    'gemini-3.5-flash-lite',
-    'gemini-3.5-flash',
-    'gemini-3.6-flash',
-    'gemini-3.1-flash-lite',
-    'gemini-flash-latest',
-    'gemini-3.8-flash',
-    'gemini-3.7-flash',
-  ];
+  const candidateModels = GEMINI_FLASH_MODELS;
 
   // Build daily context summary
   const remainingKcal = context.kcalTarget - context.todayKcal;
@@ -760,19 +758,19 @@ ${workoutsSummary}
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`;
       try {
         // First attempt with top-level system_instruction
-        let res = await fetch(endpoint, {
+        let res = await fetchWithTimeout(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(requestBodyWithSystem),
-        });
+        }, 15000);
 
         // If system_instruction is not supported (HTTP 400), try fallback format
         if (!res.ok && res.status === 400) {
-          res = await fetch(endpoint, {
+          res = await fetchWithTimeout(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(requestBodyFallback),
-          });
+          }, 15000);
         }
 
         if (res.ok) {
@@ -1100,13 +1098,7 @@ export async function analyzeYoutubeWorkoutVideo(
   "suitability": "string (เหมาะสำหรับใคร เช่น เหมาะสำหรับผู้หญิงที่อยากปั้นร่อง 11 และลดไขมันหน้าท้อง)"
 }`;
 
-  const candidateModels = [
-    'gemini-flash-lite-latest',
-    'gemini-1.5-flash',
-    'gemini-2.0-flash',
-    'gemini-flash-latest',
-    'gemini-3.5-flash-lite',
-  ];
+  const candidateModels = GEMINI_FLASH_MODELS;
 
   const defaultKey = getDefaultGeminiApiKey();
   const keysToTry = [activeKey];
@@ -1120,7 +1112,7 @@ export async function analyzeYoutubeWorkoutVideo(
     for (const model of candidateModels) {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentKey}`;
       try {
-        const res = await fetch(endpoint, {
+        const res = await fetchWithTimeout(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1130,7 +1122,7 @@ export async function analyzeYoutubeWorkoutVideo(
               response_mime_type: 'application/json',
             },
           }),
-        });
+        }, 15000);
 
         if (res.ok) {
           const json = await res.json();
