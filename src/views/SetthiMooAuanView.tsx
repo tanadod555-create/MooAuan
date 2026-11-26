@@ -121,6 +121,19 @@ export const SetthiMooAuanView: React.FC = () => {
   // Smart Deletion Modal State
   const [deletingTx, setDeletingTx] = useState<Transaction | null>(null);
 
+  // Classic Top-Button Modals (Slip+Note Modal & AI Quick Text Modal)
+  const [showSlipModal, setShowSlipModal] = useState(false);
+  const [modalSlips, setModalSlips] = useState<{ file: File; previewUrl: string }[]>([]);
+  const [modalSlipNotes, setModalSlipNotes] = useState('');
+  const [isModalSlipProcessing, setIsModalSlipProcessing] = useState(false);
+  const [modalSlipError, setModalSlipError] = useState<string | null>(null);
+  const modalSlipInputRef = useRef<HTMLInputElement>(null);
+
+  const [showAiQuickModal, setShowAiQuickModal] = useState(false);
+  const [aiQuickText, setAiQuickText] = useState('');
+  const [isAiQuickProcessing, setIsAiQuickProcessing] = useState(false);
+  const [aiQuickError, setAiQuickError] = useState<string | null>(null);
+
   // Manual Add Modal State
   const [showAddModal, setShowAddModal] = useState(false);
   const [addType, setAddType] = useState<TransactionType>('EXPENSE');
@@ -217,148 +230,108 @@ export const SetthiMooAuanView: React.FC = () => {
     setStagedSlips((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  // Main Submit Handler (Handles both Staged Slips + Typed Note OR Text-only)
-  const handleChatSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (isProcessing) return;
-
-    const typedNotes = chatInputText.trim();
-    const hasSlips = stagedSlips.length > 0;
-
-    if (!typedNotes && !hasSlips) return;
-
+  // Shared Helper 1: Process Slips + Typed Notes (used by both Chat & Classic Slip Modal)
+  const processSlipItems = async (
+    slipsToProcess: { file: File; previewUrl: string }[],
+    typedNotes: string,
+    onProgress?: (msg: string) => void
+  ): Promise<{ successCount: number; lastError?: string }> => {
     const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    let successCount = 0;
+    let lastError: string | undefined;
 
-    // Case 1: Slips attached (with or without typed text)
-    if (hasSlips) {
-      const slipsToProcess = [...stagedSlips];
-      const previewUrls = slipsToProcess.map((s) => s.previewUrl);
+    for (let i = 0; i < slipsToProcess.length; i++) {
+      const item = slipsToProcess[i];
+      onProgress?.(`กำลังสแกนสลิปใบที่ ${i + 1}/${slipsToProcess.length} ด้วย AI...`);
 
-      // Add user message with both slip images and typed text
-      setChatMessages((prev) => [
-        ...prev,
-        {
-          id: 'user-slips-' + Date.now(),
-          sender: 'user',
-          text: typedNotes ? `${typedNotes} (แนบสลิป ${slipsToProcess.length} รูป)` : `แนบสลิป ${slipsToProcess.length} รูป`,
-          images: previewUrls,
-          createdAt: nowTime,
-        },
-      ]);
+      try {
+        const base64Data = await fileToBase64(item.file);
+        const cleanBase64 = base64Data.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '');
 
-      setStagedSlips([]);
-      setChatInputText('');
-      setIsProcessing(true);
+        const parsed = await analyzeSlipImage({
+          base64Image: cleanBase64,
+          mimeType: item.file.type || 'image/jpeg',
+          userNotes: typedNotes || undefined,
+          apiKey: effectiveGeminiKey,
+        });
 
-      for (let i = 0; i < slipsToProcess.length; i++) {
-        const item = slipsToProcess[i];
-        setProcessingStatus(`กำลังสแกนสลิปใบที่ ${i + 1}/${slipsToProcess.length} ด้วย AI...`);
+        const isFood = parsed.isFood || parsed.suggestedCategory === 'อาหารและเครื่องดื่ม';
+        const foodKcalAmt = parsed.estimatedKcal || 450;
+        let foodId: string | undefined = undefined;
 
-        try {
-          const base64Data = await fileToBase64(item.file);
-          const cleanBase64 = base64Data.replace(/^data:image\/[a-zA-Z0-9+.-]+;base64,/, '');
+        const dateParts = (parsed.datetime || '').split(' ');
+        const slipDate = dateParts[0] || selectedDate;
+        const slipTime = dateParts[1] || nowTime;
 
-          // Call tested analyzeSlipImage with candidate models
-          const parsed = await analyzeSlipImage({
-            base64Image: cleanBase64,
-            mimeType: item.file.type || 'image/jpeg',
-            userNotes: typedNotes || undefined,
-            apiKey: effectiveGeminiKey,
-          });
-
-          const isFood = parsed.isFood || parsed.suggestedCategory === 'อาหารและเครื่องดื่ม';
-          const foodKcalAmt = parsed.estimatedKcal || 450;
-          let foodId: string | undefined = undefined;
-
-          const dateParts = (parsed.datetime || '').split(' ');
-          const slipDate = dateParts[0] || selectedDate;
-          const slipTime = dateParts[1] || nowTime;
-
-          // Auto Two-Way Dual-Log to Fit if food
-          if (isFood && parsed.type === 'EXPENSE') {
-            foodId = 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
-            await addFoodLog({
-              date: slipDate,
-              time: slipTime,
-              meal: 'lunch',
-              name: parsed.merchant || 'มื้ออาหาร',
-              grams: 200,
-              kcal: foodKcalAmt,
-              protein_g: 22,
-              carb_g: 45,
-              fat_g: 12,
-              source: 'ai',
-              price_thb: Number(parsed.amount) || 0,
-              payment_channel: parsed.bank || 'KBank',
-              note: typedNotes ? `สแกนสลิป (${typedNotes})` : 'สแกนสลิปจากเศรษฐีหมูอ้วน',
-            });
-          }
-
-          // Add Transaction (which triggers Google Sheets realtime sync)
-          const newTx = await addTransaction({
-            user_id: activeProfileKey,
-            user_name: isMaxnum ? 'แม็กนั่ม (Maxnum)' : 'มะนาว (Manow)',
+        if (isFood && parsed.type === 'EXPENSE') {
+          foodId = 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
+          await addFoodLog({
             date: slipDate,
             time: slipTime,
-            type: parsed.type || 'EXPENSE',
-            category: parsed.suggestedCategory || 'อาหารและเครื่องดื่ม',
-            amount: Number(parsed.amount) || 0,
-            wallet: parsed.bank || 'KBank',
-            merchant: parsed.merchant || 'สลิปโอนเงิน',
-            note: typedNotes || parsed.note || '',
-            slipRef: parsed.slipRef,
-            linked_food_log_id: foodId,
-            food_kcal: isFood ? foodKcalAmt : undefined,
+            meal: 'lunch',
+            name: parsed.merchant || 'มื้ออาหาร',
+            grams: 200,
+            kcal: foodKcalAmt,
+            protein_g: 22,
+            carb_g: 45,
+            fat_g: 12,
+            source: 'ai',
+            price_thb: Number(parsed.amount) || 0,
+            payment_channel: parsed.bank || 'KBank',
+            note: typedNotes ? `สแกนสลิป (${typedNotes})` : 'สแกนสลิปจากเศรษฐีหมูอ้วน',
           });
-
-          // Add Bot message
-          setChatMessages((prev) => [
-            ...prev,
-            {
-              id: 'bot-slip-' + Date.now() + '-' + i,
-              sender: 'bot',
-              text: `สแกนสลิป "${newTx.merchant}" ยอด ฿${newTx.amount.toLocaleString()} สำเร็จแล้วครับ! 🐷`,
-              transaction: newTx,
-              foodKcal: isFood ? foodKcalAmt : undefined,
-              isSyncedGoogleSheet: true,
-              createdAt: nowTime,
-            },
-          ]);
-        } catch (err: any) {
-          console.error(err);
-          setChatMessages((prev) => [
-            ...prev,
-            {
-              id: 'bot-err-' + Date.now() + '-' + i,
-              sender: 'bot',
-              text: `ขออภัยครับ สแกนสลิปใบที่ ${i + 1} ไม่สำเร็จ (${err.message || 'ตรวจไม่พบข้อมูล'}) คุณสามารถพิมพ์บอกจำนวนเงินแทนได้เลยครับ 🐷`,
-              createdAt: nowTime,
-            },
-          ]);
         }
-      }
 
-      setIsProcessing(false);
-      setProcessingStatus('');
-      return;
+        const newTx = await addTransaction({
+          user_id: activeProfileKey,
+          user_name: isMaxnum ? 'แม็กนั่ม (Maxnum)' : 'มะนาว (Manow)',
+          date: slipDate,
+          time: slipTime,
+          type: parsed.type || 'EXPENSE',
+          category: parsed.suggestedCategory || 'อาหารและเครื่องดื่ม',
+          amount: Number(parsed.amount) || 0,
+          wallet: parsed.bank || 'KBank',
+          merchant: parsed.merchant || 'สลิปโอนเงิน',
+          note: typedNotes || parsed.note || '',
+          slipRef: parsed.slipRef,
+          linked_food_log_id: foodId,
+          food_kcal: isFood ? foodKcalAmt : undefined,
+        });
+
+        successCount += 1;
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: 'bot-slip-' + Date.now() + '-' + i,
+            sender: 'bot',
+            text: `สแกนสลิป "${newTx.merchant}" ยอด ฿${newTx.amount.toLocaleString()} สำเร็จแล้วครับ! 🐷`,
+            transaction: newTx,
+            foodKcal: isFood ? foodKcalAmt : undefined,
+            isSyncedGoogleSheet: true,
+            createdAt: nowTime,
+          },
+        ]);
+      } catch (err: any) {
+        console.error(err);
+        lastError = err?.message || 'ตรวจไม่พบข้อมูล';
+        setChatMessages((prev) => [
+          ...prev,
+          {
+            id: 'bot-err-' + Date.now() + '-' + i,
+            sender: 'bot',
+            text: `ขออภัยครับ สแกนสลิปใบที่ ${i + 1} ไม่สำเร็จ (${lastError}) คุณสามารถพิมพ์บอกจำนวนเงินแทนได้เลยครับ 🐷`,
+            createdAt: nowTime,
+          },
+        ]);
+      }
     }
 
-    // Case 2: Text-only message
-    const userMsgId = 'msg-' + Date.now();
-    setChatMessages((prev) => [
-      ...prev,
-      {
-        id: userMsgId,
-        sender: 'user',
-        text: typedNotes,
-        createdAt: nowTime,
-      },
-    ]);
+    return { successCount, lastError };
+  };
 
-    setChatInputText('');
-    setIsProcessing(true);
-    setProcessingStatus('กำลังวิเคราะห์ข้อความ...');
-
+  // Shared Helper 2: Process Text-Only AI Entry (used by both Chat & Classic AI Quick Modal)
+  const processTextTransaction = async (typedNotes: string): Promise<boolean> => {
+    const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
     try {
       let parsed: any = null;
 
@@ -421,7 +394,6 @@ export const SetthiMooAuanView: React.FC = () => {
         const foodKcalAmt = parsed.estimatedKcal || 450;
         let foodId: string | undefined = undefined;
 
-        // Auto Two-Way Dual-Log to Fit if food
         if (isFood && parsed.type === 'EXPENSE') {
           foodId = 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6);
           await addFoodLog({
@@ -437,11 +409,10 @@ export const SetthiMooAuanView: React.FC = () => {
             source: 'ai',
             price_thb: parsed.amount,
             payment_channel: parsed.wallet || 'เงินสด',
-            note: 'บันทึกผ่านแชทเศรษฐีหมูอ้วน',
+            note: 'บันทึกผ่านเศรษฐีหมูอ้วน',
           });
         }
 
-        // Add Transaction (which triggers Google Sheets realtime sync)
         const newTx = await addTransaction({
           user_id: activeProfileKey,
           user_name: isMaxnum ? 'แม็กนั่ม (Maxnum)' : 'มะนาว (Manow)',
@@ -457,7 +428,6 @@ export const SetthiMooAuanView: React.FC = () => {
           food_kcal: isFood ? foodKcalAmt : undefined,
         });
 
-        // Add Bot message with receipt card
         setChatMessages((prev) => [
           ...prev,
           {
@@ -470,17 +440,19 @@ export const SetthiMooAuanView: React.FC = () => {
             createdAt: nowTime,
           },
         ]);
-      } else {
-        setChatMessages((prev) => [
-          ...prev,
-          {
-            id: 'bot-' + Date.now(),
-            sender: 'bot',
-            text: `ขออภัยครับ ไม่พบจำนวนเงินในข้อความ กรุณาลองใหม่อีกครั้ง เช่น "ข้าวผัด 60 บาท จ่าย kbank" 🐷`,
-            createdAt: nowTime,
-          },
-        ]);
+        return true;
       }
+
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: 'bot-' + Date.now(),
+          sender: 'bot',
+          text: `ขออภัยครับ ไม่พบจำนวนเงินในข้อความ กรุณาลองใหม่อีกครั้ง เช่น "ข้าวผัด 60 บาท จ่าย kbank" 🐷`,
+          createdAt: nowTime,
+        },
+      ]);
+      return false;
     } catch (err) {
       console.error(err);
       const fallback = localRegexParse(typedNotes);
@@ -508,10 +480,139 @@ export const SetthiMooAuanView: React.FC = () => {
             createdAt: nowTime,
           },
         ]);
+        return true;
       }
-    } finally {
+      return false;
+    }
+  };
+
+  // Main Submit Handler (Handles both Staged Slips + Typed Note OR Text-only)
+  const handleChatSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (isProcessing) return;
+
+    const typedNotes = chatInputText.trim();
+    const hasSlips = stagedSlips.length > 0;
+
+    if (!typedNotes && !hasSlips) return;
+
+    const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+    if (hasSlips) {
+      const slipsToProcess = [...stagedSlips];
+      const previewUrls = slipsToProcess.map((s) => s.previewUrl);
+
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: 'user-slips-' + Date.now(),
+          sender: 'user',
+          text: typedNotes ? `${typedNotes} (แนบสลิป ${slipsToProcess.length} รูป)` : `แนบสลิป ${slipsToProcess.length} รูป`,
+          images: previewUrls,
+          createdAt: nowTime,
+        },
+      ]);
+
+      setStagedSlips([]);
+      setChatInputText('');
+      setIsProcessing(true);
+      await processSlipItems(slipsToProcess, typedNotes, setProcessingStatus);
       setIsProcessing(false);
       setProcessingStatus('');
+      return;
+    }
+
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: 'msg-' + Date.now(),
+        sender: 'user',
+        text: typedNotes,
+        createdAt: nowTime,
+      },
+    ]);
+
+    setChatInputText('');
+    setIsProcessing(true);
+    setProcessingStatus('กำลังวิเคราะห์ข้อความ...');
+    await processTextTransaction(typedNotes);
+    setIsProcessing(false);
+    setProcessingStatus('');
+  };
+
+  // Classic Top-Button Modal Handlers
+  const handleModalSlipSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const newItems = Array.from(files).map((f) => ({
+      file: f,
+      previewUrl: URL.createObjectURL(f),
+    }));
+    setModalSlips((prev) => [...prev, ...newItems]);
+    setModalSlipError(null);
+    e.target.value = '';
+  };
+
+  const handleModalSlipSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (modalSlips.length === 0 || isModalSlipProcessing) return;
+    setIsModalSlipProcessing(true);
+    setModalSlipError(null);
+
+    const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+    const notes = modalSlipNotes.trim();
+    const previewUrls = modalSlips.map((s) => s.previewUrl);
+
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: 'user-modal-slips-' + Date.now(),
+        sender: 'user',
+        text: notes ? `${notes} (แนบสลิป ${modalSlips.length} รูป)` : `แนบสลิป ${modalSlips.length} รูป`,
+        images: previewUrls,
+        createdAt: nowTime,
+      },
+    ]);
+
+    const { successCount, lastError } = await processSlipItems(modalSlips, notes);
+    setIsModalSlipProcessing(false);
+
+    if (successCount > 0) {
+      setModalSlips([]);
+      setModalSlipNotes('');
+      setShowSlipModal(false);
+    } else {
+      setModalSlipError(lastError || 'สแกนสลิปไม่สำเร็จ กรุณาลองใหม่หรือกรอกรายการเอง');
+    }
+  };
+
+  const handleAiQuickSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = aiQuickText.trim();
+    if (!text || isAiQuickProcessing) return;
+
+    setIsAiQuickProcessing(true);
+    setAiQuickError(null);
+    const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+
+    setChatMessages((prev) => [
+      ...prev,
+      {
+        id: 'msg-quick-' + Date.now(),
+        sender: 'user',
+        text,
+        createdAt: nowTime,
+      },
+    ]);
+
+    const ok = await processTextTransaction(text);
+    setIsAiQuickProcessing(false);
+
+    if (ok) {
+      setAiQuickText('');
+      setShowAiQuickModal(false);
+    } else {
+      setAiQuickError('ไม่พบจำนวนเงินในข้อความ กรุณาระบุยอดเงิน เช่น "ข้าวกะเพรา 60 kbank"');
     }
   };
 
@@ -643,6 +744,14 @@ export const SetthiMooAuanView: React.FC = () => {
         onChange={handleFilesSelected}
         className="hidden"
       />
+      <input
+        ref={modalSlipInputRef}
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={handleModalSlipSelected}
+        className="hidden"
+      />
 
       {/* Top World Header Pill */}
       <div className="flex items-center justify-between p-2.5 sm:p-3 bg-white/95 backdrop-blur-md rounded-2xl border border-amber-200/90 shadow-2xs">
@@ -687,6 +796,47 @@ export const SetthiMooAuanView: React.FC = () => {
             <span>ภาพรวม & รายการ</span>
           </button>
         </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* CLASSIC ACTION BUTTONS BAR (Above Chat & Dashboard)      */}
+      {/* ======================================================== */}
+      <div className="grid grid-cols-3 gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setModalSlipError(null);
+            setShowSlipModal(true);
+          }}
+          className="py-2.5 px-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition cursor-pointer"
+          title="แนบรูปสลิป + พิมพ์รายละเอียดก่อนสแกน"
+        >
+          <Camera size={16} className="shrink-0" />
+          <span className="truncate">สแกนสลิป (+โน้ต)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setAiQuickError(null);
+            setShowAiQuickModal(true);
+          }}
+          className="py-2.5 px-2 rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition cursor-pointer"
+          title="พิมพ์ข้อความบอก AI ให้บันทึกรายการ"
+        >
+          <Sparkles size={16} className="shrink-0" />
+          <span className="truncate">พิมพ์บอก AI</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowAddModal(true)}
+          className="py-2.5 px-2 rounded-2xl bg-white hover:bg-amber-50 border border-amber-200 text-slate-700 font-black text-xs flex items-center justify-center gap-1.5 shadow-2xs active:scale-95 transition cursor-pointer"
+          title="กรอกรายรับ-รายจ่ายเอง"
+        >
+          <Plus size={16} className="shrink-0 text-amber-600 stroke-[2.5]" />
+          <span className="truncate">จดรายการเอง</span>
+        </button>
       </div>
 
       {/* ======================================================== */}
@@ -1521,6 +1671,203 @@ export const SetthiMooAuanView: React.FC = () => {
                   className="px-5 py-2 rounded-xl bg-amber-500 text-white font-bold shadow-xs cursor-pointer"
                 >
                   บันทึกการแก้ไข
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Classic Slip Upload + Note Modal */}
+      {showSlipModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-amber-200 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-amber-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <Camera size={18} className="text-amber-500" />
+                <h3 className="font-black text-slate-800 text-sm">สแกนสลิป + พิมพ์รายละเอียด</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSlipModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleModalSlipSubmit} className="space-y-3 text-xs">
+              {modalSlips.length === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => modalSlipInputRef.current?.click()}
+                  className="w-full p-8 border-2 border-dashed border-amber-300 rounded-2xl bg-amber-50/50 hover:bg-amber-50 flex flex-col items-center justify-center gap-2 text-amber-800 cursor-pointer transition"
+                >
+                  <UploadCloud size={28} className="text-amber-500" />
+                  <span className="font-black text-sm">แตะเพื่อเลือกรูปสลิป (เลือกได้หลายรูป)</span>
+                  <span className="text-[11px] text-amber-700">รองรับสลิป KBank, SCB, PromptPay ฯลฯ</span>
+                </button>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-700">สลิปที่เลือก ({modalSlips.length} รูป)</span>
+                    <button
+                      type="button"
+                      onClick={() => modalSlipInputRef.current?.click()}
+                      className="px-2.5 py-1 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold text-[11px] cursor-pointer"
+                    >
+                      + เพิ่มสลิป
+                    </button>
+                  </div>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {modalSlips.map((st, idx) => (
+                      <div
+                        key={idx}
+                        className="relative w-20 h-28 rounded-xl overflow-hidden border border-amber-300 shrink-0 bg-slate-900"
+                      >
+                        <img src={st.previewUrl} alt="Slip" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => setModalSlips((prev) => prev.filter((_, i) => i !== idx))}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/75 hover:bg-rose-500 text-white flex items-center justify-center text-[10px] font-bold cursor-pointer"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  รายละเอียดเพิ่มเติมให้ AI (ไม่บังคับ)
+                </label>
+                <textarea
+                  rows={2}
+                  value={modalSlipNotes}
+                  onChange={(e) => setModalSlipNotes(e.target.value)}
+                  placeholder='เช่น "หาร 3 คน", "ค่าข้าวเย็นกับเพื่อน", "ซื้อของใช้เข้าบ้าน"'
+                  className="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:border-amber-400 outline-none font-medium"
+                />
+              </div>
+
+              {modalSlipError && (
+                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-bold flex items-center gap-1.5">
+                  <AlertCircle size={14} className="shrink-0" />
+                  <span>{modalSlipError}</span>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowSlipModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={modalSlips.length === 0 || isModalSlipProcessing}
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-black shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                >
+                  {isModalSlipProcessing ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>กำลังสแกน...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={14} />
+                      <span>สแกนและบันทึกเลย</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Classic AI Quick Text Modal */}
+      {showAiQuickModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fadeIn">
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border border-purple-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-purple-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} className="text-purple-500" />
+                <h3 className="font-black text-slate-800 text-sm">พิมพ์บอก AI ให้บันทึกรายการ</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAiQuickModal(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAiQuickSubmit} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  พิมพ์รายการ (AI แยกประเภท, หมวด, ช่องทางจ่ายให้เอง)
+                </label>
+                <input
+                  type="text"
+                  autoFocus
+                  value={aiQuickText}
+                  onChange={(e) => setAiQuickText(e.target.value)}
+                  placeholder='เช่น "ข้าวมันไก่ 60 kbank" หรือ "เงินเดือนเข้า 25000"'
+                  className="w-full px-3 py-2.5 border border-purple-200 rounded-xl bg-purple-50/30 focus:bg-white focus:border-purple-400 outline-none font-bold text-sm"
+                  required
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {['กาแฟ 55 kbank', 'ข้าวกะเพรา 65', 'เติมน้ำมัน 800 scb', 'ได้เงินคืน 300'].map((ex) => (
+                  <button
+                    key={ex}
+                    type="button"
+                    onClick={() => setAiQuickText(ex)}
+                    className="px-2.5 py-1 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 font-semibold text-[11px] cursor-pointer"
+                  >
+                    {ex}
+                  </button>
+                ))}
+              </div>
+
+              {aiQuickError && (
+                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 font-bold flex items-center gap-1.5">
+                  <AlertCircle size={14} className="shrink-0" />
+                  <span>{aiQuickError}</span>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setShowAiQuickModal(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold cursor-pointer"
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  disabled={!aiQuickText.trim() || isAiQuickProcessing}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-black shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+                >
+                  {isAiQuickProcessing ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      <span>กำลังวิเคราะห์...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={14} />
+                      <span>ให้ AI บันทึกเลย</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>

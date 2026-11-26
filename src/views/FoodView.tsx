@@ -1809,7 +1809,7 @@ export const FoodView: React.FC = () => {
 
 
 
-      {/* Hidden Food Photo Input */}
+      {/* Hidden Food Photo Inputs (Chat & Classic Photo+Note Modal) */}
       <input
         type="file"
         accept="image/*"
@@ -1818,6 +1818,105 @@ export const FoodView: React.FC = () => {
         multiple
         className="hidden"
       />
+      <input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        ref={cameraInputRef}
+        onChange={handlePhotoSelect}
+        className="hidden"
+      />
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        ref={galleryInputRef}
+        onChange={handlePhotoSelect}
+        className="hidden"
+      />
+
+      {/* ======================================================== */}
+      {/* CLASSIC ACTION BUTTONS BAR (Above Chat & History)        */}
+      {/* ======================================================== */}
+      <div className="grid grid-cols-5 gap-1.5 sm:gap-2.5">
+        {/* 1. Take Photo (Opens Photo + Note Modal) */}
+        <button
+          type="button"
+          onClick={() => {
+            if (!effectiveGeminiKey) {
+              setApiKeyInput(getDefaultGeminiApiKey());
+              setShowApiKeyModal(true);
+              return;
+            }
+            cameraInputRef.current?.click();
+          }}
+          className="py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 hover:from-pink-600 hover:to-rose-600 text-white font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs shadow-pink-200/60 active:scale-95 transition cursor-pointer min-h-[52px]"
+          title="ถ่ายรูปอาหาร + พิมพ์รายละเอียดให้ AI"
+        >
+          <Camera size={17} className={`stroke-[2.5] shrink-0 ${isFoodScanning ? 'animate-pulse' : ''}`} />
+          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">
+            {isFoodScanning ? 'สแกน...' : 'ถ่ายรูป'}
+          </span>
+        </button>
+
+        {/* 2. Choose from Gallery (Opens Photo + Note Modal) */}
+        <button
+          type="button"
+          onClick={() => {
+            if (!effectiveGeminiKey) {
+              setApiKeyInput(getDefaultGeminiApiKey());
+              setShowApiKeyModal(true);
+              return;
+            }
+            galleryInputRef.current?.click();
+          }}
+          className="py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-white hover:bg-pink-50 border border-pink-200/90 text-pink-700 font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs active:scale-95 transition cursor-pointer min-h-[52px]"
+          title="เลือกรูปอาหารจากคลัง + พิมพ์รายละเอียด"
+        >
+          <Upload size={17} className="shrink-0 text-pink-500" />
+          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">คลังรูป</span>
+        </button>
+
+        {/* 3. AI Text Search & Calculate */}
+        <button
+          type="button"
+          onClick={() => {
+            if (!effectiveGeminiKey) {
+              setApiKeyInput(getDefaultGeminiApiKey());
+              setShowApiKeyModal(true);
+              return;
+            }
+            setShowAiTextModal(true);
+          }}
+          className="py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-pink-500 hover:from-purple-600 hover:via-indigo-600 hover:to-pink-600 text-white font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs shadow-purple-200/50 active:scale-95 transition cursor-pointer min-h-[52px]"
+          title="พิมพ์สั่ง AI ค้นหาแคลและสารอาหาร"
+        >
+          <Sparkles size={17} className="shrink-0" />
+          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">พิมพ์สั่ง AI</span>
+        </button>
+
+        {/* 4. Quick Food Database */}
+        <button
+          type="button"
+          onClick={() => setShowFoodDbModal(true)}
+          className="py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 hover:from-emerald-100/80 hover:to-teal-100/80 border border-emerald-200/80 text-emerald-800 font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs active:scale-95 transition cursor-pointer min-h-[52px]"
+          title="เปิดตารางอาหารด่วน แตะลงมื้อทันที"
+        >
+          <BookOpen size={17} className="shrink-0 text-emerald-600" />
+          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">ตารางด่วน</span>
+        </button>
+
+        {/* 5. Manual Add */}
+        <button
+          type="button"
+          onClick={() => setShowManualModal(true)}
+          className="py-2 px-1 sm:py-2.5 sm:px-2 rounded-2xl bg-white/95 hover:bg-pink-50/70 border border-pink-200/80 text-slate-700 font-bold flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 shadow-2xs active:scale-95 transition cursor-pointer min-h-[52px]"
+          title="กรอกรายการและสารอาหารเอง"
+        >
+          <Plus size={17} className="shrink-0 text-slate-600" />
+          <span className="text-[10px] sm:text-xs font-bold truncate max-w-full text-center">กรอกเอง</span>
+        </button>
+      </div>
 
       {/* ======================================================== */}
       {/* SUBTAB SWITCHER: Chat vs Today's Food List (Matching Setthi) */}
